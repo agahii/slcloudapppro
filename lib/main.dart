@@ -1,23 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
-import 'home_screen.dart'; // We’ll create this next
+import 'home_screen.dart'; // Replace with your actual home screen
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  Future<bool> isTokenValid() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final expireStr = prefs.getString('tokenExpire');
+
+    if (token == null || expireStr == null) return false;
+
+    try {
+      final expiry = DateTime.parse(expireStr);
+      return DateTime.now().isBefore(expiry);
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cool Login Drawer App',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.indigo),
-      initialRoute: '/',
+      home: FutureBuilder<bool>(
+        future: isTokenValid(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          return snapshot.data! ? HomeScreen() : LoginScreen();
+        },
+      ),
       routes: {
-        '/': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(), // Placeholder
+
+        '/login': (context) => LoginScreen(),
+        '/home': (context) => HomeScreen(),
       },
+
     );
   }
 }

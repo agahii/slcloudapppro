@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () async {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
-                Navigator.pushReplacementNamed(context, '/');
+                Navigator.pushReplacementNamed(context, '/login');
+
               },
             ),
           ],
