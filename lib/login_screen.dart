@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -49,10 +50,20 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    // In next step, we'll go to HomeScreen with drawer
-                    Navigator.pushReplacementNamed(context, '/home');
+                  onPressed: () async {
+                    final email = emailController.text.trim();
+                    final password = passwordController.text;
+
+                    final success = await ApiService.login(email, password);
+                    if (success) {
+                      Navigator.pushReplacementNamed(context, '/home');
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Login failed')),
+                      );
+                    }
                   },
+
                   child: Text('Login'),
                 ),
               ),
