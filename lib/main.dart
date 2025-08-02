@@ -4,11 +4,15 @@ import 'login_screen.dart';
 import 'home_screen.dart'; // Replace with your actual home screen
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  // Define your global color scheme here
+  static const Color primaryColor = Color(0xFF0D47A1); // Login screen blue
+  static const Color accentColor = Colors.white;       // Text/Icon/Foreground
 
   Future<bool> isTokenValid() async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,6 +33,38 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
+      theme: ThemeData(
+        primaryColor: primaryColor,
+        scaffoldBackgroundColor: Colors.white,
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          foregroundColor: accentColor,
+        ),
+
+        iconTheme: const IconThemeData(color: primaryColor),
+
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.black),
+        ),
+
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: Colors.white,
+        ),
+
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: accentColor,
+          ),
+        ),
+
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: primaryColor,
+        ),
+      ),
+
       home: FutureBuilder<bool>(
         future: isTokenValid(),
         builder: (context, snapshot) {
@@ -38,15 +74,14 @@ class MyApp extends StatelessWidget {
             );
           }
 
-          return snapshot.data! ? HomeScreen() : LoginScreen();
+          return snapshot.data! ? const HomeScreen() : const LoginScreen();
         },
       ),
+
       routes: {
-
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
       },
-
     );
   }
 }

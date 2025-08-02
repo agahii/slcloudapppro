@@ -15,6 +15,17 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   String? errorMessage;
 
+
+  @override
+  void initState() {
+    super.initState();
+    emailController.text = 'agahii@gmail.com';
+    passwordController.text = 'Ba@leno99';
+  }
+
+
+
+
   void loginUser() async {
     final email = emailController.text.trim();
     final password = passwordController.text;
