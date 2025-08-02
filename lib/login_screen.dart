@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'api_service.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -14,13 +16,20 @@ class _LoginScreenState extends State<LoginScreen> {
   String? errorMessage;
 
   void loginUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        errorMessage = 'Please enter both User ID and Password';
+      });
+      return;
+    }
+
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
-
-    final email = emailController.text.trim();
-    final password = passwordController.text;
 
     final response = await ApiService.attemptLogin(email, password);
 
@@ -34,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

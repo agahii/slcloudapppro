@@ -8,6 +8,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   Future<bool> isTokenValid() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
