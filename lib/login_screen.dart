@@ -54,12 +54,13 @@ class LoginScreen extends StatelessWidget {
                     final email = emailController.text.trim();
                     final password = passwordController.text;
 
-                    final success = await ApiService.login(email, password);
-                    if (success) {
+                    final response = await ApiService.attemptLogin(email, password);
+
+                    if (response['success']) {
                       Navigator.pushReplacementNamed(context, '/home');
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Login failed')),
+                        SnackBar(content: Text(response['message'] ?? 'Login failed')),
                       );
                     }
                   },
