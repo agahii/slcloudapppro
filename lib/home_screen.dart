@@ -41,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         page: currentPage,
         pageSize: pageSize,
       );
-      print('Received ${newProducts.length} products');
+
       setState(() {
         currentPage++;
         _products.addAll(newProducts);
