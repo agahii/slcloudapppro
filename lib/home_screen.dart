@@ -18,7 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String searchKey = "";
   String firstName = '';
   String lastName = '';
-  final ScrollController _scrollController = ScrollController();final List<Product> _products = [];
+  final ScrollController _scrollController = ScrollController();
+  final List<Product> _products = [];
   bool isLoading = false;
   int currentPage = 1;
   bool hasMore = true;
@@ -41,9 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {});
     });
   }
+
   Future<void> fetchProducts() async {
     setState(() => isLoading = true);
-
     try {
       final newProducts = await ApiService.fetchProducts(
         managerID: managerID,
@@ -51,7 +52,6 @@ class _HomeScreenState extends State<HomeScreen> {
         pageSize: pageSize,
         searchKey: searchKey,
       );
-
       setState(() {
         currentPage++;
         _products.addAll(newProducts);
@@ -60,12 +60,30 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('Error loading products: $e');
     }
-
     setState(() => isLoading = false);
   }
+
+  Future<void> _clearCart() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear Cart?'),
+        content: const Text('Are you sure you want to remove all items from the cart?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear')),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      setState(() {
+        _cart.clear();
+      });
+    }
+  }
+
   Widget _buildProductItem(Product product) {
     final TextEditingController _qtyController = TextEditingController(text: '1');
-
     return Dismissible(
       key: ValueKey(product.skuCode),
       direction: DismissDirection.startToEnd,
@@ -76,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.shopping_cart, color: Colors.green, size: 30),
       ),
       confirmDismiss: (_) async {
-        bool added = false;
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
@@ -103,9 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   final qty = int.tryParse(_qtyController.text);
                   if (qty != null && qty > 0) {
                     setState(() {
-                      _cart[product.skuCode] = qty; // 👈 Save to cart
+                      _cart[product.skuCode] = qty;
                     });
-                    added = true;
                   }
                   Navigator.pop(context);
                 },
@@ -114,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         );
-        return false; // prevents actual dismissal
+        return false;
       },
       child: _productCard(product),
     );
@@ -179,19 +195,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-
-
     setState(() {
       firstName = prefs.getString('firstName') ?? '';
       lastName = prefs.getString('lastName') ?? '';
     });
   }
+
   @override
   void dispose() {
     _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -200,13 +216,18 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Products'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            tooltip: 'Clear Cart',
+            onPressed: _cart.isNotEmpty ? _clearCart : null,
+          ),
           Stack(
             alignment: Alignment.topRight,
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
                 onPressed: () {
-                  // You can navigate to a CartPage here if you want
+                  // Navigate to CartPage if needed
                 },
               ),
               if (_cart.isNotEmpty)
@@ -215,10 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: 6,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                     child: Text(
                       '${_cart.length}',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -229,24 +247,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
       drawer: Drawer(
         child: ListView(
           children: [
             UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: theme.primaryColor,
-              ),
+              decoration: BoxDecoration(color: theme.primaryColor),
               accountName: Text('$firstName $lastName'),
               accountEmail: const Text(''),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Text(
                   firstName.isNotEmpty ? firstName[0] : '',
-                  style: TextStyle(
-                    fontSize: 40,
-                    color: theme.primaryColor,
-                  ),
+                  style: TextStyle(fontSize: 40, color: theme.primaryColor),
                 ),
               ),
             ),
@@ -271,8 +283,8 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: InputDecoration(
                 hintText: 'Search products...',
                 prefixIcon: isLoading
-                    ? Padding(
-                  padding: const EdgeInsets.all(12),
+                    ? const Padding(
+                  padding: EdgeInsets.all(12),
                   child: SizedBox(
                     width: 16,
                     height: 16,
@@ -302,7 +314,6 @@ class _HomeScreenState extends State<HomeScreen> {
               textInputAction: TextInputAction.search,
               onChanged: (value) {
                 if (_debounce?.isActive ?? false) _debounce!.cancel();
-
                 _debounce = Timer(const Duration(milliseconds: 500), () {
                   setState(() {
                     searchKey = value.trim();
@@ -315,13 +326,12 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-
-
-
           const Divider(),
           Expanded(
             child: _products.isEmpty
-                ? Center(child: isLoading ? CircularProgressIndicator() : Text('No products found.'))
+                ? Center(
+              child: isLoading ? const CircularProgressIndicator() : const Text('No products found.'),
+            )
                 : ListView.builder(
               controller: _scrollController,
               itemCount: _products.length + (isLoading ? 1 : 0),
@@ -337,10 +347,8 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-
         ],
       ),
     );
   }
-
 }
