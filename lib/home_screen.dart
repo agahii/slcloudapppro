@@ -299,14 +299,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             }
 
             return AlertDialog(
-              title: const Text('Order Summary'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                '🧾 Order Summary',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 600,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ⬇️ Customer Dropdown
+                    const Text(
+                      "👤 Customer",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
                     DropdownSearch<Customer>(
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
@@ -335,25 +344,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         });
                       },
                     ),
-
-
-
-
-
-                    const SizedBox(height: 8),
-
-                    // 🏠 Delivery Address
+                    const SizedBox(height: 12),
+                    const Text(
+                      "🏠 Delivery Address",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
                     TextField(
                       controller: addressController,
                       maxLines: 2,
                       decoration: const InputDecoration(
-                        labelText: 'Delivery Address',
+                        hintText: "Enter delivery address",
                         border: OutlineInputBorder(),
+                        filled: true,
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // 🛒 Product List
+                    const Divider(),
+                    const Text(
+                      "🛒 Items",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
                     Expanded(
                       child: cartItems.isEmpty
                           ? const Center(child: Text("Cart is empty."))
@@ -365,8 +377,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           final price = double.tryParse(item.tradePrice) ?? 0;
                           final total = qty * price;
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -399,18 +416,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     children: [
                                       Text(
                                         item.skuName,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: const TextStyle(fontWeight: FontWeight.w600),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        'Qty: $qty × Rs. ${item.tradePrice}',
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
+                                      Text('Qty: $qty × Rs. ${item.tradePrice}'),
                                     ],
                                   ),
                                 ),
@@ -419,10 +430,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   children: [
                                     Text(
                                       'Rs. ${total.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete, color: Colors.red),
@@ -442,9 +450,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         },
                       ),
                     ),
-
                     const Divider(),
-
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
@@ -452,6 +458,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.green,
                         ),
                       ),
                     ),
@@ -488,6 +495,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ],
             );
+
 
           },
         );
