@@ -123,7 +123,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }
             },
             icon: const Icon(Icons.shopping_bag),
-            label: const Text('Place Order'),
+            label: const Text('Place Order',
+                style: TextStyle(color: Colors.white)),
+
+
           ),
           const SizedBox(height: 12),
           FloatingActionButton.extended(
@@ -135,7 +138,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               );
             },
             icon: const Icon(Icons.info_outline),
-            label: const Text('Info'),
+            label: const Text('Info',
+                style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
         ],
