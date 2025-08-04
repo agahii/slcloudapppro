@@ -44,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {});
     });
   }
-
   Future<void> loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -57,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       debugPrint('Error loading user data: \$e');
     }
   }
-
   Future<void> fetchProducts() async {
     setState(() => isLoading = true);
     try {
@@ -77,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
     setState(() => isLoading = false);
   }
-
   Future<void> _clearCart() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -96,8 +93,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     }
   }
-
-
   Widget _fabButtons() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -146,9 +141,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
-
-
-
   Widget _buildExpandableFAB() {
     return Positioned(
       left: fabOffset.dx,
@@ -166,8 +158,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
-
   Widget _buildProductItem(Product product) {
     final TextEditingController _qtyController = TextEditingController(text: '1');
     return Dismissible(
@@ -221,7 +211,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: _productCard(product),
     );
   }
-
   Widget _productCard(Product product) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -278,7 +267,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
   void _showOrderSummaryDialog() {
     showDialog(
       context: context,
@@ -419,22 +407,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
-
-
-
-
-
-
-
-
-
   @override
   void dispose() {
     _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
