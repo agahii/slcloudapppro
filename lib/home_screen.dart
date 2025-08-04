@@ -552,6 +552,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
+
+
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: const Text('Customer Ledger'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/customerLedger');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.policy),
+              title: const Text('Active Policy'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/activePolicy');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.money),
+              title: const Text('My Expenses'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/myExpenses');
+              },
+            ),
+            const Divider(),
+
             ListTile(
               leading: Icon(Icons.logout, color: theme.iconTheme.color),
               title: const Text('Logout'),
