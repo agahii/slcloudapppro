@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/Model/Product.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://api.slcloudpos.3em.tech';
+  static const String baseUrl = 'http://api.slcloud.3em.tech';
 
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
     final url = Uri.parse('$baseUrl/api/account/login');
@@ -34,4 +35,52 @@ class ApiService {
       return {'success': false, 'message': 'Server error: ${response.statusCode}'};
     }
   }
+
+
+
+
+  static Future<List<Product>> fetchProducts({
+    required String managerID,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetSKUPOS');
+    final payload = {
+      "managerID": managerID,
+      "searchKey": "",
+      "barCode": "",
+      "categoryID": "",
+      "pageNumber": page,
+      "pageSize": pageSize,
+      "StockLocationID": ""
+    };
+    print('Making POST request to $url');
+    print('Payload: ${jsonEncode(payload)}');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List skuList = data['data']['skuVMPOS'];
+      return skuList.map((item) => Product.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
+
+
+
 }
