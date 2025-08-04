@@ -4,6 +4,8 @@ import 'package:slcloudapppro/Model/Product.dart';
 import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -283,10 +285,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-            Customer? selectedCustomer;
-            List<Customer> customerOptions = [];
-            TextEditingController customerSearchController = TextEditingController();
             TextEditingController addressController = TextEditingController();
+            Customer? selectedCustomer;
+
+
 
 
             double grandTotal = 0;
@@ -304,40 +306,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 🔍 Customer Search
-                    TextField(
-                      controller: customerSearchController,
-                      decoration: const InputDecoration(
-                        labelText: 'Search Customer',
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value) async {
-                        if (value.length >= 3) {
-                          final customers = await ApiService.fetchCustomers(customerManagerID, value);
-                          setStateDialog(() => customerOptions = customers);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 8),
-
                     // ⬇️ Customer Dropdown
-                    DropdownButtonFormField<Customer>(
-                      isExpanded: true,
-                      hint: const Text('Select Customer'),
-                      value: selectedCustomer,
-                      items: customerOptions.map((customer) {
-                        return DropdownMenuItem(
-                          value: customer,
-                          child: Text(customer.customerName),
-                        );
-                      }).toList(),
-                      onChanged: (customer) {
+                    DropdownSearch<Customer>(
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        isFilterOnline: true,
+                        itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                          title: Text(customer.customerName),
+                          subtitle: Text(customer.customerAddress),
+                        ),
+                      ),
+                      dropdownDecoratorProps: const DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: "Select Customer",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      asyncItems: (String filter) async {
+                        if (filter.length < 3) return [];
+                        return await ApiService.fetchCustomers(customerManagerID, filter);
+                      },
+                      itemAsString: (Customer u) => u.customerName,
+                      selectedItem: selectedCustomer,
+                      onChanged: (Customer? customer) {
                         setStateDialog(() {
                           selectedCustomer = customer;
                           addressController.text = customer?.customerAddress ?? '';
                         });
                       },
                     ),
+
+
+
+
+
                     const SizedBox(height: 8),
 
                     // 🏠 Delivery Address
