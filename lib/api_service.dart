@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
+import 'package:slcloudapppro/Model/customer.dart';
 
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
@@ -35,6 +36,47 @@ class ApiService {
       return {'success': false, 'message': 'Server error: ${response.statusCode}'};
     }
   }
+
+
+
+
+
+
+
+
+
+  static Future<List<Customer>> fetchCustomers(String managerID, String searchKey) async {
+    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetCustomer');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"managerID": managerID, "searchKey": searchKey}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final list = data['data']['customerDropDownVM'] as List;
+      return list.map((item) => Customer.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load customers');
+    }
+  }
+
+
+
+
+
+
+
+
 
 
 

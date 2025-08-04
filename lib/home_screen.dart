@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'api_service.dart';
 import 'dart:async';
-
+import 'package:slcloudapppro/Model/customer.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -12,6 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+
+
+
+
+
+
+
   Offset fabOffset = const Offset(20, 500);
   Timer? _debounce;
   final Map<String, int> _cart = {};
@@ -26,6 +33,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool hasMore = true;
   final int pageSize = 20;
   final String managerID = '67e98001-1084-48ad-ba98-7d48c440e972';
+  final String customerManagerID = '59ed026d-1764-4616-9387-6ab6676b6667';
+
   bool isFabExpanded = false;
 
   @override
@@ -274,6 +283,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+            Customer? selectedCustomer;
+            List<Customer> customerOptions = [];
+            TextEditingController customerSearchController = TextEditingController();
+            TextEditingController addressController = TextEditingController();
+
 
             double grandTotal = 0;
             for (var item in cartItems) {
@@ -286,10 +300,58 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               title: const Text('Order Summary'),
               content: SizedBox(
                 width: double.maxFinite,
-                height: 500,
+                height: 600,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // 🔍 Customer Search
+                    TextField(
+                      controller: customerSearchController,
+                      decoration: const InputDecoration(
+                        labelText: 'Search Customer',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) async {
+                        if (value.length >= 3) {
+                          final customers = await ApiService.fetchCustomers(customerManagerID, value);
+                          setStateDialog(() => customerOptions = customers);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ⬇️ Customer Dropdown
+                    DropdownButtonFormField<Customer>(
+                      isExpanded: true,
+                      hint: const Text('Select Customer'),
+                      value: selectedCustomer,
+                      items: customerOptions.map((customer) {
+                        return DropdownMenuItem(
+                          value: customer,
+                          child: Text(customer.customerName),
+                        );
+                      }).toList(),
+                      onChanged: (customer) {
+                        setStateDialog(() {
+                          selectedCustomer = customer;
+                          addressController.text = customer?.customerAddress ?? '';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+
+                    // 🏠 Delivery Address
+                    TextField(
+                      controller: addressController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Delivery Address',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 🛒 Product List
                     Expanded(
                       child: cartItems.isEmpty
                           ? const Center(child: Text("Cart is empty."))
@@ -327,7 +389,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     color: Colors.grey[300],
                                     child: const Icon(Icons.image, size: 30),
                                   ),
-
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -368,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         setState(() {
                                           _cart.remove(item.skuCode);
                                         });
-                                        setStateDialog(() {}); // Refresh popup
+                                        setStateDialog(() {});
                                       },
                                     ),
                                   ],
@@ -379,7 +440,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         },
                       ),
                     ),
+
                     const Divider(),
+
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
@@ -402,13 +465,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   onPressed: cartItems.isEmpty
                       ? null
                       : () {
+                    if (selectedCustomer == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please select a customer')),
+                      );
+                      return;
+                    }
                     Navigator.pop(context);
-                    Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
+                    Navigator.pushNamed(
+                      context,
+                      '/salesOrder',
+                      arguments: {
+                        'cart': _cart,
+                        'customerId': selectedCustomer!.id,
+                        'deliveryAddress': addressController.text,
+                      },
+                    );
                   },
                   child: const Text('Finalize Order'),
                 ),
               ],
             );
+
           },
         );
       },
