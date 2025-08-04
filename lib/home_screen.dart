@@ -54,12 +54,66 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => isLoading = false);
   }
   Widget _buildProductItem(Product product) {
-    return ListTile(
-      title: Text(product.skuName),
-      subtitle: Text('Code: ${product.skuCode} | Brand: ${product.brandName}'),
-      trailing: Text('Rs. ${product.tradePrice}'),
+    final String imageBaseUrl = 'http://yourcdn.com/images/'; // 👈 update if needed
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            // Image block
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: product.imageUrls.isNotEmpty
+                  ? Image.network(
+                imageBaseUrl + product.imageUrls,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Icon(Icons.image_not_supported, size: 80),
+              )
+                  : Container(
+                width: 80,
+                height: 80,
+                color: Colors.grey[300],
+                child: const Icon(Icons.image, size: 40),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Text content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.skuName,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Brand: ${product.brandName}', style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Rs. ${product.tradePrice}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
+
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
 
