@@ -11,7 +11,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Timer? _debounce;
   final Map<String, int> _cart = {};
   final TextEditingController _searchController = TextEditingController();
@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool hasMore = true;
   final int pageSize = 20;
   final String managerID = '67e98001-1084-48ad-ba98-7d48c440e972';
+  bool isFabExpanded = false;
 
   @override
   void initState() {
@@ -43,6 +44,19 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        firstName = prefs.getString('firstName') ?? '';
+        lastName = prefs.getString('lastName') ?? '';
+      });
+    } catch (e) {
+      debugPrint('Error loading user data: \$e');
+    }
+  }
+
   Future<void> fetchProducts() async {
     setState(() => isLoading = true);
     try {
@@ -58,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (newProducts.length < pageSize) hasMore = false;
       });
     } catch (e) {
-      print('Error loading products: $e');
+      print('Error loading products: \$e');
     }
     setState(() => isLoading = false);
   }
@@ -80,6 +94,55 @@ class _HomeScreenState extends State<HomeScreen> {
         _cart.clear();
       });
     }
+  }
+
+  Widget _buildExpandableFAB() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (isFabExpanded) ...[
+          FloatingActionButton.extended(
+            heroTag: 'placeOrder',
+            backgroundColor: Colors.red,
+            onPressed: () {
+              if (_cart.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cart is empty')),
+                );
+              } else {
+                Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
+              }
+            },
+            icon: const Icon(Icons.shopping_bag),
+            label: const Text('Place Order'),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'anotherAction',
+            backgroundColor: Colors.red,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Another Action Clicked')),
+              );
+            },
+            icon: const Icon(Icons.info_outline),
+            label: const Text('Info'),
+          ),
+          const SizedBox(height: 12),
+        ],
+        FloatingActionButton(
+          backgroundColor: Colors.red,
+          onPressed: () {
+            setState(() => isFabExpanded = !isFabExpanded);
+          },
+          child: Icon(
+            isFabExpanded ? Icons.close : Icons.menu,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildProductItem(Product product) {
@@ -193,14 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      firstName = prefs.getString('firstName') ?? '';
-      lastName = prefs.getString('lastName') ?? '';
-    });
-  }
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -226,9 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  // Navigate to CartPage if needed
-                },
+                onPressed: () {},
               ),
               if (_cart.isNotEmpty)
                 Positioned(
@@ -330,7 +383,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: _products.isEmpty
                 ? Center(
-              child: isLoading ? const CircularProgressIndicator() : const Text('No products found.'),
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('No products found.'),
             )
                 : ListView.builder(
               controller: _scrollController,
@@ -349,6 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: _buildExpandableFAB(),
     );
   }
 }
