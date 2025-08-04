@@ -314,6 +314,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     width: 60,
                                     height: 60,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.image_not_supported, size: 30),
+                                    ),
                                   )
                                       : Container(
                                     width: 60,
@@ -321,6 +327,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     color: Colors.grey[300],
                                     child: const Icon(Icons.image, size: 30),
                                   ),
+
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
