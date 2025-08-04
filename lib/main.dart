@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'home_screen.dart'; // Replace with your actual home screen
-
+import 'splash_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -65,18 +65,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      home: FutureBuilder<bool>(
-        future: isTokenValid(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
+      home: const SplashScreen(),
 
-          return snapshot.data! ? const HomeScreen() : const LoginScreen();
-        },
-      ),
 
       routes: {
         '/login': (context) => const LoginScreen(),

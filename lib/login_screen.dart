@@ -76,7 +76,10 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                Icon(Icons.lock_outline, size: 90, color: Colors.white),
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 100,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Welcome Back!',
