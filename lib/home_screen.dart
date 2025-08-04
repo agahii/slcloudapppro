@@ -37,6 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
         fetchProducts();
       }
     });
+    _searchController.addListener(() {
+      setState(() {});
+    });
   }
   Future<void> fetchProducts() async {
     setState(() => isLoading = true);
@@ -184,7 +187,31 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search products...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: isLoading
+                    ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+                    : const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      searchKey = '';
+                      currentPage = 1;
+                      _products.clear();
+                      hasMore = true;
+                    });
+                    fetchProducts();
+                  },
+                )
+                    : null,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 filled: true,
                 fillColor: Colors.grey[100],
@@ -192,6 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
               textInputAction: TextInputAction.search,
               onChanged: (value) {
                 if (_debounce?.isActive ?? false) _debounce!.cancel();
+
                 _debounce = Timer(const Duration(milliseconds: 500), () {
                   setState(() {
                     searchKey = value.trim();
@@ -202,9 +230,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   fetchProducts();
                 });
               },
-
             ),
           ),
+
+
 
           const Divider(),
           Expanded(
