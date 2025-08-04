@@ -5,7 +5,7 @@ import 'package:slcloudapppro/Model/Product.dart';
 
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
-
+  static const String imageBaseUrl = '$baseUrl/files/';
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
     final url = Uri.parse('$baseUrl/api/account/login');
 
@@ -59,8 +59,7 @@ class ApiService {
       "pageSize": pageSize,
       "StockLocationID": ""
     };
-    print('Making POST request to $url');
-    print('Payload: ${jsonEncode(payload)}');
+
 
     final response = await http.post(
       url,
@@ -70,8 +69,7 @@ class ApiService {
       },
       body: jsonEncode(payload),
     );
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final List skuList = data['data']['skuVMPOS'];

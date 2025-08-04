@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => isLoading = false);
   }
   Widget _buildProductItem(Product product) {
-    final String imageBaseUrl = 'http://yourcdn.com/images/'; // 👈 update if needed
+
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(8),
               child: product.imageUrls.isNotEmpty
                   ? Image.network(
-                imageBaseUrl + product.imageUrls,
+                ApiService.imageBaseUrl + product.imageUrls,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
