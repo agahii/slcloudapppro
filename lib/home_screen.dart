@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  Offset fabOffset = const Offset(20, 500);
   Timer? _debounce;
   final Map<String, int> _cart = {};
   final TextEditingController _searchController = TextEditingController();
@@ -96,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildExpandableFAB() {
+
+  Widget _fabButtons() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -111,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SnackBar(content: Text('Cart is empty')),
                 );
               } else {
-                Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
+                _showOrderSummaryDialog();
               }
             },
             icon: const Icon(Icons.shopping_bag),
@@ -144,6 +146,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
+
+
+
+  Widget _buildExpandableFAB() {
+    return Positioned(
+      left: fabOffset.dx,
+      top: fabOffset.dy,
+      child: Draggable(
+        feedback: Material(
+          color: Colors.transparent,
+          child: _fabButtons(),
+        ),
+        childWhenDragging: const SizedBox.shrink(),
+        onDraggableCanceled: (_, offset) {
+          setState(() => fabOffset = offset);
+        },
+        child: _fabButtons(),
+      ),
+    );
+  }
+
 
   Widget _buildProductItem(Product product) {
     final TextEditingController _qtyController = TextEditingController(text: '1');
@@ -255,6 +278,79 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
+  void _showOrderSummaryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        double grandTotal = 0;
+        final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+
+        return AlertDialog(
+          title: const Text('Order Summary'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = cartItems[index];
+                      final qty = _cart[item.skuCode]!;
+                      final price = double.tryParse(item.tradePrice) ?? 0;
+                      final total = qty * price;
+                      grandTotal += total;
+
+                      return ListTile(
+                        leading: item.imageUrls.isNotEmpty
+                            ? Image.network(ApiService.imageBaseUrl + item.imageUrls,
+                            width: 40, height: 40, fit: BoxFit.cover)
+                            : const Icon(Icons.image, size: 40),
+                        title: Text(item.skuName),
+                        subtitle: Text('Qty: $qty x Rs. ${item.tradePrice}'),
+                        trailing: Text('Rs. ${total.toStringAsFixed(2)}'),
+                      );
+                    },
+                  ),
+                ),
+                const Divider(),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
+              },
+              child: const Text('Finalize Order'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
+
+
+
 
   @override
   void dispose() {
@@ -404,7 +500,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      floatingActionButton: _buildExpandableFAB(),
+      floatingActionButton: Stack(children: [_buildExpandableFAB()]),
     );
   }
 }
