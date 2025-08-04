@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _debounce;
-
+  final Map<String, int> _cart = {};
   final TextEditingController _searchController = TextEditingController();
   String searchKey = "";
   String firstName = '';
@@ -64,8 +64,63 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => isLoading = false);
   }
   Widget _buildProductItem(Product product) {
+    final TextEditingController _qtyController = TextEditingController(text: '1');
 
+    return Dismissible(
+      key: ValueKey(product.skuCode),
+      direction: DismissDirection.startToEnd,
+      background: Container(
+        color: Colors.green[100],
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: const Icon(Icons.shopping_cart, color: Colors.green, size: 30),
+      ),
+      confirmDismiss: (_) async {
+        bool added = false;
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(product.skuName),
+            content: Row(
+              children: [
+                const Text('Qty: '),
+                Expanded(
+                  child: TextField(
+                    controller: _qtyController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(hintText: 'Enter quantity'),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final qty = int.tryParse(_qtyController.text);
+                  if (qty != null && qty > 0) {
+                    setState(() {
+                      _cart[product.skuCode] = qty; // 👈 Save to cart
+                    });
+                    added = true;
+                  }
+                  Navigator.pop(context);
+                },
+                child: const Text('Add to Cart'),
+              ),
+            ],
+          ),
+        );
+        return false; // prevents actual dismissal
+      },
+      child: _productCard(product),
+    );
+  }
 
+  Widget _productCard(Product product) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       elevation: 4,
@@ -74,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            // Image block
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: product.imageUrls.isNotEmpty
@@ -83,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(Icons.image_not_supported, size: 80),
+                errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 80),
               )
                   : Container(
                 width: 80,
@@ -93,7 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            // Text content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +199,37 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Products'),
+        actions: [
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () {
+                  // You can navigate to a CartPage here if you want
+                },
+              ),
+              if (_cart.isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${_cart.length}',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
+
       drawer: Drawer(
         child: ListView(
           children: [
