@@ -280,21 +280,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _showOrderSummaryDialog() {
+    final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+
+    double grandTotal = 0;
+    for (var item in cartItems) {
+      final qty = _cart[item.skuCode]!;
+      final price = double.tryParse(item.tradePrice) ?? 0;
+      grandTotal += qty * price;
+    }
+
     showDialog(
       context: context,
       builder: (context) {
-        double grandTotal = 0;
-        final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-
         return AlertDialog(
           title: const Text('Order Summary'),
           content: SizedBox(
             width: double.maxFinite,
+            height: 500, // Increased height
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  height: 200,
+                Expanded(
                   child: ListView.builder(
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
@@ -302,16 +308,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       final qty = _cart[item.skuCode]!;
                       final price = double.tryParse(item.tradePrice) ?? 0;
                       final total = qty * price;
-                      grandTotal += total;
 
-                      return ListTile(
-                        leading: item.imageUrls.isNotEmpty
-                            ? Image.network(ApiService.imageBaseUrl + item.imageUrls,
-                            width: 40, height: 40, fit: BoxFit.cover)
-                            : const Icon(Icons.image, size: 40),
-                        title: Text(item.skuName),
-                        subtitle: Text('Qty: $qty x Rs. ${item.tradePrice}'),
-                        trailing: Text('Rs. ${total.toStringAsFixed(2)}'),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: item.imageUrls.isNotEmpty
+                                  ? Image.network(
+                                ApiService.imageBaseUrl + item.imageUrls,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              )
+                                  : Container(
+                                width: 60,
+                                height: 60,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image, size: 30),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.skuName,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Qty: $qty × Rs. ${item.tradePrice}',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              'Rs. ${total.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -321,7 +370,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   alignment: Alignment.centerRight,
                   child: Text(
                     'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -344,6 +396,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
+
 
 
 
