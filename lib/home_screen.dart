@@ -280,118 +280,141 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _showOrderSummaryDialog() {
-    final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-
-    double grandTotal = 0;
-    for (var item in cartItems) {
-      final qty = _cart[item.skuCode]!;
-      final price = double.tryParse(item.tradePrice) ?? 0;
-      grandTotal += qty * price;
-    }
-
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Order Summary'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 500, // Increased height
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: cartItems.length,
-                    itemBuilder: (context, index) {
-                      final item = cartItems[index];
-                      final qty = _cart[item.skuCode]!;
-                      final price = double.tryParse(item.tradePrice) ?? 0;
-                      final total = qty * price;
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: item.imageUrls.isNotEmpty
-                                  ? Image.network(
-                                ApiService.imageBaseUrl + item.imageUrls,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                              )
-                                  : Container(
-                                width: 60,
-                                height: 60,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.image, size: 30),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.skuName,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
+            double grandTotal = 0;
+            for (var item in cartItems) {
+              final qty = _cart[item.skuCode]!;
+              final price = double.tryParse(item.tradePrice) ?? 0;
+              grandTotal += qty * price;
+            }
+
+            return AlertDialog(
+              title: const Text('Order Summary'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 500,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: cartItems.isEmpty
+                          ? const Center(child: Text("Cart is empty."))
+                          : ListView.builder(
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartItems[index];
+                          final qty = _cart[item.skuCode]!;
+                          final price = double.tryParse(item.tradePrice) ?? 0;
+                          final total = qty * price;
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: item.imageUrls.isNotEmpty
+                                      ? Image.network(
+                                    ApiService.imageBaseUrl + item.imageUrls,
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                  )
+                                      : Container(
+                                    width: 60,
+                                    height: 60,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.image, size: 30),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.skuName,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Qty: $qty × Rs. ${item.tradePrice}',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'Rs. ${total.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Qty: $qty × Rs. ${item.tradePrice}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      tooltip: 'Remove Item',
+                                      onPressed: () {
+                                        setState(() {
+                                          _cart.remove(item.skuCode);
+                                        });
+                                        setStateDialog(() {}); // Refresh popup
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Rs. ${total.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const Divider(),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                    const Divider(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: cartItems.isEmpty
+                      ? null
+                      : () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
+                  },
+                  child: const Text('Finalize Order'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/salesOrder', arguments: _cart);
-              },
-              child: const Text('Finalize Order'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
