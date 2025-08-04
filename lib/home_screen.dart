@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'api_service.dart';
+import 'dart:async';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -10,6 +12,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Timer? _debounce;
+
+  final TextEditingController _searchController = TextEditingController();
+  String searchKey = "";
   String firstName = '';
   String lastName = '';
   final ScrollController _scrollController = ScrollController();final List<Product> _products = [];
@@ -40,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
         managerID: managerID,
         page: currentPage,
         pageSize: pageSize,
+        searchKey: searchKey,
       );
 
       setState(() {
@@ -126,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
   @override
@@ -170,14 +178,34 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Welcome, $firstName $lastName!',
-              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 18),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search products...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+              textInputAction: TextInputAction.search,
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  setState(() {
+                    searchKey = value.trim();
+                    currentPage = 1;
+                    _products.clear();
+                    hasMore = true;
+                  });
+                  fetchProducts();
+                });
+              },
+
             ),
           ),
+
           const Divider(),
           Expanded(
             child: _products.isEmpty

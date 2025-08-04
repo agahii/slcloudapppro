@@ -43,6 +43,7 @@ class ApiService {
     required String managerID,
     int page = 1,
     int pageSize = 20,
+    String searchKey = "",
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -52,7 +53,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetSKUPOS');
     final payload = {
       "managerID": managerID,
-      "searchKey": "",
+      "searchKey": searchKey,
       "barCode": "",
       "categoryID": "",
       "pageNumber": page,
