@@ -285,12 +285,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   void _showOrderSummaryDialog() {
+
+    String dialogTitle = '🧾 Order Summary';
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            String dialogTitle = '🧾 Order Summary';
+
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
             TextEditingController addressController = TextEditingController();
             double grandTotal = 0;
