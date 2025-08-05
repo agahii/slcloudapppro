@@ -37,14 +37,6 @@ class ApiService {
     }
   }
 
-
-
-
-
-
-
-
-
   static Future<List<Customer>> fetchCustomers(String managerID, String searchKey) async {
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetCustomer');
     final prefs = await SharedPreferences.getInstance();
@@ -72,6 +64,19 @@ class ApiService {
 
 
 
+  static Future<http.Response> finalizeSalesOrder(Map<String, dynamic> payload) async {
+    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/Add');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    return await http.post(url, headers: headers, body: jsonEncode(payload));
+  }
 
 
 

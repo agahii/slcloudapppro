@@ -484,25 +484,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ElevatedButton(
                   onPressed: cartItems.isEmpty
                       ? null
-                      : () {
+                      : () async {
                     if (selectedCustomer == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please select a customer')),
                       );
                       return;
                     }
-                    Navigator.pop(context);
-                    Navigator.pushNamed(
-                      context,
-                      '/salesOrder',
-                      arguments: {
-                        'cart': _cart,
-                        'customerId': selectedCustomer!.id,
-                        'deliveryAddress': addressController.text,
-                      },
-                    );
-                  },
-                  child: const Text('Finalize Order'),
+
+                    Navigator.pop(context); // Close the dialog
+
+                    // Build payload
+                    final payload = {
+                      "fK_Customer_ID": selectedCustomer!.id,
+                      "isBankGuarantee": false,
+                      "isClosed": false,
+                      "fK_PurchaseSalesOrderManagerMaster_ID": customerManagerID,
+                      "docDate": DateTime.now().toIso8601String(),
+                      "expectedDelRecDate": null,
+                      "bankGuaranteeIssueDate": null,
+                      "bankGuaranteeExpiryDate": null,
+                      "proformaInvoiceDate": null,
+                      "lcReceived": false,
+                      "transShipmentAllow": false,
+                      "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                        final qty = _cart[item.skuCode]!;
+                        final rate = double.tryParse(item.tradePrice) ?? 0;
+                        return {
+                          "id": "",
+                          "fK_ChartOfAccounts_ID": null,
+                          "fK_Sku_ID": item.id,
+                          //"fK_SKUPacking_ID": item.packingID,
+                          "quantity": qty,
+                          "agreedRate": rate,
+                          "totalAmount": qty * rate,
+                          "totalAmountInLocalCurrency": 0,
+                          "specialInstruction": "",
+                          "skuName": "",
+                          "packingName": "",
+                        };
+                      }).toList(),
+                      "purchaseSalesOrderShipmentDetailsInp": [],
+                    };
+
+                    try {
+                      final response = await ApiService.finalizeSalesOrder(payload);
+
+                      if (response.statusCode == 200 || response.statusCode == 201) {
+                        setState(() => _cart.clear());
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✅ Order placed successfully!')),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('❌ Failed: ${response.statusCode}')),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('⚠️ Error: $e')),
+                      );
+                    }
+                  }, child: null,
+
                 ),
               ],
             );
