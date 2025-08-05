@@ -290,13 +290,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+            String dialogTitle = '🧾 Order Summary';
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
             TextEditingController addressController = TextEditingController();
-
-
-
-
-
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
@@ -306,9 +302,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text(
-                '🧾 Order Summary',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              title: Text(
+                dialogTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
               content: SizedBox(
                 width: double.maxFinite,
@@ -548,18 +544,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       if (response.statusCode == 200 || response.statusCode == 201) {
                         setState(() => _cart.clear());
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('✅ Order placed successfully!')),
-                        );
+                        setStateDialog(() {
+                          dialogTitle = '✅ Order placed successfully!';
+                        });
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('❌ Failed: ${response.statusCode}')),
-                        );
+                        setStateDialog(() {
+                          dialogTitle = '❌ Failed: ${response.statusCode}';
+                        });
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('⚠️ Error: $e')),
-                      );
+                      setStateDialog(() {
+                        dialogTitle = '⚠️ Error: $e';
+                      });
                     }
                   }, child: const Text('📝 Finalize Order'),
 
