@@ -122,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 _showOrderSummaryDialog();
               }
             },
-            icon: const Icon(Icons.shopping_bag),
+            icon: const Icon(Icons.shopping_bag, color: Colors.white),
             label: const Text('Place Order',
                 style: TextStyle(color: Colors.white)),
 
@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 const SnackBar(content: Text('Another Action Clicked')),
               );
             },
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.info_outline, color: Colors.white),
             label: const Text('Info',
                 style: TextStyle(color: Colors.white)),
           ),
