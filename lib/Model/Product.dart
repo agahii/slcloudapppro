@@ -1,5 +1,6 @@
 class Product {
   final String id;
+  final String defaultPackingID;
   final String skuName;
   final String skuCode;
   final String tradePrice;
@@ -9,6 +10,7 @@ class Product {
 
   Product({
     required this.id,
+    required this.defaultPackingID,
     required this.skuName,
     required this.skuCode,
     required this.tradePrice,
@@ -20,6 +22,7 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'],
+      defaultPackingID: json['defaultPackingID'],
       skuName: json['skuName'],
       skuCode: json['skuCode'],
       tradePrice: json['tradePrice'],

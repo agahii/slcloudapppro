@@ -494,6 +494,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     Navigator.pop(context); // Close the dialog
 
+
+
+                    print("🧺 _cart: ${_cart.map((k, v) => MapEntry(k, v))}");
+                    print("📦 _products count: ${_products.length}");
+                    final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+                    print("✅ cartItems: ${cartItems.map((p) => p.skuName).toList()}");
+
+
+
+
+
+
                     // Build payload
                     final payload = {
                       "fK_Customer_ID": _selectedCustomer!.id,
@@ -514,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           "id": "",
                           "fK_ChartOfAccounts_ID": null,
                           "fK_Sku_ID": item.id,
-                          //"fK_SKUPacking_ID": item.packingID,
+                          "fK_SKUPacking_ID": item.defaultPackingID,
                           "quantity": qty,
                           "agreedRate": rate,
                           "totalAmount": qty * rate,
