@@ -324,6 +324,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
                         isFilterOnline: true,
+                        searchFieldProps: TextFieldProps(
+                          decoration: const InputDecoration(
+                            hintText: "🔍 Search customer...",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
                         itemBuilder: (context, Customer customer, isSelected) => ListTile(
                           title: Text(customer.customerName),
                           subtitle: Text(customer.customerAddress),
@@ -348,6 +354,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         });
                       },
                     ),
+
                     const SizedBox(height: 12),
                     const Text(
                       "🏠 Delivery Address",
