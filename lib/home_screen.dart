@@ -490,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       return;
                     }
 
-                    Navigator.pop(context); // Close the dialog
+                   // Navigator.pop(context); // Close the dialog
 
 
 
@@ -557,6 +557,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         dialogTitle = '⚠️ Error: $e';
                       });
                     }
+
+
+                    await Future.delayed(const Duration(seconds: 3));
+                    if (context.mounted) Navigator.pop(context);
+
+
                   }, child: const Text('📝 Finalize Order'),
 
                 ),
