@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
 
-
+  Customer? _selectedCustomer;
   Offset fabOffset = const Offset(20, 500);
   Timer? _debounce;
   final Map<String, int> _cart = {};
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           builder: (context, setStateDialog) {
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
             TextEditingController addressController = TextEditingController();
-            Customer? selectedCustomer;
+
 
 
 
@@ -346,10 +346,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         return await ApiService.fetchCustomers(customerManagerID, filter);
                       },
                       itemAsString: (Customer u) => u.customerName,
-                      selectedItem: selectedCustomer,
+                      selectedItem: _selectedCustomer,
                       onChanged: (Customer? customer) {
                         setStateDialog(() {
-                          selectedCustomer = customer;
+                          _selectedCustomer = customer;
                           addressController.text = customer?.customerAddress ?? '';
                         });
                       },
@@ -482,10 +482,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: cartItems.isEmpty
+                  onPressed: cartItems.isEmpty || _selectedCustomer == null
                       ? null
                       : () async {
-                    if (selectedCustomer == null) {
+                    if (_selectedCustomer  == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please select a customer')),
                       );
@@ -496,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     // Build payload
                     final payload = {
-                      "fK_Customer_ID": selectedCustomer!.id,
+                      "fK_Customer_ID": _selectedCustomer!.id,
                       "isBankGuarantee": false,
                       "isClosed": false,
                       "fK_PurchaseSalesOrderManagerMaster_ID": customerManagerID,
