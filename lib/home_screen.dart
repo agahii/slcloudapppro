@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
@@ -496,10 +498,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
 
-                    print("🧺 _cart: ${_cart.map((k, v) => MapEntry(k, v))}");
-                    print("📦 _products count: ${_products.length}");
-                    final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-                    print("✅ cartItems: ${cartItems.map((p) => p.skuName).toList()}");
 
 
 
@@ -538,6 +536,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       }).toList(),
                       "purchaseSalesOrderShipmentDetailsInp": [],
                     };
+
+
+
+
+
+                    print("📦 Final Order Payload:");
+                    print(jsonEncode(payload));
+
+
+
 
                     try {
                       final response = await ApiService.finalizeSalesOrder(payload);
