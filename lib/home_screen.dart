@@ -541,11 +541,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
 
-                    print("📦 Final Order Payload:");
-                    print(jsonEncode(payload));
-
-
-
 
                     try {
                       final response = await ApiService.finalizeSalesOrder(payload);
@@ -566,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         SnackBar(content: Text('⚠️ Error: $e')),
                       );
                     }
-                  }, child: null,
+                  }, child: const Text('📝 Finalize Order'),
 
                 ),
               ],
