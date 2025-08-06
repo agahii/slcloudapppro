@@ -305,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-
+            bool isSubmitting = false;
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
@@ -537,9 +537,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                 ElevatedButton(
-                  onPressed: cartItems.isEmpty || _selectedCustomer == null
+                  onPressed: cartItems.isEmpty || _selectedCustomer == null || isSubmitting
                       ? null
                       : () async {
+                    setStateDialog(() => isSubmitting = true); // 🔒 Disable further clicks
+
                     final prefs = await SharedPreferences.getInstance();
                     final _employeeID = prefs.getString('employeeID');
 
@@ -592,8 +594,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     await Future.delayed(const Duration(seconds: 3));
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text('📝 Finalize Order'),
-                ),
+                  child: isSubmitting
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : const Text('📝 Finalize Order'),
+                )
+
+
               ],
             );
           },
