@@ -41,6 +41,7 @@ class ApiService {
         await prefs.setString('firstName', data['firstName']);
         await prefs.setString('lastName', data['lastName']);
         await prefs.setString('tokenExpire', data['tokenExpire']);
+        await prefs.setString('employeeID', data['employeeID']);
 
         return {'success': true};
       } else {

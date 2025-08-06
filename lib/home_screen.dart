@@ -287,6 +287,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showOrderSummaryDialog() {
 
     String dialogTitle = '🧾 Order Summary';
+    TextEditingController addressController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
@@ -294,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           builder: (context, setStateDialog) {
 
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-            TextEditingController addressController = TextEditingController();
+
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
@@ -495,16 +496,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                    // Navigator.pop(context); // Close the dialog
 
 
-
-
-
-
-
-
+                    final prefs = await SharedPreferences.getInstance();
+                    final _employeeID = prefs.getString('employeeID');
 
                     // Build payload
                     final payload = {
                       "fK_Customer_ID": _selectedCustomer!.id,
+                      "fK_Employee_ID":_employeeID,
+                      "deliveryAddress":addressController.text,
                       "isBankGuarantee": false,
                       "isClosed": false,
                       "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
