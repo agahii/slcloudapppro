@@ -3,11 +3,25 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
   static const String imageBaseUrl = '$baseUrl/files/';
+
+
+
+  static Future<bool> hasInternetConnection() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
+  }
+
+
+
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
     final url = Uri.parse('$baseUrl/api/account/login');
 
     final response = await http.post(
@@ -37,7 +51,19 @@ class ApiService {
     }
   }
 
+
+
+
+
+
+
+
+
+
   static Future<List<Customer>> fetchCustomers(String managerID, String searchKey) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetCustomer');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -65,6 +91,9 @@ class ApiService {
 
 
   static Future<http.Response> finalizeSalesOrder(Map<String, dynamic> payload) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/Add');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -93,6 +122,13 @@ class ApiService {
     int pageSize = 20,
     String searchKey = "",
   }) async {
+
+
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
+
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
