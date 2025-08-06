@@ -245,7 +245,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 80),
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.image_not_supported, size: 80),
               )
                   : Container(
                 width: 80,
@@ -276,6 +277,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       color: Colors.green,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Stock: ${product.stockInHand.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: product.stockInHand > 0 ? Colors.orange : Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -284,6 +294,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
   void _showOrderSummaryDialog() {
 
     String dialogTitle = '🧾 Order Summary';
