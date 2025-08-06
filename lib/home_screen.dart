@@ -296,15 +296,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _showOrderSummaryDialog() {
-
     String dialogTitle = '🧾 Order Summary';
     TextEditingController addressController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
 
             double grandTotal = 0;
@@ -316,31 +315,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                dialogTitle,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
+              title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 600,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "👤 Customer",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     DropdownSearch<Customer>(
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
                         isFilterOnline: true,
                         searchFieldProps: TextFieldProps(
-                          decoration: const InputDecoration(
-                            hintText: "🔍 Search customer...",
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(hintText: "🔍 Search customer...", border: OutlineInputBorder()),
                         ),
                         itemBuilder: (context, Customer customer, isSelected) => ListTile(
                           title: Text(customer.customerName),
@@ -348,10 +337,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          labelText: "Select Customer",
-                          border: OutlineInputBorder(),
-                        ),
+                        dropdownSearchDecoration: InputDecoration(labelText: "Select Customer", border: OutlineInputBorder()),
                       ),
                       asyncItems: (String filter) async {
                         if (filter.length < 3) return [];
@@ -366,12 +352,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         });
                       },
                     ),
-
                     const SizedBox(height: 12),
-                    const Text(
-                      "🏠 Delivery Address",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     TextField(
                       controller: addressController,
@@ -384,10 +366,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
-                    const Text(
-                      "🛒 Items",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    const Text("🛒 Items", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     Expanded(
                       child: cartItems.isEmpty
@@ -402,119 +381,172 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                           return Container(
                             margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
-                            child: Row(
+                            child:
+
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Image
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: item.imageUrls.isNotEmpty
                                       ? Image.network(
                                     ApiService.imageBaseUrl + item.imageUrls,
-                                    width: 60,
-                                    height: 60,
+                                    width: 45,
+                                    height: 45,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
-                                      width: 60,
-                                      height: 60,
+                                      width: 45,
+                                      height: 45,
                                       color: Colors.grey[300],
-                                      child: const Icon(Icons.image_not_supported, size: 30),
+                                      child: const Icon(Icons.image_not_supported, size: 20),
                                     ),
                                   )
                                       : Container(
-                                    width: 60,
-                                    height: 60,
+                                    width: 45,
+                                    height: 45,
                                     color: Colors.grey[300],
-                                    child: const Icon(Icons.image, size: 30),
+                                    child: const Icon(Icons.image, size: 20),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+
+                                const SizedBox(width: 8),
+
+                                // Text + Qty + Total
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         item.skuName,
-                                        style: const TextStyle(fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text('Qty: $qty × Rs. ${item.tradePrice}'),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Rs. ${item.tradePrice} each',
+                                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                      ),
+                                      const SizedBox(height: 6),
+
+                                      // Qty controls and total
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              // - button
+                                              IconButton(
+                                                icon: const Icon(Icons.remove_circle_outline, size: 18),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                onPressed: qty > 1
+                                                    ? () {
+                                                  setStateDialog(() {
+                                                    _cart[item.skuCode] = qty - 1;
+                                                  });
+                                                }
+                                                    : null,
+                                              ),
+
+                                              // Qty
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                                child: Text(
+                                                  '$qty',
+                                                  style: const TextStyle(fontSize: 13),
+                                                ),
+                                              ),
+
+                                              // + button
+                                              IconButton(
+                                                icon: const Icon(Icons.add_circle_outline, size: 18),
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(),
+                                                onPressed: () {
+                                                  setStateDialog(() {
+                                                    _cart[item.skuCode] = qty + 1;
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 4),
+
+                                          // Rs. Total aligned right
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              'Rs. ${total.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
                                     ],
                                   ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      'Rs. ${total.toStringAsFixed(2)}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      tooltip: 'Remove Item',
-                                      onPressed: () {
-                                        setState(() {
-                                          _cart.remove(item.skuCode);
-                                        });
-                                        setStateDialog(() {});
-                                      },
-                                    ),
-                                  ],
+
+                                // Delete Icon
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    setState(() {
+                                      _cart.remove(item.skuCode);
+                                    });
+                                    setStateDialog(() {});
+                                  },
                                 ),
                               ],
                             ),
+
                           );
+
                         },
                       ),
                     ),
+
                     const Divider(),
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
                         'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
                     ),
                   ],
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                 ElevatedButton(
                   onPressed: cartItems.isEmpty || _selectedCustomer == null
                       ? null
                       : () async {
-                    if (_selectedCustomer  == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select a customer')),
-                      );
-                      return;
-                    }
-
-                   // Navigator.pop(context); // Close the dialog
-
-
                     final prefs = await SharedPreferences.getInstance();
                     final _employeeID = prefs.getString('employeeID');
 
-                    // Build payload
                     final payload = {
                       "fK_Customer_ID": _selectedCustomer!.id,
-                      "fK_Employee_ID":_employeeID,
-                      "deliveryAddress":addressController.text,
+                      "fK_Employee_ID": _employeeID,
+                      "deliveryAddress": addressController.text,
                       "isBankGuarantee": false,
                       "isClosed": false,
                       "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
@@ -545,48 +577,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       "purchaseSalesOrderShipmentDetailsInp": [],
                     };
 
-
-
-
-
-
                     try {
                       final response = await ApiService.finalizeSalesOrder(payload);
-
                       if (response.statusCode == 200 || response.statusCode == 201) {
                         setState(() => _cart.clear());
-
-                        setStateDialog(() {
-                          dialogTitle = '✅ Order placed successfully!';
-                        });
+                        setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
                       } else {
-                        setStateDialog(() {
-                          dialogTitle = '❌ Failed: ${response.statusCode}';
-                        });
+                        setStateDialog(() => dialogTitle = '❌ Failed: ${response.statusCode}');
                       }
                     } catch (e) {
-                      setStateDialog(() {
-                        dialogTitle = '⚠️ Error: $e';
-                      });
+                      setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                     }
-
 
                     await Future.delayed(const Duration(seconds: 3));
                     if (context.mounted) Navigator.pop(context);
-
-
-                  }, child: const Text('📝 Finalize Order'),
-
+                  },
+                  child: const Text('📝 Finalize Order'),
                 ),
               ],
             );
-
-
           },
         );
       },
     );
   }
+
   @override
   void dispose() {
     _scrollController.dispose();
