@@ -134,7 +134,7 @@ class ApiService {
     if (token == null) {
       throw Exception('Token not found. Please login again.');
     }
-    final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetSKUPOS');
+    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetSKUPOS');
     final payload = {
       "managerID": managerID,
       "searchKey": searchKey,

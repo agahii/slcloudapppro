@@ -36,8 +36,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int currentPage = 1;
   bool hasMore = true;
   final int pageSize = 20;
-  final String managerID = '67e98001-1084-48ad-ba98-7d48c440e972';
-  final String customerManagerID = '59ed026d-1764-4616-9387-6ab6676b6667';
+  final String managerID = '59ed026d-1764-4616-9387-6ab6676b6667';
+
 
   bool isFabExpanded = false;
 
@@ -343,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       asyncItems: (String filter) async {
                         if (filter.length < 3) return [];
-                        return await ApiService.fetchCustomers(customerManagerID, filter);
+                        return await ApiService.fetchCustomers(managerID, filter);
                       },
                       itemAsString: (Customer u) => u.customerName,
                       selectedItem: _selectedCustomer,
@@ -507,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       "fK_Customer_ID": _selectedCustomer!.id,
                       "isBankGuarantee": false,
                       "isClosed": false,
-                      "fK_PurchaseSalesOrderManagerMaster_ID": customerManagerID,
+                      "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
                       "docDate": DateTime.now().toIso8601String(),
                       "expectedDelRecDate": null,
                       "bankGuaranteeIssueDate": null,
