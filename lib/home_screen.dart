@@ -683,6 +683,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.pushNamed(context, '/customerLedger');
               },
             ),
+
+
+
+
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: const Text('My Sales Orders'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/mySalesOrders');
+              },
+            ),
+
+
+
+
+
             ListTile(
               leading: const Icon(Icons.policy),
               title: const Text('Active Policy'),
