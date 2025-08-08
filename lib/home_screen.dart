@@ -172,20 +172,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 label: Text('$n'),
                 selected: selected,
                 labelStyle: TextStyle(
-                  color: selected ? theme.colorScheme.primary : Colors.black87,
+                  color: selected ? Colors.white : Colors.black87, // white when selected
                   fontWeight: FontWeight.w600,
                 ),
+                selectedColor: theme.colorScheme.primary, // solid brand color
+                backgroundColor: const Color(0xFFE0E0E0), // light grey when unselected
                 onSelected: (_) {
                   qty.value = n;
                   controller.text = '$n';
                 },
-                side: BorderSide(
-                  color: selected ? theme.colorScheme.primary : const Color(0x1F000000),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: selected
+                        ? theme.colorScheme.primary
+                        : const Color(0x1F000000),
+                  ),
                 ),
               );
             }).toList(),
           );
         }
+
+
 
         return Theme(
           data: sheetTheme,
