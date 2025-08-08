@@ -766,145 +766,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           final price = double.tryParse(item.tradePrice) ?? 0;
                           final total = qty * price;
 
-                          return Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child:
-
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Image
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: item.imageUrls.isNotEmpty
-                                      ? Image.network(
-                                    ApiService.imageBaseUrl + item.imageUrls,
-                                    width: 45,
-                                    height: 45,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      width: 45,
-                                      height: 45,
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.image_not_supported, size: 20),
-                                    ),
-                                  )
-                                      : Container(
-                                    width: 45,
-                                    height: 45,
-                                    color: Colors.grey[300],
-                                    child: const Icon(Icons.image, size: 20),
-                                  ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                // Text + Qty + Total
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.skuName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Rs. ${item.tradePrice} each',
-                                        style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                      ),
-                                      const SizedBox(height: 6),
-
-                                      // Qty controls and total
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              // - button
-                                              IconButton(
-                                                icon: const Icon(Icons.remove_circle_outline, size: 18),
-                                                padding: EdgeInsets.zero,
-                                                constraints: const BoxConstraints(),
-                                                onPressed: qty > 1
-                                                    ? () {
-                                                  setStateDialog(() {
-                                                    _cart[item.skuCode] = qty - 1;
-                                                  });
-                                                }
-                                                    : null,
-                                              ),
-
-                                              // Qty
-                                              Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6),
-                                                child: Text(
-                                                  '$qty',
-                                                  style: const TextStyle(fontSize: 13),
-                                                ),
-                                              ),
-
-                                              // + button
-                                              IconButton(
-                                                icon: const Icon(Icons.add_circle_outline, size: 18),
-                                                padding: EdgeInsets.zero,
-                                                constraints: const BoxConstraints(),
-                                                onPressed: () {
-                                                  setStateDialog(() {
-                                                    _cart[item.skuCode] = qty + 1;
-                                                  });
-                                                },
-                                              ),
-                                            ],
-                                          ),
-
-                                          const SizedBox(height: 4),
-
-                                          // Rs. Total aligned right
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: Text(
-                                              'Rs. ${total.toStringAsFixed(2)}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-
-                                    ],
-                                  ),
-                                ),
-
-                                // Delete Icon
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    setState(() {
-                                      _cart.remove(item.skuCode);
-                                    });
-                                    setStateDialog(() {});
-                                  },
-                                ),
-                              ],
-                            ),
-
+                          return _OrderItemTile(
+                            item: item,
+                            qty: qty,
+                            onQtyChanged: (newQty) {
+                              if (newQty < 1) return;
+                              setStateDialog(() {
+                                _cart[item.skuCode] = newQty;
+                              });
+                            },
+                            onRemove: () {
+                              setState(() {
+                                _cart.remove(item.skuCode);
+                              });
+                              setStateDialog(() {});
+                            },
                           );
+
 
                         },
                       ),
@@ -1254,3 +1132,177 @@ class _RoundIconButton extends StatelessWidget {
     );
   }
 }
+class _OrderItemTile extends StatelessWidget {
+  final Product item;
+  final int qty;
+  final VoidCallback onRemove;
+  final ValueChanged<int> onQtyChanged;
+
+  const _OrderItemTile({
+    super.key,
+    required this.item,
+    required this.qty,
+    required this.onRemove,
+    required this.onQtyChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final price = double.tryParse(item.tradePrice) ?? 0;
+    final total = price * qty;
+
+    return Card(
+      color: Colors.white,
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 4), // less margin
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(8), // reduced padding
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // align center vertically
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8), // slightly smaller radius
+              child: item.imageUrls.isNotEmpty
+                  ? Image.network(
+                ApiService.imageBaseUrl + item.imageUrls,
+                width: 48,
+                height: 48, // reduced size
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 48,
+                  height: 48,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image_not_supported, size: 18, color: Colors.grey),
+                ),
+              )
+                  : Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                color: Colors.grey[200],
+                child: const Icon(Icons.image, size: 18, color: Colors.grey),
+              ),
+            ),
+
+            const SizedBox(width: 8),
+
+            // Title, price x qty, stepper
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // shrink height
+                children: [
+                  Text(
+                    item.skuName,
+                    maxLines: 1, // force single line for compactness
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'Rs. ${price.toStringAsFixed(2)} × $qty',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                  ),
+                  _QtyPillStepper(
+                    value: qty,
+                    onChanged: onQtyChanged,
+                    primary: theme.colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 6),
+
+            // Total + delete
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min, // shrink height
+              children: [
+                Text(
+                  'Rs. ${total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                  splashRadius: 16,
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+  }
+}
+class _QtyPillStepper extends StatelessWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+  final Color primary;
+
+  const _QtyPillStepper({
+    required this.value,
+    required this.onChanged,
+    required this.primary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // much smaller
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6F8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0x11000000)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _miniIconButton(Icons.remove, () {
+            if (value > 1) onChanged(value - 1);
+          }),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 13, // smaller font
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          _miniIconButton(Icons.add, () {
+            onChanged(value + 1);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniIconButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.all(2), // small tap target
+        child: Icon(icon, size: 16, color: primary), // smaller icon
+      ),
+    );
+  }
+}
+
