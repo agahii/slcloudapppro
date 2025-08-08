@@ -484,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (isFabExpanded) ...[
           FloatingActionButton.extended(
             heroTag: 'placeOrder',
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               if (_cart.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -503,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(height: 12),
           FloatingActionButton.extended(
             heroTag: 'anotherAction',
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Another Action Clicked')),
@@ -516,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(height: 12),
         ],
         FloatingActionButton(
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           onPressed: () {
             setState(() => isFabExpanded = !isFabExpanded);
           },
