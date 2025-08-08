@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +17,367 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
+
+  Future<void> _showAddToCartSheet(Product product) async {
+    final theme = Theme.of(context);
+    final double price = double.tryParse(product.tradePrice) ?? 0;
+    final int stock = product.stockInHand.round();
+    final int initialQty = (_cart[product.skuCode] ?? 0) > 0 ? _cart[product.skuCode]! : 1;
+
+    final qty = ValueNotifier<int>(initialQty);
+    final controller = TextEditingController(text: initialQty.toString());
+
+    void syncFromText() {
+      final n = int.tryParse(controller.text) ?? 0;
+      qty.value = n < 1 ? 1 : n;
+      controller
+        ..text = qty.value.toString()
+        ..selection = TextSelection.collapsed(offset: controller.text.length);
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final sheetTheme = theme.copyWith(
+          // High-contrast text/icons on white
+          iconTheme: const IconThemeData(color: Colors.black87),
+          textTheme: theme.textTheme.apply(
+            bodyColor: Colors.black87,
+            displayColor: Colors.black87,
+          ),
+          inputDecorationTheme: const InputDecorationTheme(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          ),
+          chipTheme: theme.chipTheme.copyWith(
+            labelStyle: const TextStyle(color: Colors.black87),
+            side: const BorderSide(color: Color(0x1F000000)),
+            backgroundColor: const Color(0x0D000000),
+            selectedColor: theme.colorScheme.primary.withOpacity(.12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              elevation: 0,
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: const BorderSide(color: Colors.black26),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        );
+
+        Widget stockChip() => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: stock > 0 ? Colors.green.withOpacity(.10) : Colors.red.withOpacity(.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: stock > 0 ? Colors.green : Colors.red),
+          ),
+          child: Text(
+            stock > 0 ? 'Stock: $stock' : 'Out of stock',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: stock > 0 ? Colors.green[800] : Colors.red[800],
+            ),
+          ),
+        );
+
+        // Rounded "pill" stepper for a premium look
+        Widget qtyStepper() => ValueListenableBuilder<int>(
+          valueListenable: qty,
+          builder: (_, v, __) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F6F8),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0x11000000)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _RoundIconButton(
+                    icon: Icons.remove_rounded,
+                    onTap: v > 1
+                        ? () {
+                      qty.value = v - 1;
+                      controller.text = qty.value.toString();
+                    }
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 64,
+                    child: TextField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        letterSpacing: 0.2,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,     // cleaner inside the pill
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      onChanged: (_) => syncFromText(),
+                      onSubmitted: (_) => syncFromText(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _RoundIconButton(
+                    icon: Icons.add_rounded,
+                    onTap: () {
+                      // if (stock > 0 && v >= stock) return; // optional cap
+                      qty.value = v + 1;
+                      controller.text = qty.value.toString();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+
+        Widget quickChips() {
+          final options = [1, 3, 5, 10];
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: options.map((n) {
+              final selected = int.tryParse(controller.text) == n;
+              return ChoiceChip(
+                label: Text('$n'),
+                selected: selected,
+                labelStyle: TextStyle(
+                  color: selected ? theme.colorScheme.primary : Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+                onSelected: (_) {
+                  qty.value = n;
+                  controller.text = '$n';
+                },
+                side: BorderSide(
+                  color: selected ? theme.colorScheme.primary : const Color(0x1F000000),
+                ),
+              );
+            }).toList(),
+          );
+        }
+
+        return Theme(
+          data: sheetTheme,
+          child: Container(
+            decoration: BoxDecoration(
+              // Subtle “card-in-sheet” look
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 20,
+                  offset: Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 16, right: 16, top: 12,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag handle
+                  Container(
+                    width: 44, height: 5, margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0x22000000),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+
+                  // Header row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: product.imageUrls.isNotEmpty
+                            ? Image.network(
+                          ApiService.imageBaseUrl + product.imageUrls,
+                          width: 68,
+                          height: 68,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 68,
+                            height: 68,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                        )
+                            : Container(
+                          width: 68,
+                          height: 68,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.image, color: Colors.grey),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.skuName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.2,
+                                  color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Text(
+                                  'Rs. ${price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                stockChip(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+
+                  // Quantity section label + stepper
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Row(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.inventory_2_rounded, size: 18, color: theme.colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Quantity',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color:  Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        qtyStepper(),
+                      ],
+                    ),
+                  ),
+
+                  // Quick chips
+                  const SizedBox(height: 10),
+                  Align(alignment: Alignment.centerLeft, child: quickChips()),
+
+                  // Total
+                  const SizedBox(height: 12),
+                  ValueListenableBuilder<int>(
+                    valueListenable: qty,
+                    builder: (_, v, __) => Align(
+                      alignment: Alignment.centerRight,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
+                        child: Text(
+                          'Total: Rs. ${(v * price).toStringAsFixed(2)}',
+                          key: ValueKey(v),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Actions
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ValueListenableBuilder<int>(
+                          valueListenable: qty,
+                          builder: (_, v, __) {
+                            final canAdd = v >= 1 && (stock == 0 ? true : v <= stock);
+                            return ElevatedButton(
+                              onPressed: canAdd
+                                  ? () {
+                                setState(() => _cart[product.skuCode] = v);
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${product.skuName} • qty $v added')),
+                                );
+                              }
+                                  : null,
+                              child: const Text('Add to Cart'),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+
+    );
+  }
 
 
 
@@ -187,104 +548,122 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: const Icon(Icons.shopping_cart, color: Colors.green, size: 30),
       ),
       confirmDismiss: (_) async {
-        await showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text(product.skuName),
-            content: Row(
-              children: [
-                const Text('Qty: '),
-                Expanded(
-                  child: TextField(
-                    controller: _qtyController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(hintText: 'Enter quantity'),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final qty = int.tryParse(_qtyController.text);
-                  if (qty != null && qty > 0) {
-                    setState(() {
-                      _cart[product.skuCode] = qty;
-                    });
-                  }
-                  Navigator.pop(context);
-                },
-                child: const Text('Add to Cart'),
-              ),
-            ],
-          ),
-        );
-        return false;
+        await _showAddToCartSheet(product);
+        return false; // don’t actually dismiss the tile
       },
+
       child: _productCard(product),
     );
   }
   Widget _productCard(Product product) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Product Image
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               child: product.imageUrls.isNotEmpty
                   ? Image.network(
                 ApiService.imageBaseUrl + product.imageUrls,
-                width: 80,
-                height: 80,
+                width: 90,
+                height: 90,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                const Icon(Icons.image_not_supported, size: 80),
+                errorBuilder: (_, __, ___) => Container(
+                  width: 90,
+                  height: 90,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, size: 30, color: Colors.grey),
+                ),
               )
                   : Container(
-                width: 80,
-                height: 80,
-                color: Colors.grey[300],
-                child: const Icon(Icons.image, size: 40),
+                width: 90,
+                height: 90,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.image, size: 30, color: Colors.grey),
               ),
             ),
-            const SizedBox(width: 12),
+
+            const SizedBox(width: 14),
+
+            // Product Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Product Name
                   Text(
                     product.skuName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontFamily: 'Roboto', // modern clean font
+                      letterSpacing: 0.2,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text('Brand: ${product.brandName}', style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 4),
+
+                  // Brand
                   Text(
-                    'Rs. ${product.tradePrice}',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Stock: ${product.stockInHand.toStringAsFixed(0)}',
+                    'Brand: ${product.brandName}',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: product.stockInHand > 0 ? Colors.orange : Colors.red,
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
                       fontWeight: FontWeight.w500,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Price + Stock Row
+                  Row(
+                    children: [
+                      Text(
+                        'Rs. ${product.tradePrice}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                          fontFamily: 'RobotoMono', // monospace for numbers
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: product.stockInHand > 0
+                              ? Colors.orange.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: product.stockInHand > 0 ? Colors.orange : Colors.red,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          product.stockInHand > 0
+                              ? 'Stock: ${product.stockInHand.toStringAsFixed(0)}'
+                              : 'Out of stock',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: product.stockInHand > 0 ? Colors.orange[800] : Colors.red[800],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -294,7 +673,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
   void _showOrderSummaryDialog() {
     String dialogTitle = '🧾 Order Summary';
     TextEditingController addressController = TextEditingController();
@@ -614,7 +992,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -659,6 +1036,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
       drawer: Drawer(
+        backgroundColor: Colors.white, // solid background
+        surfaceTintColor: Colors.white,
         child: ListView(
           children: [
             UserAccountsDrawerHeader(
@@ -674,53 +1053,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
 
-
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text('Customer Ledger'),
+              leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
+              title: Text(
+                'Customer Ledger',
+                style: TextStyle(color: theme.primaryColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/customerLedger');
               },
             ),
 
-
-
-
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text('My Sales Orders'),
+              leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
+              title: Text(
+                'My Sales Orders',
+                style: TextStyle(color: theme.primaryColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/mySalesOrders');
               },
             ),
 
-
-
-
-
             ListTile(
-              leading: const Icon(Icons.policy),
-              title: const Text('Active Policy'),
+              leading: Icon(Icons.policy, color: theme.primaryColor),
+              title: Text(
+                'Active Policy',
+                style: TextStyle(color: theme.primaryColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/activePolicy');
               },
             ),
+
             ListTile(
-              leading: const Icon(Icons.money),
-              title: const Text('My Expenses'),
+              leading: Icon(Icons.money, color: theme.primaryColor),
+              title: Text(
+                'My Expenses',
+                style: TextStyle(color: theme.primaryColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/myExpenses');
               },
             ),
+
             const Divider(),
 
             ListTile(
-              leading: Icon(Icons.logout, color: theme.iconTheme.color),
-              title: const Text('Logout'),
+              leading: Icon(Icons.logout, color: theme.primaryColor),
+              title: Text(
+                'Logout',
+                style: TextStyle(color: theme.primaryColor),
+              ),
               onTap: () async {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
@@ -729,28 +1117,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
-      ),
+      )
+      ,
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(color: Colors.black87),          // make typed text visible
+              cursorColor: Colors.black54,
               decoration: InputDecoration(
                 hintText: 'Search products...',
+                hintStyle: const TextStyle(color: Colors.black45),    // visible hint
+                filled: true,
+                fillColor: Colors.white,                               // solid light background
                 prefixIcon: isLoading
                     ? const Padding(
                   padding: EdgeInsets.all(12),
                   child: SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black54), // visible spinner
+                    ),
                   ),
                 )
-                    : const Icon(Icons.search),
+                    : const Icon(Icons.search, color: Colors.black54),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear, color: Colors.black54),
                   onPressed: () {
                     _searchController.clear();
                     setState(() {
@@ -763,9 +1160,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   },
                 )
                     : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.black12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor), // brand color on focus
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
               ),
               textInputAction: TextInputAction.search,
               onChanged: (value) {
@@ -781,7 +1187,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 });
               },
             ),
-          ),
+          )
+          ,
           const Divider(),
           Expanded(
             child: _products.isEmpty
@@ -808,6 +1215,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
       floatingActionButton: Stack(children: [_buildExpandableFAB()]),
+    );
+  }
+}
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  const _RoundIconButton({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Ink(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white : const Color(0xFFEAECEF),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0x11000000)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.black26),
+      ),
     );
   }
 }
