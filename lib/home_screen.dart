@@ -753,7 +753,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 12),
                     const Divider(),
-                    const Text("🛒 Items", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(
+                      "🛒 Items (${cartItems.length})",
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 8),
                     Expanded(
                       child: cartItems.isEmpty
