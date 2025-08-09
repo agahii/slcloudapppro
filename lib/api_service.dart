@@ -9,16 +9,10 @@ class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
   //static const String baseUrl = 'http://localhost:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
-
-
-
   static Future<bool> hasInternetConnection() async {
     var connectivityResult = await Connectivity().checkConnectivity();
     return connectivityResult != ConnectivityResult.none;
   }
-
-
-
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -52,16 +46,6 @@ class ApiService {
       return {'success': false, 'message': 'Server error: ${response.statusCode}'};
     }
   }
-
-
-
-
-
-
-
-
-
-
   static Future<List<Customer>> fetchCustomers(String managerID, String searchKey) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -89,9 +73,6 @@ class ApiService {
       throw Exception('Failed to load customers');
     }
   }
-
-
-
   static Future<http.Response> finalizeSalesOrder(Map<String, dynamic> payload) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -109,28 +90,15 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
     return response;
   }
-
-
-
-
-
-
-
-
-
   static Future<List<Product>> fetchProducts({
     required String managerID,
     int page = 1,
     int pageSize = 20,
     String searchKey = "",
   }) async {
-
-
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
     }
-
-
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
