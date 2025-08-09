@@ -701,6 +701,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             }
 
             return AlertDialog(
+
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               content: SizedBox(

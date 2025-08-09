@@ -7,6 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
+  //static const String baseUrl = 'http://localhost:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
 
 
@@ -22,12 +23,12 @@ class ApiService {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
     }
-    final url = Uri.parse('$baseUrl/api/account/login');
+    final url = Uri.parse('$baseUrl/api/Account/loginMobile');
 
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({'mobile': email, 'password': password}),
     );
 
     if (response.statusCode == 200) {
