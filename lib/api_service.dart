@@ -5,6 +5,8 @@ import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'my_sales_orders_screen.dart';
+
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
   //static const String baseUrl = 'http://localhost:7271';
@@ -133,6 +135,66 @@ class ApiService {
       throw Exception('Failed to load products');
     }
   }
+
+
+
+
+
+
+
+  static Future<List<SalesOrder>> fetchMySalesOrders({
+    required String? managerID,
+    required String? employeeID,
+    required int page,
+    required int pageSize,
+    required String searchKey,
+    required String status, // "ALL" | "OPEN" | "CLOSED"
+  }) async {
+    // If your backend expects POST with body:
+    final uri = Uri.parse("$baseUrl/api/PurchaseSalesOrderMaster/GetList"); // <-- TODO: confirm endpoint
+
+    final body = {
+      "managerID": managerID,
+      "employeeID": employeeID,
+      "pageNumber": page,
+      "pageSize": pageSize,
+      "searchKey": searchKey,
+      "status": status, // tell backend how you encode filters; otherwise ignore
+    };
+
+    final resp = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        // Add auth header if needed
+        // "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(body),
+    );
+
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      final decoded = jsonDecode(resp.body);
+
+      // Adjust to your API shape:
+      final List list = (decoded['data'] ??
+          decoded['orders'] ??
+          decoded['purchaseSalesOrderVM'] ??
+          decoded) as List;
+
+      return list
+          .map((e) => SalesOrder.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception("Server ${resp.statusCode}: ${resp.body}");
+    }
+  }
+
+
+
+
+
+
+
 
 
 

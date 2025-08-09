@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'splash_screen.dart';
+import 'my_sales_orders_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -106,6 +107,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginScreen(),
         '/home' : (_) => const HomeScreen(),
+        '/mySalesOrders': (_) => const MySalesOrdersScreen(),
       },
     );
   }
