@@ -506,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           FloatingActionButton.extended(
             heroTag: 'salesInvoice',
-            backgroundColor: Colors.orange,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               if (_cart.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
