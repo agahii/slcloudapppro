@@ -497,9 +497,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
     setState(() => isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String managerIDSalesOrder =prefs.getString('salesPurchaseOrderManagerID') ?? '';
-      final String invoiceManagerID =prefs.getString('invoiceManagerID') ?? '';
       final newProducts = await ApiService.fetchProducts(
         managerID: activeId,
         page: currentPage,
@@ -1308,9 +1305,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       floatingActionButton: Stack(children: [_buildExpandableFAB()]),
     );
   }
-
-
-
   void _switchManager(ManagerSource next) {
     if (next == _managerSource) return;
 
@@ -1334,7 +1328,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // fetch with the new active manager id
     fetchProducts();
   }
-
 
 }
 class _RoundIconButton extends StatelessWidget {
