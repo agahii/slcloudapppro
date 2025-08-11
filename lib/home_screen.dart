@@ -484,8 +484,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return null;
   }
   Future<void> fetchProducts() async {
-
-
     final activeId = _resolveActiveManagerId();
     if (activeId == null || activeId.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -497,12 +495,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
     setState(() => isLoading = true);
     try {
-      final newProducts = await ApiService.fetchProducts(
-        managerID: activeId,
-        page: currentPage,
-        pageSize: pageSize,
-        searchKey: searchKey,
-      );
+
+      List<Product> newProducts = [];
+      if (_managerSource == ManagerSource.salesOrder) {
+        newProducts = await ApiService.fetchProductsFromOrderManager(
+          managerID: activeId,
+          page: currentPage,
+          pageSize: pageSize,
+          searchKey: searchKey,
+        );
+      }
+      if (_managerSource == ManagerSource.invoice) {
+        newProducts = await ApiService.fetchProductsFromInvoiceManager(
+          managerID: activeId,
+          page: currentPage,
+          pageSize: pageSize,
+          searchKey: searchKey,
+        );
+      }
       setState(() {
         currentPage++;
         _products.addAll(newProducts);

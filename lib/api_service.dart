@@ -96,7 +96,7 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
     return response;
   }
-  static Future<List<Product>> fetchProducts({
+  static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
     int page = 1,
     int pageSize = 20,
@@ -141,6 +141,51 @@ class ApiService {
   }
 
 
+
+
+  static Future<List<Product>> fetchProductsFromInvoiceManager({
+    required String managerID,
+    int page = 1,
+    int pageSize = 20,
+    String searchKey = "",
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetSKUPOS');
+    final payload = {
+      "managerID": managerID,
+      "searchKey": searchKey,
+      "barCode": "",
+      "categoryID": "",
+      "pageNumber": page,
+      "pageSize": pageSize,
+      "StockLocationID": ""
+    };
+
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final List skuList = data['data']['skuVMPOS'];
+      return skuList.map((item) => Product.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
 
 
 
