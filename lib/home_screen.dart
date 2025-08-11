@@ -627,7 +627,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
-
   Widget _buildExpandableFAB() {
     return Positioned(
       left: fabOffset.dx,
@@ -646,7 +645,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   Widget _buildProductItem(Product product) {
-
     return Dismissible(
       key: ValueKey(product.skuCode),
       direction: DismissDirection.startToEnd,
@@ -793,6 +791,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
             bool isSubmitting = false;
             double grandTotal = 0;
@@ -812,6 +811,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     DropdownSearch<Customer>(
