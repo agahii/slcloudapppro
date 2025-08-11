@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 enum OrderAction { placeOrder, salesInvoice }
+enum ManagerSource { salesOrder, invoice }
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,6 +18,29 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
+
+  String _salesOrderMgrId = '';
+  String _invoiceMgrId = '';
+  ManagerSource? _managerSource; // Currently selected manager source
+  bool _showManagerSwitch = false;
+
+  Customer? _selectedCustomer;
+  Offset fabOffset = const Offset(20, 500);
+  Timer? _debounce;
+  final Map<String, int> _cart = {};
+  final TextEditingController _searchController = TextEditingController();
+  String searchKey = "";
+  String firstName = '';
+  String lastName = '';
+  final ScrollController _scrollController = ScrollController();
+  final List<Product> _products = [];
+  bool isLoading = false;
+  int currentPage = 1;
+  bool hasMore = true;
+  final int pageSize = 20;
+  final String managerIDSalesOrder = '59ed026d-1764-4616-9387-6ab6676b6667';
+  final String managerIDSalesInvoice = '67e98001-1084-48ad-ba98-7d48c440e972';
+  bool isFabExpanded = false;
 
   Future<void> _showAddToCartSheet(Product product) async {
     final theme = Theme.of(context);
@@ -388,33 +412,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-
-
-
-
-  Customer? _selectedCustomer;
-  Offset fabOffset = const Offset(20, 500);
-  Timer? _debounce;
-  final Map<String, int> _cart = {};
-  final TextEditingController _searchController = TextEditingController();
-  String searchKey = "";
-  String firstName = '';
-  String lastName = '';
-  final ScrollController _scrollController = ScrollController();
-  final List<Product> _products = [];
-  bool isLoading = false;
-  int currentPage = 1;
-  bool hasMore = true;
-  final int pageSize = 20;
-  final String managerIDSalesOrder = '59ed026d-1764-4616-9387-6ab6676b6667';
-  final String managerIDSalesInvoice = '67e98001-1084-48ad-ba98-7d48c440e972';
-
-
-  bool isFabExpanded = false;
-
   @override
   void initState() {
     super.initState();
+    _initManagersAndFirstLoad();
     loadUserData();
     fetchProducts();
     _scrollController.addListener(() {
@@ -428,6 +429,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {});
     });
   }
+  Future<void> _initManagersAndFirstLoad() async {
+    await loadUserData();
+
+    final prefs = await SharedPreferences.getInstance();
+    _salesOrderMgrId = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
+    _invoiceMgrId    = prefs.getString('invoiceManagerID')?.trim() ?? '';
+
+    final hasSO  = _salesOrderMgrId.isNotEmpty;
+    final hasInv = _invoiceMgrId.isNotEmpty;
+
+    setState(() {
+      if (hasSO && hasInv) {
+        _showManagerSwitch = true;
+        _managerSource = ManagerSource.salesOrder; // default
+      } else if (hasSO) {
+        _showManagerSwitch = false;
+        _managerSource = ManagerSource.salesOrder;
+      } else if (hasInv) {
+        _showManagerSwitch = false;
+        _managerSource = ManagerSource.invoice;
+      } else {
+        _showManagerSwitch = false;
+        _managerSource = null;
+      }
+    });
+
+    _resetAndFetch();
+  }
+  void _resetAndFetch() {
+    setState(() {
+      currentPage = 1;
+      _products.clear();
+      hasMore = true;
+    });
+    fetchProducts();
+  }
   Future<void> loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -440,12 +477,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       debugPrint('Error loading user data: \$e');
     }
   }
+  String? _resolveActiveManagerId() {
+    if (_managerSource == null) return null;
+    if (_managerSource == ManagerSource.salesOrder) return _salesOrderMgrId.isNotEmpty ? _salesOrderMgrId : null;
+    if (_managerSource == ManagerSource.invoice)    return _invoiceMgrId.isNotEmpty ? _invoiceMgrId : null;
+    return null;
+  }
   Future<void> fetchProducts() async {
+
+
+    final activeId = _resolveActiveManagerId();
+    if (activeId == null || activeId.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No manager ID available to fetch products.')),
+        );
+      });
+      return;
+    }
     setState(() => isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
+      final String managerIDSalesOrder =prefs.getString('salesPurchaseOrderManagerID') ?? '';
+      final String invoiceManagerID =prefs.getString('invoiceManagerID') ?? '';
       final newProducts = await ApiService.fetchProducts(
-        managerID: prefs.getString('salesPurchaseOrderManagerID') ?? '',
+        managerID: activeId,
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,
@@ -477,6 +533,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _cart.clear();
       });
     }
+  }
+  Widget _managerToggleBar() {
+    if (!_showManagerSwitch) {
+      // Optional: show small chip if only one manager is active
+      if (_managerSource == null) return const SizedBox.shrink();
+      final label = _managerSource == ManagerSource.salesOrder ? 'Sales Order' : 'Invoice';
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Chip(label: Text('Manager: $label')),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      child: SegmentedButton<ManagerSource>(
+        segments: const <ButtonSegment<ManagerSource>>[
+          ButtonSegment(value: ManagerSource.salesOrder, label: Text('Sales Order')),
+          ButtonSegment(value: ManagerSource.invoice,    label: Text('Invoice')),
+        ],
+        selected: {_managerSource ?? ManagerSource.salesOrder},
+        onSelectionChanged: (newSel) {
+          final next = newSel.first;
+          if (next == _managerSource) return;
+          setState(() => _managerSource = next);
+          _resetAndFetch();
+        },
+      ),
+    );
   }
   Widget _fabButtons() {
     return Column(
@@ -983,11 +1070,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
-
-
-
-
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -1117,6 +1199,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ,
       body: Column(
         children: [
+          _managerToggleBar(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: TextField(
@@ -1414,4 +1497,5 @@ class _QtyPillStepper extends StatelessWidget {
     );
   }
 }
+
 
