@@ -1197,11 +1197,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 'Logout',
                 style: TextStyle(color: theme.primaryColor),
               ),
-              onTap: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pushReplacementNamed(context, '/login');
-              },
+                onTap: () async {
+                  final nav = Navigator.of(context);
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.clear();
+                  nav.pushReplacementNamed('/login');
+                }
             ),
           ],
         ),
@@ -1306,29 +1307,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       floatingActionButton: Stack(children: [_buildExpandableFAB()]),
     );
   }
-  void _switchManager(ManagerSource next) {
-    if (next == _managerSource) return;
-
-    setState(() {
-      _managerSource = next;
-
-      // 👇 clear cart on mode change
-      _cart.clear();
-
-      // also reset paging & products so list reloads for new mode
-      currentPage = 1;
-      _products.clear();
-      hasMore = true;
-    });
-
-    // tiny heads-up
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mode changed. Cart cleared.')),
-    );
-
-    // fetch with the new active manager id
-    fetchProducts();
-  }
+  // void _switchManager(ManagerSource next) {
+  //   if (next == _managerSource) return;
+  //
+  //   setState(() {
+  //     _managerSource = next;
+  //
+  //     // 👇 clear cart on mode change
+  //     _cart.clear();
+  //
+  //     // also reset paging & products so list reloads for new mode
+  //     currentPage = 1;
+  //     _products.clear();
+  //     hasMore = true;
+  //   });
+  //
+  //   // tiny heads-up
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(content: Text('Mode changed. Cart cleared.')),
+  //   );
+  //
+  //   // fetch with the new active manager id
+  //   fetchProducts();
+  // }
 
 }
 class _RoundIconButton extends StatelessWidget {
