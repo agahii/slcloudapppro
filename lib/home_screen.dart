@@ -867,53 +867,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                           final prefs = await SharedPreferences.getInstance();
                           final _employeeID = prefs.getString('employeeID');
+                          if (action == OrderAction.placeOrder) {
+                            final payload = {
+                              "fK_Customer_ID": _selectedCustomer!.id,
+                              "fK_Employee_ID": _employeeID,
+                              "deliveryAddress": addressController.text,
+                              "isBankGuarantee": false,
+                              "isClosed": false,
+                              "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
+                              "docDate": DateTime.now().toIso8601String(),
+                              "expectedDelRecDate": null,
+                              "bankGuaranteeIssueDate": null,
+                              "bankGuaranteeExpiryDate": null,
+                              "proformaInvoiceDate": null,
+                              "lcReceived": false,
+                              "transShipmentAllow": false,
+                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "agreedRate": rate,
+                                  "totalAmount": qty * rate,
+                                  "totalAmountInLocalCurrency": 0,
+                                  "specialInstruction": "",
+                                  "skuName": "",
+                                  "packingName": "",
+                                };
+                              }).toList(),
+                              "purchaseSalesOrderShipmentDetailsInp": [],
+                            };
 
-                          final payload = {
-                            "fK_Customer_ID": _selectedCustomer!.id,
-                            "fK_Employee_ID": _employeeID,
-                            "deliveryAddress": addressController.text,
-                            "isBankGuarantee": false,
-                            "isClosed": false,
-                            "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
-                            "docDate": DateTime.now().toIso8601String(),
-                            "expectedDelRecDate": null,
-                            "bankGuaranteeIssueDate": null,
-                            "bankGuaranteeExpiryDate": null,
-                            "proformaInvoiceDate": null,
-                            "lcReceived": false,
-                            "transShipmentAllow": false,
-                            "purchaseSalesOrderDetailsInp": cartItems.map((item) {
-                              final qty = _cart[item.skuCode]!;
-                              final rate = double.tryParse(item.tradePrice) ?? 0;
-                              return {
-                                "id": "",
-                                "fK_ChartOfAccounts_ID": null,
-                                "fK_Sku_ID": item.id,
-                                "fK_SKUPacking_ID": item.defaultPackingID,
-                                "quantity": qty,
-                                "agreedRate": rate,
-                                "totalAmount": qty * rate,
-                                "totalAmountInLocalCurrency": 0,
-                                "specialInstruction": "",
-                                "skuName": "",
-                                "packingName": "",
-                              };
-                            }).toList(),
-                            "purchaseSalesOrderShipmentDetailsInp": [],
-                          };
-
-                          try {
-                            final response = await ApiService.finalizeSalesOrder(payload);
-                            if (response.statusCode == 200 || response.statusCode == 201) {
-                              setState(() => _cart.clear());
-                              setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
-                            } else {
-                              setStateDialog(() => dialogTitle = '❌ Failed: ${response.statusCode}');
+                            try {
+                              final response = await ApiService.finalizeSalesOrder(payload);
+                              if (response.statusCode == 200 || response.statusCode == 201) {
+                                setState(() => _cart.clear());
+                                setStateDialog(() =>
+                                dialogTitle = '✅ Order placed successfully!');
+                              } else {
+                                setStateDialog(() =>
+                                dialogTitle = '❌ Failed: ${response.statusCode}');
+                              }
+                            } catch (e) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             }
-                          } catch (e) {
-                            setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                           }
-
                           await Future.delayed(const Duration(seconds: 3));
                           if (context.mounted) Navigator.pop(context);
                         },
