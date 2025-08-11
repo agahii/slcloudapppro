@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             labelStyle: const TextStyle(color: Colors.black87),
             side: const BorderSide(color: Color(0x1F000000)),
             backgroundColor: const Color(0x0D000000),
-            selectedColor: theme.colorScheme.primary.withOpacity(.12),
+            selectedColor: theme.colorScheme.primary.withValues(alpha: 0.12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
@@ -111,7 +111,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Widget stockChip() => Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: stock > 0 ? Colors.green.withOpacity(.10) : Colors.red.withOpacity(.10),
+            color: stock > 0
+                ? Colors.green.withValues(alpha: 0.10)
+                : Colors.red.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: stock > 0 ? Colors.green : Colors.red),
           ),
@@ -416,8 +418,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initManagersAndFirstLoad();
-    loadUserData();
-    fetchProducts();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
           !isLoading &&
@@ -509,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (newProducts.length < pageSize) hasMore = false;
       });
     } catch (e) {
-      print('Error loading products: \$e');
+      debugPrint('Error loading products: $e');
     }
     setState(() => isLoading = false);
   }
@@ -535,7 +535,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (!_showManagerSwitch) {
       // Optional: show small chip if only one manager is active
       if (_managerSource == null) return const SizedBox.shrink();
-      final label = _managerSource == ManagerSource.salesOrder ? 'Sales Order' : 'Invoice';
+
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
         child: Align(
@@ -665,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   Widget _buildProductItem(Product product) {
-    final TextEditingController _qtyController = TextEditingController(text: '1');
+
     return Dismissible(
       key: ValueKey(product.skuCode),
       direction: DismissDirection.startToEnd,
@@ -772,8 +772,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: product.stockInHand > 0
-                              ? Colors.orange.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
+                              ? Colors.orange.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
+
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: product.stockInHand > 0 ? Colors.orange : Colors.red,
@@ -887,8 +888,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         itemBuilder: (context, index) {
                           final item = cartItems[index];
                           final qty = _cart[item.skuCode]!;
-                          final price = double.tryParse(item.tradePrice) ?? 0;
-                          final total = qty * price;
+
+
 
                           return _OrderItemTile(
                             item: item,
@@ -953,11 +954,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           setStateDialog(() => isSubmitting = true); // 🔒 Disable further clicks
 
                           final prefs = await SharedPreferences.getInstance();
-                          final _employeeID = prefs.getString('employeeID');
+                          final employeeID = prefs.getString('employeeID');
                           if (action == OrderAction.placeOrder) {
                             final payload = {
                               "fK_Customer_ID": _selectedCustomer!.id,
-                              "fK_Employee_ID": _employeeID,
+                              "fK_Employee_ID": employeeID,
                               "deliveryAddress": addressController.text,
                               "isBankGuarantee": false,
                               "isClosed": false,
@@ -1007,7 +1008,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           if (action == OrderAction.salesInvoice) {
                             final payload = {
                               "fK_Customer_ID": _selectedCustomer!.id,
-                              "fK_Employee_ID": _employeeID,
+                              "fK_Employee_ID": employeeID,
                               "deliveryAddress": addressController.text,
                               "fK_StockLocation_ID": "",
                               "isClosed": false,
