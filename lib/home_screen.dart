@@ -443,8 +443,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> fetchProducts() async {
     setState(() => isLoading = true);
     try {
+      final prefs = await SharedPreferences.getInstance();
       final newProducts = await ApiService.fetchProducts(
-        managerID: managerIDSalesOrder,
+        managerID: prefs.getString('salesPurchaseOrderManagerID') ?? '',
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,
@@ -522,11 +523,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
-
-
-
-
-
           FloatingActionButton.extended(
             heroTag: 'anotherAction',
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -540,12 +536,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
-
-
-
-
-
-
 
         ],
         FloatingActionButton(
@@ -918,7 +908,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             }
                           }
 
-
                           if (action == OrderAction.salesInvoice) {
                             final payload = {
                               "fK_Customer_ID": _selectedCustomer!.id,
@@ -968,14 +957,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             }
                           }
-
-
-
-
-
-
-
-
 
                           await Future.delayed(const Duration(seconds: 3));
                           if (context.mounted) Navigator.pop(context);
