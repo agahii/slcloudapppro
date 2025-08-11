@@ -40,7 +40,6 @@ class ApiService {
         await prefs.setString('tokenExpire', data['tokenExpire']);
         await prefs.setString('salesPurchaseOrderManagerID', data['salesPurchaseOrderManagerID']);
         await prefs.setString('invoiceManagerID', data['invoiceManagerID']);
-
         await prefs.setString('walkInCustomerID', data['walkInCustomerID']);
         await prefs.setString('cashBookID', data['cashBookID']);
         await prefs.setString('stockLocationID', data['stockLocationID']);
