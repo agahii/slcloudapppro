@@ -991,17 +991,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               "fK_Customer_ID": _selectedCustomer!.id,
                               "fK_Employee_ID": employeeID,
                               "deliveryAddress": addressController.text,
-                              "fK_StockLocation_ID": "",
-                              "isClosed": false,
+                              "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
                               "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
                               "docDate": DateTime.now().toIso8601String(),
-                              "expectedDelRecDate": null,
-                              "bankGuaranteeIssueDate": null,
-                              "bankGuaranteeExpiryDate": null,
-                              "proformaInvoiceDate": null,
-                              "lcReceived": false,
-                              "transShipmentAllow": false,
-                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                              "invoiceDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
                                 final rate = double.tryParse(item.tradePrice) ?? 0;
                                 return {
@@ -1010,23 +1003,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   "fK_Sku_ID": item.id,
                                   "fK_SKUPacking_ID": item.defaultPackingID,
                                   "quantity": qty,
-                                  "agreedRate": rate,
+                                  "rate": rate,
+                                  "amount" : qty * rate,
+                                  "discountPercentage": 0,
+                                  "discountAmount": 0,
                                   "totalAmount": qty * rate,
-                                  "totalAmountInLocalCurrency": 0,
-                                  "specialInstruction": "",
-                                  "skuName": "",
-                                  "packingName": "",
+                                  "valueExclusiveTax": 0,
+                                  "taxPercentage": 0,
+                                  "taxAmount": 0,
+                                  "valueInclusiveTax": 0,
+                                  "freightCharges": 0,
                                 };
                               }).toList(),
-                              "purchaseSalesOrderShipmentDetailsInp": [],
+                              "invoiceGdnGrnDetailsInp": [],
                             };
 
                             try {
-                              final response = await ApiService.finalizeSalesOrder(payload);
+                              final response = await ApiService.finalizeInvoice(payload);
                               if (response.statusCode == 200 || response.statusCode == 201) {
                                 setState(() => _cart.clear());
                                 setStateDialog(() =>
-                                dialogTitle = '✅ Order placed successfully!');
+                                dialogTitle = '✅ Invoice Created successfully!');
                               } else {
                                 setStateDialog(() =>
                                 dialogTitle = '❌ Failed: ${response.statusCode}');

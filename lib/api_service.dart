@@ -96,6 +96,38 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
     return response;
   }
+
+
+
+
+  static Future<http.Response> finalizeInvoice(Map<String, dynamic> payload) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
+    final url = Uri.parse('$baseUrl/api/InvoiceMaster/AddPos');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+
+    String a = jsonEncode(payload);
+    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+    return response;
+  }
+
+
+
+
+
+
+
+
   static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
     int page = 1,
