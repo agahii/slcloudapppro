@@ -501,6 +501,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
           ),
           const SizedBox(height: 12),
+
+
+
+          FloatingActionButton.extended(
+            heroTag: 'salesInvoice',
+            backgroundColor: Colors.orange,
+            onPressed: () {
+              if (_cart.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cart is empty')),
+                );
+              } else {
+                _showOrderSummaryDialog();
+              }
+            },
+            icon: const Icon(Icons.receipt_long, color: Colors.white),
+            label: const Text('Sales Invoice',
+                style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(height: 12),
+
+
+
+
+
           FloatingActionButton.extended(
             heroTag: 'anotherAction',
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -514,6 +539,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
+
+
+
+
+
+
+
         ],
         FloatingActionButton(
           backgroundColor: Theme.of(context).colorScheme.primary,
