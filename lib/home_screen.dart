@@ -784,16 +784,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showOrderSummaryDialog(OrderAction action) {
     final bool isInvoice = action == OrderAction.salesInvoice;
     String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
-    TextEditingController addressController = TextEditingController();
+    final TextEditingController addressController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (outerCtx) {
+        // persist within the dialog lifecycle
+        bool isWalkIn = false;
+
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
             bool isSubmitting = false;
+
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
@@ -801,8 +804,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               grandTotal += qty * price;
             }
 
-            return AlertDialog(
+            // helper: enable state for Finalize button
+            bool finalizeDisabled() {
+              if (cartItems.isEmpty || isSubmitting) return true;
+              if (isInvoice) {
+                // If invoice + Registered, require selected customer
+                if (!isWalkIn && _selectedCustomer == null) return true;
+                return false;
+              } else {
+                // Sales order: always require a selected customer
+                return _selectedCustomer == null;
+              }
+            }
 
+            return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               content: SizedBox(
@@ -811,37 +826,102 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
-                    DropdownSearch<Customer>(
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        isFilterOnline: true,
-                        searchFieldProps: TextFieldProps(
-                          decoration: const InputDecoration(hintText: "🔍 Search customer...", border: OutlineInputBorder()),
-                        ),
-                        itemBuilder: (context, Customer customer, isSelected) => ListTile(
-                          title: Text(customer.customerName),
-                          subtitle: Text(customer.customerAddress),
-                        ),
+
+                    // Invoice: show Walk-in vs Registered toggle + conditional dropdown
+                    if (isInvoice) ...[
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment<bool>(value: true, label: Text('Walk-in customer')),
+                          ButtonSegment<bool>(value: false, label: Text('Registered customer')),
+                        ],
+                        selected: {isWalkIn},
+                        onSelectionChanged: (s) {
+                          setStateDialog(() {
+                            isWalkIn = s.first;
+                            if (isWalkIn) {
+                              _selectedCustomer = null;
+                              addressController.text = ''; // optional default for walk-in
+                            }
+                          });
+                        },
                       ),
-                      dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(labelText: "Select Customer", border: OutlineInputBorder()),
+                      const SizedBox(height: 10),
+
+                      if (!isWalkIn)
+                        DropdownSearch<Customer>(
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            isFilterOnline: true,
+                            searchFieldProps: TextFieldProps(
+                              decoration: const InputDecoration(
+                                hintText: "🔍 Search customer...",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                              title: Text(customer.customerName),
+                              subtitle: Text(customer.customerAddress),
+                            ),
+                          ),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: "Select Customer",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          asyncItems: (String filter) async {
+                            if (filter.length < 3) return [];
+                            return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
+                          },
+                          itemAsString: (Customer u) => u.customerName,
+                          selectedItem: _selectedCustomer,
+                          onChanged: (Customer? customer) {
+                            setStateDialog(() {
+                              _selectedCustomer = customer;
+                              addressController.text = customer?.customerAddress ?? '';
+                            });
+                          },
+                        ),
+                    ] else ...[
+                      // Sales Order: always show dropdown (registered customer)
+                      DropdownSearch<Customer>(
+                        popupProps: PopupProps.menu(
+                          showSearchBox: true,
+                          isFilterOnline: true,
+                          searchFieldProps: TextFieldProps(
+                            decoration: const InputDecoration(
+                              hintText: "🔍 Search customer...",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                            title: Text(customer.customerName),
+                            subtitle: Text(customer.customerAddress),
+                          ),
+                        ),
+                        dropdownDecoratorProps: const DropDownDecoratorProps(
+                          dropdownSearchDecoration: InputDecoration(
+                            labelText: "Select Customer",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        asyncItems: (String filter) async {
+                          if (filter.length < 3) return [];
+                          return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
+                        },
+                        itemAsString: (Customer u) => u.customerName,
+                        selectedItem: _selectedCustomer,
+                        onChanged: (Customer? customer) {
+                          setStateDialog(() {
+                            _selectedCustomer = customer;
+                            addressController.text = customer?.customerAddress ?? '';
+                          });
+                        },
                       ),
-                      asyncItems: (String filter) async {
-                        if (filter.length < 3) return [];
-                        return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
-                      },
-                      itemAsString: (Customer u) => u.customerName,
-                      selectedItem: _selectedCustomer,
-                      onChanged: (Customer? customer) {
-                        setStateDialog(() {
-                          _selectedCustomer = customer;
-                          addressController.text = customer?.customerAddress ?? '';
-                        });
-                      },
-                    ),
+                    ],
+
                     const SizedBox(height: 12),
                     const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
@@ -854,13 +934,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         filled: true,
                       ),
                     ),
+
                     const SizedBox(height: 12),
                     const Divider(),
-                    Text(
-                      "🛒 Items (${cartItems.length})",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
+                    Text("🛒 Items (${cartItems.length})", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
+
                     Expanded(
                       child: cartItems.isEmpty
                           ? const Center(child: Text("Cart is empty."))
@@ -869,8 +948,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         itemBuilder: (context, index) {
                           final item = cartItems[index];
                           final qty = _cart[item.skuCode]!;
-
-
 
                           return _OrderItemTile(
                             item: item,
@@ -888,8 +965,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               setStateDialog(() {});
                             },
                           );
-
-
                         },
                       ),
                     ),
@@ -929,13 +1004,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: cartItems.isEmpty || _selectedCustomer == null || isSubmitting
+                        onPressed: finalizeDisabled()
                             ? null
                             : () async {
-                          setStateDialog(() => isSubmitting = true); // 🔒 Disable further clicks
+                          setStateDialog(() => isSubmitting = true); // 🔒 disable clicks
 
                           final prefs = await SharedPreferences.getInstance();
                           final employeeID = prefs.getString('employeeID');
+
                           if (action == OrderAction.placeOrder) {
                             final payload = {
                               "fK_Customer_ID": _selectedCustomer!.id,
@@ -943,7 +1019,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               "deliveryAddress": addressController.text,
                               "isBankGuarantee": false,
                               "isClosed": false,
-                              "fK_PurchaseSalesOrderManagerMaster_ID": prefs.getString('salesPurchaseOrderManagerID') ?? '',
+                              "fK_PurchaseSalesOrderManagerMaster_ID":
+                              prefs.getString('salesPurchaseOrderManagerID') ?? '',
                               "docDate": DateTime.now().toIso8601String(),
                               "expectedDelRecDate": null,
                               "bankGuaranteeIssueDate": null,
@@ -975,23 +1052,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               final response = await ApiService.finalizeSalesOrder(payload);
                               if (response.statusCode == 200 || response.statusCode == 201) {
                                 setState(() => _cart.clear());
-                                setStateDialog(() =>
-                                dialogTitle = '✅ Order placed successfully!');
+                                setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
                                 await Future.delayed(const Duration(seconds: 3));
                                 if (context.mounted) Navigator.pop(context);
                               } else {
-
                                 final msg = ApiService.extractServerMessage(response);
-                                setStateDialog(() => dialogTitle = '❌ $msg');
+                                setStateDialog(() => dialogTitle = '❌ $msg'); // keep dialog open
                               }
                             } catch (e) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e'); // keep dialog open
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
                             }
                           }
 
                           if (action == OrderAction.salesInvoice) {
+                            final customerId = isWalkIn
+                                ? (prefs.getString('walkInCustomerID') ?? '')
+                                : (_selectedCustomer?.id ?? '');
+
                             final payload = {
-                              "fK_Customer_ID": _selectedCustomer!.id,
+                              "fK_Customer_ID": customerId,
                               "fK_Employee_ID": employeeID,
                               "deliveryAddress": addressController.text,
                               "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
@@ -1007,7 +1088,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   "fK_SKUPacking_ID": item.defaultPackingID,
                                   "quantity": qty,
                                   "rate": rate,
-                                  "amount" : qty * rate,
+                                  "amount": qty * rate,
                                   "discountPercentage": 0,
                                   "discountAmount": 0,
                                   "totalAmount": qty * rate,
@@ -1027,22 +1108,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               final response = await ApiService.finalizeInvoice(payload);
                               if (response.statusCode == 200 || response.statusCode == 201) {
                                 setState(() => _cart.clear());
-                                setStateDialog(() =>
-                                dialogTitle = '✅ Invoice Created successfully!');
+                                setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
                                 await Future.delayed(const Duration(seconds: 3));
                                 if (context.mounted) Navigator.pop(context);
                               } else {
                                 final msg = ApiService.extractServerMessage(response);
-                                setStateDialog(() => dialogTitle = '❌ $msg');  // <- shows Postman-like message
-                                // (optional) SnackBar:
-                                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                                setStateDialog(() => dialogTitle = '❌ $msg'); // keep dialog open
                               }
                             } catch (e) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e'); // keep dialog open
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
                             }
                           }
-
-
                         },
                         child: isSubmitting
                             ? const SizedBox(
@@ -1059,13 +1137,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ],
-
             );
           },
         );
       },
     );
   }
+
   @override
   void dispose() {
     _scrollController.dispose();
