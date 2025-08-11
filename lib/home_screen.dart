@@ -585,13 +585,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
   Widget _fabButtons() {
+    // Determine dynamic label & action type based on selected manager source
+    final bool isInvoice = _managerSource == ManagerSource.invoice;
+    final String actionLabel = isInvoice ? 'Create Invoice' : 'Place Order';
+    final IconData actionIcon = isInvoice ? Icons.receipt_long : Icons.shopping_bag;
+    final OrderAction actionType =
+    isInvoice ? OrderAction.salesInvoice : OrderAction.placeOrder;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (isFabExpanded) ...[
           FloatingActionButton.extended(
-            heroTag: 'placeOrder',
+            heroTag: 'dynamicAction',
             backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               if (_cart.isEmpty) {
@@ -599,50 +606,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SnackBar(content: Text('Cart is empty')),
                 );
               } else {
-                _showOrderSummaryDialog(OrderAction.placeOrder);
+                _showOrderSummaryDialog(actionType);
               }
             },
-            icon: const Icon(Icons.shopping_bag, color: Colors.white),
-            label: const Text('Place Order',
-                style: TextStyle(color: Colors.white)),
-
-
+            icon: Icon(actionIcon, color: Colors.white),
+            label: Text(actionLabel, style: const TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
-
-
-
-          FloatingActionButton.extended(
-            heroTag: 'salesInvoice',
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            onPressed: () {
-              if (_cart.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cart is empty')),
-                );
-              } else {
-                _showOrderSummaryDialog(OrderAction.salesInvoice);
-              }
-            },
-            icon: const Icon(Icons.receipt_long, color: Colors.white),
-            label: const Text('Sales Invoice',
-                style: TextStyle(color: Colors.white)),
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'anotherAction',
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Another Action Clicked')),
-              );
-            },
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            label: const Text('Info',
-                style: TextStyle(color: Colors.white)),
-          ),
-          const SizedBox(height: 12),
-
         ],
         FloatingActionButton(
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -657,6 +627,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
+
   Widget _buildExpandableFAB() {
     return Positioned(
       left: fabOffset.dx,
