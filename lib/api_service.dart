@@ -38,7 +38,12 @@ class ApiService {
         await prefs.setString('firstName', data['firstName']);
         await prefs.setString('lastName', data['lastName']);
         await prefs.setString('tokenExpire', data['tokenExpire']);
-        await prefs.setString('employeeID', data['employeeID']);
+        await prefs.setString('salesPurchaseOrderManagerID', data['salesPurchaseOrderManagerID']);
+        await prefs.setString('invoiceManagerID', data['invoiceManagerID']);
+
+        await prefs.setString('walkInCustomerID', data['walkInCustomerID']);
+        await prefs.setString('cashBookID', data['cashBookID']);
+        await prefs.setString('stockLocationID', data['stockLocationID']);
 
         return {'success': true};
       } else {

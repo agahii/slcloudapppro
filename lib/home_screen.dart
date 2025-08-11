@@ -406,7 +406,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int currentPage = 1;
   bool hasMore = true;
   final int pageSize = 20;
-  final String managerID = '59ed026d-1764-4616-9387-6ab6676b6667';
+  final String managerIDSalesOrder = '59ed026d-1764-4616-9387-6ab6676b6667';
+  final String managerIDSalesInvoice = '67e98001-1084-48ad-ba98-7d48c440e972';
 
 
   bool isFabExpanded = false;
@@ -443,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() => isLoading = true);
     try {
       final newProducts = await ApiService.fetchProducts(
-        managerID: managerID,
+        managerID: managerIDSalesOrder,
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,
@@ -762,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       asyncItems: (String filter) async {
                         if (filter.length < 3) return [];
-                        return await ApiService.fetchCustomers(managerID, filter);
+                        return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
                       },
                       itemAsString: (Customer u) => u.customerName,
                       selectedItem: _selectedCustomer,
@@ -874,7 +875,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               "deliveryAddress": addressController.text,
                               "isBankGuarantee": false,
                               "isClosed": false,
-                              "fK_PurchaseSalesOrderManagerMaster_ID": managerID,
+                              "fK_PurchaseSalesOrderManagerMaster_ID": prefs.getString('salesPurchaseOrderManagerID') ?? '',
                               "docDate": DateTime.now().toIso8601String(),
                               "expectedDelRecDate": null,
                               "bankGuaranteeIssueDate": null,
@@ -916,6 +917,66 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             }
                           }
+
+
+                          if (action == OrderAction.salesInvoice) {
+                            final payload = {
+                              "fK_Customer_ID": _selectedCustomer!.id,
+                              "fK_Employee_ID": _employeeID,
+                              "deliveryAddress": addressController.text,
+                              "fK_StockLocation_ID": "",
+                              "isClosed": false,
+                              "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
+                              "docDate": DateTime.now().toIso8601String(),
+                              "expectedDelRecDate": null,
+                              "bankGuaranteeIssueDate": null,
+                              "bankGuaranteeExpiryDate": null,
+                              "proformaInvoiceDate": null,
+                              "lcReceived": false,
+                              "transShipmentAllow": false,
+                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "agreedRate": rate,
+                                  "totalAmount": qty * rate,
+                                  "totalAmountInLocalCurrency": 0,
+                                  "specialInstruction": "",
+                                  "skuName": "",
+                                  "packingName": "",
+                                };
+                              }).toList(),
+                              "purchaseSalesOrderShipmentDetailsInp": [],
+                            };
+
+                            try {
+                              final response = await ApiService.finalizeSalesOrder(payload);
+                              if (response.statusCode == 200 || response.statusCode == 201) {
+                                setState(() => _cart.clear());
+                                setStateDialog(() =>
+                                dialogTitle = '✅ Order placed successfully!');
+                              } else {
+                                setStateDialog(() =>
+                                dialogTitle = '❌ Failed: ${response.statusCode}');
+                              }
+                            } catch (e) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                            }
+                          }
+
+
+
+
+
+
+
+
+
                           await Future.delayed(const Duration(seconds: 3));
                           if (context.mounted) Navigator.pop(context);
                         },
