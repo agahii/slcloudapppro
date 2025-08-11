@@ -977,9 +977,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 setState(() => _cart.clear());
                                 setStateDialog(() =>
                                 dialogTitle = '✅ Order placed successfully!');
+                                await Future.delayed(const Duration(seconds: 3));
+                                if (context.mounted) Navigator.pop(context);
                               } else {
-                                setStateDialog(() =>
-                                dialogTitle = '❌ Failed: ${response.statusCode}');
+
+                                final msg = ApiService.extractServerMessage(response);
+                                setStateDialog(() => dialogTitle = '❌ $msg');
                               }
                             } catch (e) {
                               setStateDialog(() => dialogTitle = '⚠️ Error: $e');
@@ -1013,6 +1016,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   "taxAmount": 0,
                                   "valueInclusiveTax": 0,
                                   "freightCharges": 0,
+                                  "notes": "",
+                                  "batchNumber": "",
                                 };
                               }).toList(),
                               "invoiceGdnGrnDetailsInp": [],
@@ -1024,17 +1029,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 setState(() => _cart.clear());
                                 setStateDialog(() =>
                                 dialogTitle = '✅ Invoice Created successfully!');
+                                await Future.delayed(const Duration(seconds: 3));
+                                if (context.mounted) Navigator.pop(context);
                               } else {
-                                setStateDialog(() =>
-                                dialogTitle = '❌ Failed: ${response.statusCode}');
+                                final msg = ApiService.extractServerMessage(response);
+                                setStateDialog(() => dialogTitle = '❌ $msg');  // <- shows Postman-like message
+                                // (optional) SnackBar:
+                                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
                               }
                             } catch (e) {
                               setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             }
                           }
 
-                          await Future.delayed(const Duration(seconds: 3));
-                          if (context.mounted) Navigator.pop(context);
+
                         },
                         child: isSubmitting
                             ? const SizedBox(

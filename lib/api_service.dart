@@ -6,7 +6,14 @@ import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'my_sales_orders_screen.dart';
-
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+  final dynamic data;
+  ApiException(this.statusCode, this.message, {this.data});
+  @override
+  String toString() => 'ApiException($statusCode): $message';
+}
 class ApiService {
   static const String baseUrl = 'http://api.slcloud.3em.tech';
   //static const String baseUrl = 'http://localhost:7271';
@@ -15,6 +22,43 @@ class ApiService {
     var connectivityResult = await Connectivity().checkConnectivity();
     return connectivityResult != ConnectivityResult.none;
   }
+
+
+
+
+
+  static String _utf8Body(http.Response r) =>
+      utf8.decode(r.bodyBytes, allowMalformed: true);
+
+  static String extractServerMessage(http.Response r) {
+    final text = _utf8Body(r);
+    try {
+      final j = json.decode(text);
+      if (j is Map<String, dynamic>) {
+        // Postman screenshot shows: { "responseCode": 2000, "message": "..." }
+        if (j['message'] is String && (j['message'] as String).isNotEmpty) {
+          return j['message'];
+        }
+        // fallbacks some APIs use
+        if (j['Message'] is String) return j['Message'];
+        if (j['error'] is String) return j['error'];
+        if (j['detail'] is String) return j['detail'];
+      }
+    } catch (_) {
+      // not JSON; return raw text if any
+    }
+    return text.isNotEmpty
+        ? text
+        : (r.reasonPhrase ?? 'Request failed (${r.statusCode}).');
+  }
+
+
+
+
+
+
+
+
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -114,10 +158,11 @@ class ApiService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-
-
-    String a = jsonEncode(payload);
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+    final bodyText = _utf8Body(response);
+    dynamic jsonBody;
+    try { jsonBody = json.decode(bodyText); } catch (_) { /* may be plain text/HTML */ }
+
     return response;
   }
 
