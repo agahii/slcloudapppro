@@ -571,13 +571,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _products.clear();
             hasMore = true;
           });
-
-          // Optional: notify the user
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Mode changed. Cart cleared.')),
-          );
-
-          // Fetch products for the newly selected manager
           fetchProducts();
         },
 
