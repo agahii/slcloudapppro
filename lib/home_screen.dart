@@ -7,7 +7,7 @@ import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-
+enum OrderAction { placeOrder, salesInvoice }
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -491,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SnackBar(content: Text('Cart is empty')),
                 );
               } else {
-                _showOrderSummaryDialog();
+                _showOrderSummaryDialog(OrderAction.placeOrder);
               }
             },
             icon: const Icon(Icons.shopping_bag, color: Colors.white),
@@ -513,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SnackBar(content: Text('Cart is empty')),
                 );
               } else {
-                _showOrderSummaryDialog();
+                _showOrderSummaryDialog(OrderAction.salesInvoice);
               }
             },
             icon: const Icon(Icons.receipt_long, color: Colors.white),
@@ -714,8 +714,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  void _showOrderSummaryDialog() {
-    String dialogTitle = '🧾 Order Summary';
+  void _showOrderSummaryDialog(OrderAction action) {
+    final bool isInvoice = action == OrderAction.salesInvoice;
+    String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
     TextEditingController addressController = TextEditingController();
 
     showDialog(
@@ -938,6 +939,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
+
+
+
+
+
   @override
   void dispose() {
     _scrollController.dispose();
