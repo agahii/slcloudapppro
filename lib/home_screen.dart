@@ -1,5 +1,5 @@
 
-
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
@@ -784,37 +784,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showOrderSummaryDialog(OrderAction action) {
     final bool isInvoice = action == OrderAction.salesInvoice;
     String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
+
+    // Controllers persist for dialog lifetime
     final TextEditingController addressController = TextEditingController();
+    final TextEditingController walkInNameController = TextEditingController();
+    final TextEditingController walkInMobileController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (outerCtx) {
-        // persist within the dialog lifecycle
+        // Persist across StatefulBuilder rebuilds
         bool isWalkIn = false;
+        bool isSubmitting = false;
+
+
+
+        bool finalizeDisabled(List cartItems) {
+          if (cartItems.isEmpty || isSubmitting) return true;
+
+          if (isInvoice) {
+            // Walk-in: allow finalize even if name/mobile are empty
+            if (isWalkIn) return false;
+
+            // Registered: still require a selected customer
+            return _selectedCustomer == null;
+          } else {
+            // Sales Order: always require a selected customer
+            return _selectedCustomer == null;
+          }
+        }
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
-            bool isSubmitting = false;
 
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
               final price = double.tryParse(item.tradePrice) ?? 0;
               grandTotal += qty * price;
-            }
-
-            // helper: enable state for Finalize button
-            bool finalizeDisabled() {
-              if (cartItems.isEmpty || isSubmitting) return true;
-              if (isInvoice) {
-                // If invoice + Registered, require selected customer
-                if (!isWalkIn && _selectedCustomer == null) return true;
-                return false;
-              } else {
-                // Sales order: always require a selected customer
-                return _selectedCustomer == null;
-              }
             }
 
             return AlertDialog(
@@ -829,8 +837,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
 
-                    // Invoice: show Walk-in vs Registered toggle + conditional dropdown
                     if (isInvoice) ...[
+                      // Walk-in vs Registered toggle
                       SegmentedButton<bool>(
                         segments: const [
                           ButtonSegment<bool>(value: true, label: Text('Walk-in customer')),
@@ -842,20 +850,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             isWalkIn = s.first;
                             if (isWalkIn) {
                               _selectedCustomer = null;
-                              addressController.text = ''; // optional default for walk-in
+                              addressController.text = ''; // no delivery address for walk-in
                             }
                           });
                         },
                       ),
                       const SizedBox(height: 10),
 
-                      if (!isWalkIn)
+                      if (isWalkIn) ...[
+                        // WALK-IN FIELDS: NAME + MOBILE
+                        TextField(
+                          controller: walkInNameController,
+                          decoration: const InputDecoration(
+                            labelText: "Walk-in Name (optional)",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: walkInMobileController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: const InputDecoration(
+                            labelText: "Mobile Number (optional)",
+                            hintText: "03XXXXXXXXX",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ] else ...[
+                        // Registered customer dropdown
                         DropdownSearch<Customer>(
                           popupProps: PopupProps.menu(
                             showSearchBox: true,
                             isFilterOnline: true,
-                            searchFieldProps: TextFieldProps(
-                              decoration: const InputDecoration(
+                            searchFieldProps: const TextFieldProps(
+                              decoration: InputDecoration(
                                 hintText: "🔍 Search customer...",
                                 border: OutlineInputBorder(),
                               ),
@@ -884,14 +913,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             });
                           },
                         ),
+                      ],
                     ] else ...[
-                      // Sales Order: always show dropdown (registered customer)
+                      // Sales Order: always registered customer
                       DropdownSearch<Customer>(
                         popupProps: PopupProps.menu(
                           showSearchBox: true,
                           isFilterOnline: true,
-                          searchFieldProps: TextFieldProps(
-                            decoration: const InputDecoration(
+                          searchFieldProps: const TextFieldProps(
+                            decoration: InputDecoration(
                               hintText: "🔍 Search customer...",
                               border: OutlineInputBorder(),
                             ),
@@ -923,19 +953,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
 
                     const SizedBox(height: 12),
-                    const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: addressController,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        hintText: "Enter delivery address",
-                        border: OutlineInputBorder(),
-                        filled: true,
-                      ),
-                    ),
 
-                    const SizedBox(height: 12),
+                    // DELIVERY ADDRESS: hide for walk-in invoice
+                    if (!(isInvoice && isWalkIn)) ...[
+                      const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: addressController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          hintText: "Enter delivery address",
+                          border: OutlineInputBorder(),
+                          filled: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
                     const Divider(),
                     Text("🛒 Items (${cartItems.length})", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
@@ -948,7 +982,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         itemBuilder: (context, index) {
                           final item = cartItems[index];
                           final qty = _cart[item.skuCode]!;
-
                           return _OrderItemTile(
                             item: item,
                             qty: qty,
@@ -1004,15 +1037,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: finalizeDisabled()
+                        onPressed: finalizeDisabled(cartItems)
                             ? null
                             : () async {
-                          setStateDialog(() => isSubmitting = true); // 🔒 disable clicks
+                          setStateDialog(() => isSubmitting = true); // lock UI
 
                           final prefs = await SharedPreferences.getInstance();
                           final employeeID = prefs.getString('employeeID');
 
                           if (action == OrderAction.placeOrder) {
+                            // Registered customer required
                             final payload = {
                               "fK_Customer_ID": _selectedCustomer!.id,
                               "fK_Employee_ID": employeeID,
@@ -1053,14 +1087,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               if (response.statusCode == 200 || response.statusCode == 201) {
                                 setState(() => _cart.clear());
                                 setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
-                                await Future.delayed(const Duration(seconds: 3));
+                                await Future.delayed(const Duration(seconds: 2));
                                 if (context.mounted) Navigator.pop(context);
                               } else {
                                 final msg = ApiService.extractServerMessage(response);
-                                setStateDialog(() => dialogTitle = '❌ $msg'); // keep dialog open
+                                setStateDialog(() => dialogTitle = '❌ $msg');
                               }
                             } catch (e) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e'); // keep dialog open
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             } finally {
                               setStateDialog(() => isSubmitting = false);
                             }
@@ -1074,10 +1108,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             final payload = {
                               "fK_Customer_ID": customerId,
                               "fK_Employee_ID": employeeID,
-                              "deliveryAddress": addressController.text,
+                              // For walk-in: no delivery address
+                              "deliveryAddress": isWalkIn ? "" : addressController.text,
                               "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
                               "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
                               "docDate": DateTime.now().toIso8601String(),
+
+                              // Walk-in extras (your API can accept these or ignore if not present)
+                              "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
+                              "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
+
                               "invoiceDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
                                 final rate = double.tryParse(item.tradePrice) ?? 0;
@@ -1097,7 +1137,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   "taxAmount": 0,
                                   "valueInclusiveTax": 0,
                                   "freightCharges": 0,
-                                  "notes": "",
+                                  "notes": isWalkIn
+                                      ? "Walk-in: ${walkInNameController.text.trim()} / ${walkInMobileController.text.trim()}"
+                                      : "",
                                   "batchNumber": "",
                                 };
                               }).toList(),
@@ -1109,14 +1151,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               if (response.statusCode == 200 || response.statusCode == 201) {
                                 setState(() => _cart.clear());
                                 setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
-                                await Future.delayed(const Duration(seconds: 3));
+                                await Future.delayed(const Duration(seconds: 2));
                                 if (context.mounted) Navigator.pop(context);
                               } else {
                                 final msg = ApiService.extractServerMessage(response);
-                                setStateDialog(() => dialogTitle = '❌ $msg'); // keep dialog open
+                                setStateDialog(() => dialogTitle = '❌ $msg');
                               }
                             } catch (e) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e'); // keep dialog open
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
                             } finally {
                               setStateDialog(() => isSubmitting = false);
                             }
@@ -1126,12 +1168,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                         )
-                            : const Text('📝 Finalize Order'),
+                            : Text(isInvoice ? '🧾 Finalize Invoice' : '📝 Finalize Order'),
                       ),
                     ),
                   ],
@@ -1143,6 +1182,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
   }
+
 
   @override
   void dispose() {

@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.slcloudapppro"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21              // keep or raise as needed
+        targetSdk = 34           // <-- set explicitly (≥31 for Android 12)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
