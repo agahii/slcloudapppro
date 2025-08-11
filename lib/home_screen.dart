@@ -543,7 +543,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Chip(label: Text('Manager: $label')),
+          //child: Chip(label: Text('Products on Manager: $label')),
         ),
       );
     }
