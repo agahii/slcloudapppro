@@ -182,37 +182,206 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
   }
 
   void _showInvoiceDetails(SalesInvoice inv) {
+    final theme = Theme.of(context);
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey[50], // light grey like orders
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            Text(
-              "Invoice #${inv.docNumber ?? '-'}",
-              style:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 8),
-            Text("Customer: ${inv.customerName ?? ""}"),
-            Text("POS Name: ${inv.customerNamePOS ?? ""}"),
-            Text("Mobile: ${inv.mobileNumber ?? ""}"),
-            Text("Date: ${_fmtDate(inv.docDate ?? "")}"),
-            Text("Cash Received: ${inv.cashReceived ?? 0}"),
-            Text("Bank Received: ${inv.bankReceived ?? "0"}"),
-            Text("Bank Name: ${inv.bankName ?? ""}"),
-            const Divider(),
-            Text("Items:"),
-            Text(inv.itemsList ?? "—"),
-          ],
-        ),
-      ),
+      builder: (ctx) {
+        final items = (inv.itemsList ?? '').trim();
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+
+              // Title & Doc chip
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Invoice Details",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Doc #${inv.docNumber ?? '-'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Customer name (primary line)
+              Text(
+                inv.customerName ?? "",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: Colors.black87,
+                ),
+              ),
+
+              // POS name and Mobile (optional)
+              if ((inv.customerNamePOS ?? '').isNotEmpty ||
+                  (inv.mobileNumber ?? '').isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if ((inv.customerNamePOS ?? '').isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          "POS: ${inv.customerNamePOS}",
+                          style: const TextStyle(color: Colors.black54, fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if ((inv.customerNamePOS ?? '').isNotEmpty &&
+                        (inv.mobileNumber ?? '').isNotEmpty)
+                      const SizedBox(width: 12),
+                    if ((inv.mobileNumber ?? '').isNotEmpty)
+                      Text(
+                        "Mob: ${inv.mobileNumber}",
+                        style: const TextStyle(color: Colors.black54, fontSize: 13),
+                      ),
+                  ],
+                ),
+              ],
+
+              // Date & Bank name pill
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    "Date: ${_fmtDate(inv.docDate ?? "")}",
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  if ((inv.bankName ?? '').isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        inv.bankName!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              // Amount chips (Cash / Bank)
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: Text(
+                      'Cash: ${inv.cashReceived ?? 0}',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.withOpacity(.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.indigo),
+                    ),
+                    child: Text(
+                      'Bank: ${(inv.bankReceived ?? "0")}',
+                      style: const TextStyle(
+                        color: Colors.indigo,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              Divider(color: Colors.grey.shade400),
+
+              // Items
+              Text(
+                "Items",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SelectableText(
+                items.isEmpty ? '—' : items,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Colors.black87,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
+
 }
