@@ -339,11 +339,11 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         icon: const Icon(Icons.assignment_return, size: 16),
                                         label: const Text('Return'),
                                         style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(color: Colors.red),
-                                          foregroundColor: Colors.red,
+                                          side: BorderSide(color: Colors.red.shade300),
+                                          foregroundColor: Colors.red.shade300,
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // match chip height
-                                          minimumSize: const Size(0, 38), // force same height as chips
+                                          minimumSize: const Size(0, 38),
                                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                           visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
                                           textStyle: const TextStyle(
@@ -353,6 +353,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         ),
                                         onPressed: () => _onReturnPressed(inv),
                                       )
+
 
                                     ],
                                   ),
