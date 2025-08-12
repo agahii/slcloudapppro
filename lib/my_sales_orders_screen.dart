@@ -22,7 +22,8 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
 
   // filters
   String searchKey = "";
-  String status = "ALL"; // ALL | OPEN | CLOSED  (backend currently ignores)
+  String status = "Open"; // Open | Unapprove | Approved | Closed
+
 
   // data
   final List<SalesOrder> _orders = [];
@@ -148,9 +149,10 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
             child: Wrap(
               spacing: 8,
               children: [
-                _chip("ALL"),
-                _chip("OPEN"),
-                _chip("CLOSED"),
+                _chip("Open"),
+                _chip("Unapprove"),
+                _chip("Approved"),
+                _chip("Closed"),
               ],
             ),
           ),
