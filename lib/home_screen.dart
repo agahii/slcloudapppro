@@ -1270,6 +1270,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
 
+            // ✅ New My Sales Invoices item
+            ListTile(
+              leading: Icon(Icons.receipt_long, color: theme.primaryColor),
+              title: Text(
+                'My Sales Invoices',
+                style: TextStyle(color: theme.primaryColor),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/mySalesInvoices');
+              },
+            ),
+
             ListTile(
               leading: Icon(Icons.policy, color: theme.primaryColor),
               title: Text(
@@ -1297,11 +1310,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const Divider(),
 
             ListTile(
-              leading: Icon(Icons.logout, color: theme.primaryColor),
-              title: Text(
-                'Logout',
-                style: TextStyle(color: theme.primaryColor),
-              ),
+                leading: Icon(Icons.logout, color: theme.primaryColor),
+                title: Text(
+                  'Logout',
+                  style: TextStyle(color: theme.primaryColor),
+                ),
                 onTap: () async {
                   final nav = Navigator.of(context);
                   final prefs = await SharedPreferences.getInstance();
@@ -1311,6 +1324,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
+
       )
       ,
       body: Column(

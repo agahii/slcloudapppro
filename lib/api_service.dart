@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-
+import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'Model/SalesOrderItem.dart';
 import 'my_sales_orders_screen.dart';
 class ApiException implements Exception {
@@ -265,7 +265,46 @@ class ApiService {
     }
   }
 
+  static Future<List<SalesInvoice>> fetchMySalesInvoices({
+    required String managerID,
+    required String searchKey,
+    required int pageNumber,
+    required int pageSize,
+  }) async {
 
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+
+
+
+    final payload = {
+      "managerID": managerID,
+      "searchKey": searchKey,
+      "pageNumber": pageNumber,
+      "pageSize": pageSize,
+    };
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/api/InvoiceMaster/GetEmployeeInvoice"),
+      headers: {
+        "Content-Type": "application/json",
+            'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body);
+      final List data = json['data'] ?? [];
+      return data.map((e) => SalesInvoice.fromJson(e)).toList();
+    } else {
+      throw Exception("Failed to fetch invoices");
+    }
+  }
 
 
 
