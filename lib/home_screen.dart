@@ -1171,7 +1171,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                         )
-                            : Text(isInvoice ? '🧾 Finalize Invoice' : '📝 Finalize Order'),
+                            : Text(isInvoice ? '🧾 Save' : '📝 Save'),
                       ),
                     ),
                   ],
