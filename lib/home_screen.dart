@@ -1117,6 +1117,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               // Walk-in extras (your API can accept these or ignore if not present)
                               "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
                               "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
+                              "cashReceived": grandTotal,
 
                               "invoiceDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
