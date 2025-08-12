@@ -5,6 +5,7 @@ import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'Model/SalesOrderItem.dart';
 import 'my_sales_orders_screen.dart';
 class ApiException implements Exception {
   final int statusCode;
@@ -269,19 +270,29 @@ class ApiService {
 
 
   static Future<List<SalesOrder>> fetchMySalesOrders({
-    required String? managerID,
-    required String? employeeID,
     required int page,
     required int pageSize,
     required String searchKey,
     required String status, // "ALL" | "OPEN" | "CLOSED"
   }) async {
+
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+
+
+
     // If your backend expects POST with body:
-    final uri = Uri.parse("$baseUrl/api/PurchaseSalesOrderMaster/GetList"); // <-- TODO: confirm endpoint
+    final uri = Uri.parse("$baseUrl/api/PurchaseSalesOrderMaster/GetEmployeeOrder"); // <-- TODO: confirm endpoint
 
     final body = {
-      "managerID": managerID,
-      "employeeID": employeeID,
+
       "pageNumber": page,
       "pageSize": pageSize,
       "searchKey": searchKey,
@@ -291,9 +302,8 @@ class ApiService {
     final resp = await http.post(
       uri,
       headers: {
-        "Content-Type": "application/json",
-        // Add auth header if needed
-        // "Authorization": "Bearer $token",
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(body),
     );
