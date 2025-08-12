@@ -30,7 +30,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
 
   // identity
   String? _employeeID;
-  String? _managerID = "59ed026d-1764-4616-9387-6ab6676b6667";
+  String? _managerID = "";
 
   get itemBuilder => null; // keep same as your HomeScreen
 
@@ -50,6 +50,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
 
   Future<void> _bootstrap() async {
     final prefs = await SharedPreferences.getInstance();
+    _managerID = prefs.getString('salesPurchaseOrderManagerID');
     _employeeID = prefs.getString('employeeID');
     _fetchOrders(initial: true);
   }
@@ -67,7 +68,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
     setState(() => isLoading = true);
     try {
       final list = await ApiService.fetchMySalesOrders(
-
+        managerID: _managerID ?? '',
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,

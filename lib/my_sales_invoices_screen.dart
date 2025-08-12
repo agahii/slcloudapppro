@@ -22,7 +22,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
 
   final List<SalesInvoice> _invoices = [];
 
-  String? _managerID = "59ed026d-1764-4616-9387-6ab6676b6667";
+  String? _managerID = "";
 
   @override
   void initState() {
@@ -39,8 +39,9 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
   }
 
   Future<void> _bootstrap() async {
+
     final prefs = await SharedPreferences.getInstance();
-    _managerID ??= prefs.getString('managerID');
+    _managerID = prefs.getString('invoiceManagerID');
     _fetchInvoices(initial: true);
   }
 

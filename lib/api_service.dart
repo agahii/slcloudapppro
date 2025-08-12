@@ -52,14 +52,6 @@ class ApiService {
         ? text
         : (r.reasonPhrase ?? 'Request failed (${r.statusCode}).');
   }
-
-
-
-
-
-
-
-
   static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -88,6 +80,7 @@ class ApiService {
         await prefs.setString('walkInCustomerID', data['walkInCustomerID']);
         await prefs.setString('cashBookID', data['cashBookID']);
         await prefs.setString('stockLocationID', data['stockLocationID']);
+        await prefs.setString('employeeID', data['employeeID']);
 
         return {'success': true};
       } else {
@@ -141,10 +134,6 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
     return response;
   }
-
-
-
-
   static Future<http.Response> finalizeInvoice(Map<String, dynamic> payload) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -166,14 +155,6 @@ class ApiService {
 
     return response;
   }
-
-
-
-
-
-
-
-
   static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
     int page = 1,
@@ -265,6 +246,15 @@ class ApiService {
     }
   }
 
+
+
+
+
+
+
+
+
+
   static Future<List<SalesInvoice>> fetchMySalesInvoices({
     required String managerID,
     required String searchKey,
@@ -309,6 +299,7 @@ class ApiService {
 
 
   static Future<List<SalesOrder>> fetchMySalesOrders({
+    required String managerID,
     required int page,
     required int pageSize,
     required String searchKey,
@@ -331,7 +322,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/api/PurchaseSalesOrderMaster/GetEmployeeOrder"); // <-- TODO: confirm endpoint
 
     final body = {
-
+      "managerID": managerID,
       "pageNumber": page,
       "pageSize": pageSize,
       "searchKey": searchKey,
