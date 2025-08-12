@@ -331,7 +331,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50], // light grey instead of pure white
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -351,36 +351,36 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
 
-              // Title and Doc Number chip
+              // Title & Doc chip
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      "Order Details", // fixed title, no orderNo
+                      "Order Details",
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
                   Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(.1),
+                      color: Colors.blue,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue),
                     ),
                     child: Text(
                       'Doc #${order.docNumber ?? '-'}',
                       style: const TextStyle(
-                        color: Colors.blue,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
@@ -397,15 +397,19 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
+                  color: Colors.black87,
                 ),
               ),
 
-              // Date and Area
+              // Date & Area
               Row(
                 children: [
                   Text(
                     "Date: ${_fmtDate(order.docDate ?? "")}",
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
                   ),
                   const Spacer(),
                   if ((order.areaName ?? '').isNotEmpty)
@@ -433,23 +437,32 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
                 const SizedBox(height: 6),
                 Text(
                   "Delivery: ${order.deliveryAddress}",
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 13,
+                  ),
                 ),
               ],
 
               const SizedBox(height: 12),
-              const Divider(),
+              Divider(color: Colors.grey.shade400),
 
               // Items
               Text(
                 "Items",
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 8),
               SelectableText(
                 details.isEmpty ? '—' : details,
-                style: const TextStyle(fontSize: 14, height: 1.4),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Colors.black87,
+                ),
               ),
 
               const SizedBox(height: 8),
@@ -459,6 +472,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
       },
     );
   }
+
 
 
 
