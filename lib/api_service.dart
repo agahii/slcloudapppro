@@ -6,7 +6,7 @@ import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'Model/SalesOrderItem.dart';
-import 'my_sales_orders_screen.dart';
+
 class ApiException implements Exception {
   final int statusCode;
   final String message;
