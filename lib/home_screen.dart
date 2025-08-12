@@ -794,8 +794,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context: context,
       builder: (outerCtx) {
         // Persist across StatefulBuilder rebuilds
-        bool isWalkIn = false;
+        bool isWalkIn = isInvoice ? true : false;
         bool isSubmitting = false;
+
 
 
 
