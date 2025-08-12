@@ -91,11 +91,12 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('My Sales Invoices')),
       body: Column(
         children: [
-          // Search box
+          // Search
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
             child: TextField(
@@ -113,8 +114,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                     _fetchInvoices(initial: true);
                   },
                 ),
-                border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
               textInputAction: TextInputAction.search,
@@ -145,38 +145,183 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                   }
 
                   final inv = _invoices[i];
+                  final preview = (inv.itemsList ?? '').trim();
+
                   return Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    child: ListTile(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
                       onTap: () => _showInvoiceDetails(inv),
-                      title: Text(
-                        "Invoice #${inv.docNumber ?? '-'}",
-                        style:
-                        const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(inv.customerName ?? ""),
-                          Text("Date: ${_fmtDate(inv.docDate ?? "")}"),
-                          Text("Bank: ${inv.bankName ?? "-"}"),
-                        ],
-                      ),
-                      trailing: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text("Cash: ${inv.cashReceived ?? 0}"),
-                          Text("Bank: ${inv.bankReceived ?? "0"}"),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Doc Number chip (same style as Orders)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.blue),
+                              ),
+                              child: Text(
+                                'Doc #${inv.docNumber ?? '-'}',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+
+                            // Invoice details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Title row + Bank pill on right (mirrors Area pill)
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          "Invoice Details",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      if ((inv.bankName ?? '').isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            inv.bankName!,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  // Customer name
+                                  Text(
+                                    inv.customerName ?? "Unknown Customer",
+                                    style: TextStyle(
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 2),
+
+                                  // Date + items preview (same icon language)
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.event, size: 14, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _fmtDate(inv.docDate ?? ""),
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.list_alt, size: 14, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          preview.isEmpty ? '—' : preview,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 8),
+
+                                  // Amount chips (Cash / Bank) — visually consistent with your theme
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      _moneyChip(
+                                        label: 'Cash',
+                                        value: inv.cashReceived,
+                                        border: Colors.green,
+                                        fill: Colors.green.withOpacity(.08),
+                                        text: Colors.green,
+                                      ),
+                                      _moneyChip(
+                                        label: 'Bank',
+                                        value: inv.bankReceived,
+                                        border: Colors.indigo,
+                                        fill: Colors.indigo.withOpacity(.08),
+                                        text: Colors.indigo,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
                 },
               ),
             ),
-          )
+          ),
         ],
+      ),
+    );
+  }
+
+// --- helpers (keep in same file) ---
+  Widget _moneyChip({
+    required String label,
+    dynamic value,
+    required Color border,
+    required Color fill,
+    required Color text,
+  }) {
+    final str = (value == null || value.toString().trim().isEmpty)
+        ? '0'
+        : value.toString();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        '$label: $str',
+        style: TextStyle(
+          color: text,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
       ),
     );
   }
