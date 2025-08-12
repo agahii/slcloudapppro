@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'my_cash_book_screen.dart';
 import 'splash_screen.dart';
 import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
@@ -110,6 +111,7 @@ class MyApp extends StatelessWidget {
         '/home' : (_) => const HomeScreen(),
         '/mySalesOrders': (_) => const MySalesOrdersScreen(),
         '/mySalesInvoices': (_) => const MySalesInvoicesScreen(),
+        '/myCashBook': (_) => const MyCashBookScreen(),
       },
     );
   }

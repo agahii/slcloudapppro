@@ -5,6 +5,7 @@ import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
+import 'package:slcloudapppro/Model/cash_book.dart';
 import 'Model/SalesOrderItem.dart';
 
 class ApiException implements Exception {
@@ -358,7 +359,53 @@ class ApiService {
 
 
 
+  static Future<List<CashBookEntry>> fetchMyCashBook({
+    required String accountID,
+    required int page,
+    required int pageSize,
+    String searchKey = "",
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
 
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSLedger');
+
+    final payload = {
+      "accountID": accountID,
+      "searchKey": searchKey,
+      "pageNumber": page,
+      "pageSize": pageSize,
+    };
+
+    final res = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
+
+    final json = jsonDecode(res.body) as Map<String, dynamic>;
+    final parsed = CashBookResponse.fromJson(json);
+
+    if (parsed.responseCode != 0) {
+      // Treat non-zero as API-level error (adjust if your codes differ)
+      throw Exception(parsed.message.isEmpty ? 'API error $parsed.responseCode' : parsed.message);
+    }
+
+    return parsed.data;
+  }
 
 
 
