@@ -5,6 +5,14 @@ import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 class MySalesInvoicesScreen extends StatefulWidget {
   const MySalesInvoicesScreen({super.key});
 
+
+
+
+
+
+
+
+
   @override
   State<MySalesInvoicesScreen> createState() => _MySalesInvoicesScreenState();
 }
@@ -89,6 +97,62 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     }
   }
 
+
+
+
+  Future<void> _onReturnPressed(SalesInvoice inv) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Invoice Return'),
+        content: Text('Return Invoice #${inv.docNumber ?? "-"}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Proceed'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Option A: Navigate to a return screen (recommended)
+    Navigator.pushNamed(
+      context,
+      '/invoiceReturn',
+      arguments: {
+        'invoiceId': inv.id,
+        'docNumber': inv.docNumber,
+        'customerName': inv.customerName,
+        'docDate': inv.docDate,
+        'itemsList': inv.itemsList,
+      },
+    );
+
+    // Option B (alternative): Call an API directly here to create a return
+    // try {
+    //   await ApiService.createInvoiceReturn(invoiceId: inv.id!);
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Return created successfully')),
+    //   );
+    //   _refresh(); // reload list if needed
+    // } catch (e) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('Failed: $e')),
+    //   );
+    // }
+  }
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -98,7 +162,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
         children: [
           // Search
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -148,14 +212,14 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                   final preview = (inv.itemsList ?? '').trim();
 
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     elevation: 2,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
                       onTap: () => _showInvoiceDetails(inv),
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -176,14 +240,14 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
 
                             // Invoice details
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Title row + Bank pill on right (mirrors Area pill)
+                                  // Title row + Bank pill on right
                                   Row(
                                     children: [
                                       const Expanded(
@@ -197,8 +261,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                       ),
                                       if ((inv.bankName ?? '').isNotEmpty)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.blue,
                                             borderRadius: BorderRadius.circular(8),
@@ -215,7 +278,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                     ],
                                   ),
 
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 3),
 
                                   // Customer name
                                   Text(
@@ -228,17 +291,14 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
 
                                   const SizedBox(height: 2),
 
-                                  // Date + items preview (same icon language)
+                                  // Date + items preview
                                   Row(
                                     children: [
                                       const Icon(Icons.event, size: 14, color: Colors.grey),
                                       const SizedBox(width: 4),
                                       Text(
                                         _fmtDate(inv.docDate ?? ""),
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
                                       ),
                                       const SizedBox(width: 8),
                                       const Icon(Icons.list_alt, size: 14, color: Colors.grey),
@@ -248,21 +308,16 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                           preview.isEmpty ? '—' : preview,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 12,
-                                          ),
+                                          style: const TextStyle(color: Colors.grey, fontSize: 12),
                                         ),
                                       ),
                                     ],
                                   ),
 
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
 
-                                  // Amount chips (Cash / Bank) — visually consistent with your theme
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
+                                  // Money chips + Return button (short label, right aligned)
+                                  Row(
                                     children: [
                                       _moneyChip(
                                         label: 'Cash',
@@ -271,6 +326,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         fill: Colors.green.withOpacity(.08),
                                         text: Colors.green,
                                       ),
+                                      const SizedBox(width: 6),
                                       _moneyChip(
                                         label: 'Bank',
                                         value: inv.bankReceived,
@@ -278,6 +334,26 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         fill: Colors.indigo.withOpacity(.08),
                                         text: Colors.indigo,
                                       ),
+                                      const Spacer(), // pushes button to the far right
+                                      OutlinedButton.icon(
+                                        icon: const Icon(Icons.assignment_return, size: 16),
+                                        label: const Text('Return'),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Colors.red),
+                                          foregroundColor: Colors.red,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // match chip height
+                                          minimumSize: const Size(0, 38), // force same height as chips
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                                          textStyle: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        onPressed: () => _onReturnPressed(inv),
+                                      )
+
                                     ],
                                   ),
                                 ],
@@ -305,9 +381,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     required Color fill,
     required Color text,
   }) {
-    final str = (value == null || value.toString().trim().isEmpty)
-        ? '0'
-        : value.toString();
+    final str = (value == null || value.toString().trim().isEmpty) ? '0' : value.toString();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -325,6 +399,8 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
       ),
     );
   }
+
+
 
   void _showInvoiceDetails(SalesInvoice inv) {
     final theme = Theme.of(context);
