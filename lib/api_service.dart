@@ -82,7 +82,9 @@ class ApiService {
         await prefs.setString('cashBookID', data['cashBookID']);
         await prefs.setString('stockLocationID', data['stockLocationID']);
         await prefs.setString('employeeID', data['employeeID']);
-
+        if (data['banks'] != null) {
+          await prefs.setString('banks', jsonEncode(data['banks']));
+        }
         return {'success': true};
       } else {
         return {'success': false, 'message': json['message']};
