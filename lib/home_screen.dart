@@ -837,34 +837,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             context: context,
             builder: (ctx) {
               return AlertDialog(
+                // Shrink overall dialog margins on small screens
+                insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 title: const Text("Select Bank & Amount"),
-                content: SizedBox(
-                  width: double.maxFinite, // ✅ Let fields take max possible width
-                  child: SingleChildScrollView( // ✅ Prevent overflow when content is wider/taller
+                content: ConstrainedBox(
+                  // ✅ Hard limit the dialog’s content width
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // --- Select Bank (narrow + non-overflow) ---
                         DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(labelText: "Bank"),
-                          items: banks.map((bank) {
+                          isExpanded: true, // ✅ Prevents overflow of long names
+                          decoration: const InputDecoration(
+                            labelText: "Bank",
+                            isDense: true, // ✅ More compact height
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                          menuMaxHeight: 300, // ✅ Keep the menu from covering the whole screen
+                          items: banks.map<DropdownMenuItem<String>>((bank) {
                             return DropdownMenuItem<String>(
-                              value: bank['bankID'],
-                              child: Text(bank['bankName']),
+                              value: bank['bankID'] as String,
+                              child: Text(
+                                bank['bankName'] as String,
+                                overflow: TextOverflow.ellipsis, // ✅ Ellipsize long names
+                                softWrap: false,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
                             selectedBankId = val;
-                            selectedBankName = banks
-                                .firstWhere((b) => b['bankID'] == val)['bankName'];
+                            if (val != null) {
+                              final match = banks.firstWhere((b) => b['bankID'] == val);
+                              selectedBankName = match['bankName'] as String?;
+                            }
                           },
                         ),
+
                         const SizedBox(height: 12),
+
+                        // --- Amount ---
                         TextField(
                           controller: amountController,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(
                             labelText: "Amount",
                             border: OutlineInputBorder(),
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
                         ),
                       ],
@@ -878,13 +900,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      if (selectedBankId != null &&
-                          amountController.text.isNotEmpty) {
+                      final raw = amountController.text.trim();
+                      final amount = double.tryParse(raw) ?? 0;
+                      if (selectedBankId != null && raw.isNotEmpty && amount > 0) {
                         setStateDialog(() {
                           bankPayments.add({
                             "bankID": selectedBankId,
                             "bankName": selectedBankName,
-                            "amount": double.tryParse(amountController.text) ?? 0,
+                            "amount": amount,
                           });
                         });
                         Navigator.pop(ctx);
@@ -896,19 +919,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               );
             },
           );
-
         }
-
-
-
-
-
-
-
-
-
-
-
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
