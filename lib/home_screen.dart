@@ -1,3 +1,4 @@
+import 'dart:convert'; // ⬅️ add this
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -789,6 +790,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final TextEditingController addressController = TextEditingController();
     final TextEditingController walkInNameController = TextEditingController();
     final TextEditingController walkInMobileController = TextEditingController();
+    Future<List<Map<String, dynamic>>> _loadBanksFromPrefs() async {
+      final prefs = await SharedPreferences.getInstance();
+      final banksString = prefs.getString('banks');
+      if (banksString == null) return [];
+      final List<dynamic> banksList = jsonDecode(banksString);
+      return banksList.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
 
     showDialog(
       context: context,
@@ -796,7 +804,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Persist across StatefulBuilder rebuilds
         bool isWalkIn = isInvoice ? true : false;
         bool isSubmitting = false;
-
+        List<Map<String, dynamic>> bankPayments = [];
 
 
 
@@ -814,6 +822,93 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             return _selectedCustomer == null;
           }
         }
+
+
+
+
+
+        Future<void> _openBankPaymentPopup(void Function(void Function()) setStateDialog) async {
+          final banks = await _loadBanksFromPrefs();
+          String? selectedBankId;
+          String? selectedBankName;
+          final amountController = TextEditingController();
+
+          showDialog(
+            context: context,
+            builder: (ctx) {
+              return AlertDialog(
+                title: const Text("Select Bank & Amount"),
+                content: SizedBox(
+                  width: double.maxFinite, // ✅ Let fields take max possible width
+                  child: SingleChildScrollView( // ✅ Prevent overflow when content is wider/taller
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(labelText: "Bank"),
+                          items: banks.map((bank) {
+                            return DropdownMenuItem<String>(
+                              value: bank['bankID'],
+                              child: Text(bank['bankName']),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            selectedBankId = val;
+                            selectedBankName = banks
+                                .firstWhere((b) => b['bankID'] == val)['bankName'];
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: "Amount",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (selectedBankId != null &&
+                          amountController.text.isNotEmpty) {
+                        setStateDialog(() {
+                          bankPayments.add({
+                            "bankID": selectedBankId,
+                            "bankName": selectedBankName,
+                            "amount": double.tryParse(amountController.text) ?? 0,
+                          });
+                        });
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    child: const Text("Add"),
+                  ),
+                ],
+              );
+            },
+          );
+
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
@@ -1017,6 +1112,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 Row(
                   children: [
+
+
+                    IconButton(
+                      tooltip: 'Add bank payment',
+                      onPressed: isInvoice ? () => _openBankPaymentPopup(setStateDialog) : null,
+                      icon: const Icon(Icons.account_balance),
+                    ),
+                    const SizedBox(width: 8),
+
+
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
