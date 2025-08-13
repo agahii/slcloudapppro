@@ -1222,6 +1222,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ? (prefs.getString('walkInCustomerID') ?? '')
                                 : (_selectedCustomer?.id ?? '');
 
+
+                            // recompute totals safely
+                            double bankTotal = 0;
+                            for (final bp in bankPayments) {
+                              bankTotal += (bp['amount'] as double?) ?? 0.0;
+                            }
+                            final double cashAfterBank = (grandTotal - bankTotal).clamp(0, double.infinity);
+
+
+
+
+
+
+
+
+
                             final payload = {
                               "fK_Customer_ID": customerId,
                               "fK_Employee_ID": employeeID,
@@ -1234,7 +1250,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               // Walk-in extras (your API can accept these or ignore if not present)
                               "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
                               "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
-                              "cashReceived": grandTotal,
+                              "cashReceived": cashAfterBank,
 
                               "invoiceDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
