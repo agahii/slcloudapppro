@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
+import 'package:slcloudapppro/print_invoice.dart';
 import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
@@ -1291,21 +1292,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             };
 
                             try {
-                              final response = await ApiService.finalizeInvoice(payload);
-                              if (response.statusCode == 200 || response.statusCode == 201) {
-                                setState(() => _cart.clear());
-                                setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
-                                await Future.delayed(const Duration(seconds: 2));
-                                if (context.mounted) Navigator.pop(context);
-                              } else {
-                                final msg = ApiService.extractServerMessage(response);
+                              final resp = await ApiService.finalizeInvoice(payload);
+
+                              // 1) Check HTTP status first
+                              final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+                              if (!ok) {
+                                final msg = ApiService.extractServerMessage(resp);
                                 setStateDialog(() => dialogTitle = '❌ $msg');
+                                return;
                               }
-                            } catch (e) {
+
+                              // 2) Parse body → data
+                              Map<String, dynamic> invData;
+                              try {
+                                final body = jsonDecode(resp.body);
+                                final data = body['data'];
+                                if (data is Map) {
+                                  invData = Map<String, dynamic>.from(data as Map);
+                                } else {
+                                  // Data missing or wrong shape
+                                  setStateDialog(() => dialogTitle = '⚠️ Invalid server response (no data).');
+                                  return;
+                                }
+                              } catch (e) {
+                                setStateDialog(() => dialogTitle = '⚠️ Could not read invoice from server.');
+                                return;
+                              }
+
+                              // 3) Success UI updates
+                              setState(() => _cart.clear());
+                              setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
+
+                              // 4) Close the summary dialog
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+
+                              // 5) Go to print/preview screen
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => InvoicePrintPage(inv: invData),
+                                ),
+                              );
+                            } catch (e, st) {
                               setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                              debugPrint('finalizeInvoice error: $e\n$st');
                             } finally {
                               setStateDialog(() => isSubmitting = false);
                             }
+
                           }
                         },
                         child: isSubmitting
