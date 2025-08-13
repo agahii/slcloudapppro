@@ -365,6 +365,7 @@ class ApiService {
     required int pageSize,
     String searchKey = "",
   }) async {
+
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
     }
@@ -374,37 +375,41 @@ class ApiService {
     if (token == null) {
       throw Exception('Token not found. Please login again.');
     }
-    final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSLedger');
 
-    final payload = {
+    // Same pattern as fetchMySalesOrders
+    final uri = Uri.parse("$baseUrl/api/Ledger/GetPOSLedger"); // <-- confirm endpoint
+
+    final body = {
       "accountID": accountID,
-      "searchKey": searchKey,
       "pageNumber": page,
       "pageSize": pageSize,
+      "searchKey": searchKey,
     };
 
-    final res = await http.post(
+    final resp = await http.post(
       uri,
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(payload),
+      body: jsonEncode(body),
     );
 
-    if (res.statusCode != 200) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      final decoded = jsonDecode(resp.body);
+
+      // Adjust to your API shape (prefers 'data', but falls back if backend changes)
+      final List list = (decoded['data'] ??
+          decoded['ledger'] ??
+          decoded['entries'] ??
+          decoded) as List;
+
+      return list
+          .map((e) => CashBookEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception("Server ${resp.statusCode}: ${resp.body}");
     }
-
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final parsed = CashBookResponse.fromJson(json);
-
-    if (parsed.responseCode != 0) {
-      // Treat non-zero as API-level error (adjust if your codes differ)
-      throw Exception(parsed.message.isEmpty ? 'API error $parsed.responseCode' : parsed.message);
-    }
-
-    return parsed.data;
   }
 
 
