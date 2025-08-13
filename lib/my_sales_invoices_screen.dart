@@ -148,11 +148,6 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     // }
   }
 
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -261,6 +256,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                       ),
                                       if ((inv.bankName ?? '').isNotEmpty)
                                         Container(
+                                          constraints: const BoxConstraints(maxWidth: 150), // limit width if needed
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
                                             color: Colors.blue,
@@ -273,8 +269,12 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                             ),
+                                            maxLines: 1, // only one line
+                                            overflow: TextOverflow.ellipsis, // show "..."
+                                            softWrap: false,
                                           ),
                                         ),
+
                                     ],
                                   ),
 
@@ -519,6 +519,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                   const Spacer(),
                   if ((inv.bankName ?? '').isNotEmpty)
                     Container(
+                      constraints: const BoxConstraints(maxWidth: 150), // limit width
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.blue,
@@ -531,8 +532,12 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
+                        maxLines: 1,                  // keep in one line
+                        overflow: TextOverflow.ellipsis, // show "..."
+                        softWrap: false,              // prevent wrap
                       ),
                     ),
+
                 ],
               ),
 
