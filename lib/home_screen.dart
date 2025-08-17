@@ -1126,12 +1126,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   children: [
 
 
-                    IconButton(
-                      tooltip: 'Add bank payment',
-                      onPressed: isInvoice ? () => _openBankPaymentPopup(setStateDialog) : null,
-                      icon: const Icon(Icons.account_balance),
-                    ),
-                    const SizedBox(width: 8),
+                    if (isInvoice) ...[
+                      IconButton(
+                        tooltip: 'Add bank payment',
+                        onPressed: () => _openBankPaymentPopup(setStateDialog),
+                        icon: const Icon(Icons.account_balance),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
 
 
                     Expanded(
