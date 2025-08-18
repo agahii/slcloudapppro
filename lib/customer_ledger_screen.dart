@@ -364,15 +364,25 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                             const SizedBox(height: 8),
 
                             // Amounts
+                            // Amounts
                             Row(
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Debit', style: TextStyle(color: Colors.red.shade700)),
-                                      Text(_money(row.debit),
-                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        'Debit',
+                                        style: TextStyle(color: Colors.red.shade700),
+                                      ),
+                                      Text(
+                                        _money(row.debit),
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black, // <-- make debit value black
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -380,14 +390,24 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      Text('Credit', style: TextStyle(color: Colors.green.shade700)),
-                                      Text(_money(row.credit),
-                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                                      Text(
+                                        'Credit',
+                                        style: TextStyle(color: Colors.green.shade700),
+                                      ),
+                                      Text(
+                                        _money(row.credit),
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black, // <-- make credit value black
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
+
 
                             const SizedBox(height: 6),
                             const Divider(height: 12),
