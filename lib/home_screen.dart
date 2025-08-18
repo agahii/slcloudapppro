@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
   String _salesOrderMgrId = '';
+  String _stockLocationId = '';
   String _invoiceMgrId = '';
   ManagerSource? _managerSource; // Currently selected manager source
   bool _showManagerSwitch = false;
@@ -40,8 +41,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int currentPage = 1;
   bool hasMore = true;
   final int pageSize = 20;
-  final String managerIDSalesOrder = '59ed026d-1764-4616-9387-6ab6676b6667';
-  final String managerIDSalesInvoice = '67e98001-1084-48ad-ba98-7d48c440e972';
+  final String managerIDSalesOrder = '';
+  final String managerIDSalesInvoice = '';
   bool isFabExpanded = false;
 
   Future<void> _showAddToCartSheet(Product product) async {
@@ -437,6 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final prefs = await SharedPreferences.getInstance();
     _salesOrderMgrId = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
     _invoiceMgrId    = prefs.getString('invoiceManagerID')?.trim() ?? '';
+    _stockLocationId = prefs.getString('stockLocationID')?.trim() ?? '';
 
     final hasSO  = _salesOrderMgrId.isNotEmpty;
     final hasInv = _invoiceMgrId.isNotEmpty;
@@ -502,14 +504,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (_managerSource == ManagerSource.salesOrder) {
         newProducts = await ApiService.fetchProductsFromOrderManager(
           managerID: activeId,
+          stockLocationID: _stockLocationId,
           page: currentPage,
           pageSize: pageSize,
           searchKey: searchKey,
+
         );
       }
       if (_managerSource == ManagerSource.invoice) {
         newProducts = await ApiService.fetchProductsFromInvoiceManager(
           managerID: activeId,
+          stockLocationID: _stockLocationId,
           page: currentPage,
           pageSize: pageSize,
           searchKey: searchKey,

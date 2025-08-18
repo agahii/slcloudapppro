@@ -160,6 +160,8 @@ class ApiService {
   }
   static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
+    required String stockLocationID,
+
     int page = 1,
     int pageSize = 20,
     String searchKey = "",
@@ -174,13 +176,14 @@ class ApiService {
     }
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetSKUPOS');
     final payload = {
+
       "managerID": managerID,
       "searchKey": searchKey,
       "barCode": "",
       "categoryID": "",
       "pageNumber": page,
       "pageSize": pageSize,
-      "StockLocationID": ""
+      "stockLocationID": stockLocationID
     };
 
 
@@ -207,6 +210,7 @@ class ApiService {
 
   static Future<List<Product>> fetchProductsFromInvoiceManager({
     required String managerID,
+    required String stockLocationID,
     int page = 1,
     int pageSize = 20,
     String searchKey = "",
@@ -227,7 +231,7 @@ class ApiService {
       "categoryID": "",
       "pageNumber": page,
       "pageSize": pageSize,
-      "StockLocationID": ""
+      "stockLocationID": stockLocationID
     };
 
 
