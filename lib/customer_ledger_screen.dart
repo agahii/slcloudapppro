@@ -17,7 +17,7 @@ class CustomerLedgerScreen extends StatefulWidget {
 
 class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
   final ScrollController _scroll = ScrollController();
-  final String managerIDSalesOrder = '';
+  String managerIDSalesOrder = '';
   // filters
   Customer? _selectedCustomer;
   DateTime? _fromDate;
@@ -40,8 +40,22 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    _loadManagerID();
     _restoreLastCustomer();
   }
+
+
+
+  Future<void> _loadManagerID() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      managerIDSalesOrder = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
+    });
+  }
+
+
+
+
 
   Future<void> _restoreLastCustomer() async {
     // Optional: restore last selected customer
@@ -109,15 +123,14 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
   }
 
   Future<List<Customer>> _searchCustomers(String filter) async {
-    // USE your existing async dropdown source (same as HomeScreen).
-    // If you already have ApiService.getCustomers(searchKey), call it here.
-    // Example using your earlier endpoint shape:
+    final q = (filter).trim();
+
+    // block calls until we have managerID + enough chars
+    if (managerIDSalesOrder.isEmpty) return [];
+    if (q.length < 3) return [];
+
     try {
-      // Replace with your actual method:
-      // return ApiService.fetchCustomers(searchKey: filter);
-      // Below is a placeholder using the pattern you shared earlier:
-      final list = await ApiService.fetchCustomers(managerIDSalesOrder,filter);
-      return list;
+      return await ApiService.fetchCustomers(managerIDSalesOrder, q);
     } catch (e) {
       debugPrint('Customer search failed: $e');
       return [];
@@ -197,12 +210,33 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
               children: [
                 // Customer
                 DropdownSearch<Customer>(
+                  enabled: managerIDSalesOrder.isNotEmpty,
                   asyncItems: (filter) => _searchCustomers(filter ?? ''),
                   itemAsString: (c) => c.customerName,
                   selectedItem: _selectedCustomer,
-                  popupProps: const PopupProps.menu(
+                  popupProps: PopupProps.menu(
                     showSearchBox: true,
-                    searchDelay: Duration(milliseconds: 250),
+                    isFilterOnline: true,
+                    searchDelay: const Duration(milliseconds: 800),
+                    searchFieldProps: TextFieldProps(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Search customers...',
+                      ),
+                    ),
+                    emptyBuilder: (ctx, str) {
+                      final typed = (str ?? '').trim();
+                      if (typed.length < 3) {
+                        return const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Text('Type at least 3 characters to search...'),
+                        );
+                      }
+                      return const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text('No customers found'),
+                      );
+                    },
                   ),
                   dropdownDecoratorProps: const DropDownDecoratorProps(
                     dropdownSearchDecoration: InputDecoration(
@@ -213,6 +247,7 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                   ),
                   onChanged: (val) => setState(() => _selectedCustomer = val),
                 ),
+
                 const SizedBox(height: 8),
 
                 // Dates row
@@ -228,7 +263,8 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                             border: OutlineInputBorder(),
                             isDense: true,
                           ),
-                          child: Text(_fromDate == null ? 'Select date' : _fmtDate(_fromDate)),
+                          child: Text(
+                              _fromDate == null ? 'Select date' : _fmtDate(_fromDate)),
                         ),
                       ),
                     ),
@@ -243,21 +279,29 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                             border: OutlineInputBorder(),
                             isDense: true,
                           ),
-                          child: Text(_toDate == null ? 'Select date' : _fmtDate(_toDate)),
+                          child: Text(
+                              _toDate == null ? 'Select date' : _fmtDate(_toDate)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: allowLoad ? _onLoadPressed : null,
-                      icon: const Icon(Icons.download),
-                      label: const Text('Load'),
-                    ),
                   ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Load button on separate line
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: allowLoad ? _onLoadPressed : null,
+                    icon: const Icon(Icons.download),
+                    label: const Text('Load'),
+                  ),
                 ),
               ],
             ),
           ),
+
 
           const Divider(height: 1),
 

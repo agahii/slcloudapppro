@@ -41,8 +41,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int currentPage = 1;
   bool hasMore = true;
   final int pageSize = 20;
-  final String managerIDSalesOrder = '';
-  final String managerIDSalesInvoice = '';
+  // final String managerIDSalesOrder = '';
+  // final String managerIDSalesInvoice = '';
   bool isFabExpanded = false;
 
   Future<void> _showAddToCartSheet(Product product) async {
@@ -1015,7 +1015,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           asyncItems: (String filter) async {
                             if (filter.length < 3) return [];
-                            return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
+                            return await ApiService.fetchCustomers(_salesOrderMgrId, filter);
                           },
                           itemAsString: (Customer u) => u.customerName,
                           selectedItem: _selectedCustomer,
@@ -1052,7 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         asyncItems: (String filter) async {
                           if (filter.length < 3) return [];
-                          return await ApiService.fetchCustomers(managerIDSalesOrder, filter);
+                          return await ApiService.fetchCustomers(_salesOrderMgrId, filter);
                         },
                         itemAsString: (Customer u) => u.customerName,
                         selectedItem: _selectedCustomer,
