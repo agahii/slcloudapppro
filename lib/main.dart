@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
@@ -114,6 +115,7 @@ class MyApp extends StatelessWidget {
         '/mySalesInvoices': (_) => const MySalesInvoicesScreen(),
         '/myCashBook': (_) => const MyCashBookScreen(),
         '/customerLedger': (_) => const CustomerLedgerScreen(),
+        '/collections': (context) => const CollectionScreen(),
       },
     );
   }

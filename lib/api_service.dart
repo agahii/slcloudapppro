@@ -9,6 +9,7 @@ import 'package:slcloudapppro/Model/cash_book.dart';
 import 'Model/SalesOrderItem.dart';
 import 'Model/chart_account.dart';
 import 'Model/ledger_entry.dart';
+import 'collection_screen.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -492,20 +493,14 @@ class ApiService {
 
 
 
-  Future<List<ChartAccount>> getProvisionalReceiptCreditAccounts({
+  static Future<List<ChartAccount>> getProvisionalReceiptCreditAccounts({
     required String managerID,
     String searchKey = '',
-    String type = 'd', // default per spec
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final baseUrl =
-        prefs.getString('baseUrl') ?? prefs.getString('base_url') ?? '';
+
     final token =
         prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
-
-    if (baseUrl.isEmpty) {
-      throw Exception('Base URL not configured in SharedPreferences');
-    }
 
     final uri = Uri.parse(
         '$baseUrl/api/VoucherMaster/GetProvisionalReceiptCreditAccounts');
@@ -518,7 +513,7 @@ class ApiService {
 
     final body = jsonEncode({
       'managerID': managerID,
-      'type': type,       // always "d" unless you override
+      'type': "d", // always "d"
       'searchKey': searchKey,
     });
 
@@ -530,19 +525,41 @@ class ApiService {
     }
 
     final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-    final listJson = (decoded['data']?['chartOfAccountsDropDownVM'] as List?) ?? [];
+    final listJson =
+        (decoded['data']?['chartOfAccountsDropDownVM'] as List?) ?? [];
 
     return listJson
         .whereType<Map<String, dynamic>>()
-        .map(ChartAccount.fromJson)
+        .map((e) => ChartAccount.fromJson(e))
         .toList();
   }
 
 
 
 
+  static Future<List<DiscountPolicy>> getDiscountPolicyPOS() async {
+    final url = Uri.parse('$baseUrl/api/DiscountPolicy/GetDiscountPolicyPOS');
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
 
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
 
+    final res = await http.post(url,headers: headers, body: jsonEncode({}));
+    if (res.statusCode == 200) {
+      final json = jsonDecode(res.body);
+      final list = (json['data'] ?? []) as List;
+      return list
+          .map((e) => DiscountPolicy.fromMap(Map<String, dynamic>.from(e)))
+          .toList();
+    } else {
+      throw Exception('Failed to load discount policies (${res.statusCode})');
+    }
+  }
 
 
 

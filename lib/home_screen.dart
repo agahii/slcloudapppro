@@ -1444,6 +1444,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
 
+            ListTile(
+              leading: Icon(Icons.payments_outlined, color: theme.primaryColor),
+              title: Text(
+                'Collections',
+                style: TextStyle(color: theme.primaryColor),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/collections');
+              },
+            ),
 
 
 
