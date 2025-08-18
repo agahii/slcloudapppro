@@ -431,6 +431,7 @@ class ApiService {
 
 
   static Future<List<LedgerEntry>> fetchCustomerLedger({
+
     required String customerID,
     required DateTime fromDate,
     required DateTime toDate,
@@ -439,25 +440,21 @@ class ApiService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final managerID = prefs.getString('managerID');
+
 
     if (token == null) {
       throw Exception('Token not found. Please login again.');
     }
-    if (managerID == null) {
-      throw Exception('Manager ID not found.');
-    }
+
 
     // TODO: adjust endpoint path if your backend differs
-    final uri = Uri.parse('$baseUrl/api/AccountLedger/GetCustomerLedger');
+    final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSLedger');
 
     final body = {
-      'managerID': managerID,
-      'customerID': customerID,
-      // 'fromDate': _fmtApiDate(fromDate),
-      // 'toDate': _fmtApiDate(toDate),
-      'pageNumber': page,
-      'pageSize': pageSize,
+      "accountID": customerID,
+      "pageNumber": page,
+      "pageSize": pageSize,
+      "searchKey": "",
     };
 
     final resp = await http.post(
