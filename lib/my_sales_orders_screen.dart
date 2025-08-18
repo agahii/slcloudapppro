@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
@@ -13,6 +15,7 @@ class MySalesOrdersScreen extends StatefulWidget {
 class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
+  Timer? _debounce;
 
   // paging
   bool isLoading = false;
@@ -94,6 +97,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -129,6 +133,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
+                    _debounce?.cancel();
                     setState(() => searchKey = "");
                     _fetchOrders(initial: true);
                   },
@@ -136,6 +141,13 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 800), () {
+                  setState(() => searchKey = value.trim());
+                  _fetchOrders(initial: true);
+                });
+              },
               textInputAction: TextInputAction.search,
               onSubmitted: (_) {
                 setState(() => searchKey = _searchController.text.trim());
@@ -143,6 +155,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
               },
             ),
           ),
+
 
           // Filters (kept for future; visually helpful)
           Padding(
@@ -475,6 +488,7 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
       },
     );
   }
+
 
 
 

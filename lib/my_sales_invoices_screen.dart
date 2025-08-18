@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
@@ -20,7 +22,7 @@ class MySalesInvoicesScreen extends StatefulWidget {
 class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
-
+  Timer? _debounce;
   bool isLoading = false;
   bool hasMore = true;
   int currentPage = 1;
@@ -169,6 +171,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
+                    _debounce?.cancel();
                     setState(() => searchKey = "");
                     _fetchInvoices(initial: true);
                   },
@@ -176,13 +179,19 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) {
-                setState(() => searchKey = _searchController.text.trim());
-                _fetchInvoices(initial: true);
+              onChanged: (value) {
+                // cancel old timer
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+                // wait 800ms after user stops typing
+                _debounce = Timer(const Duration(milliseconds: 800), () {
+                  setState(() => searchKey = value.trim());
+                  _fetchInvoices(initial: true);
+                });
               },
             ),
           ),
+
 
           const Divider(height: 1),
 
@@ -401,7 +410,13 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     );
   }
 
-
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _showInvoiceDetails(SalesInvoice inv) {
     final theme = Theme.of(context);
