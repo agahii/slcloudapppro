@@ -83,6 +83,11 @@ class ApiService {
         await prefs.setString('cashBookID', data['cashBookID']);
         await prefs.setString('stockLocationID', data['stockLocationID']);
         await prefs.setString('employeeID', data['employeeID']);
+        await prefs.setString('provisionalReceiptManagerID', data['provisionalReceiptManagerID']);
+
+        if (data['provisionalReceiptDebitAccountsVM'] != null) {
+          await prefs.setString('provisionalReceiptDebitAccountsVM', jsonEncode(data['provisionalReceiptDebitAccountsVM']));
+        }
         if (data['banks'] != null) {
           await prefs.setString('banks', jsonEncode(data['banks']));
         }
