@@ -3,6 +3,7 @@ class LedgerEntry {
   final String? docType;
   final String? narration;
   final DateTime? docDate;
+  final DateTime? datePosting;
   final double debit;
   final double credit;
   final double balance; // if backend returns running balance
@@ -12,6 +13,7 @@ class LedgerEntry {
     required this.docType,
     required this.narration,
     required this.docDate,
+    required this.datePosting,
     required this.debit,
     required this.credit,
     required this.balance,
@@ -35,6 +37,7 @@ class LedgerEntry {
       docType: json['docType']?.toString(),
       narration: json['narration']?.toString(),
       docDate: _date(json['docDate']),
+      datePosting: _date(json['datePosting']),
       debit: _num(json['debit']),
       credit: _num(json['credit']),
       balance: _num(json['balance']),

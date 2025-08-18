@@ -351,6 +351,11 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                                   '${row.docType ?? ''} ${row.docNo ?? ''}'.trim(),
                                   style: const TextStyle(color: Colors.black54),
                                 ),
+                                if (row.datePosting != null)
+                                  Text(
+                                    'Posting: ${_fmtDate(row.datePosting)}',
+                                    style: const TextStyle(color: Colors.black87, fontSize: 13),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 6),
