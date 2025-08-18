@@ -448,7 +448,7 @@ class ApiService {
 
 
     // TODO: adjust endpoint path if your backend differs
-    final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSLedger');
+    final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSCustomerLedger');
 
     final body = {
       "accountID": customerID,
