@@ -7,6 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
 import 'Model/SalesOrderItem.dart';
+import 'Model/ledger_entry.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -417,6 +418,85 @@ class ApiService {
       throw Exception("Server ${resp.statusCode}: ${resp.body}");
     }
   }
+
+
+
+  String _fmtApiDate(DateTime d) {
+    final two = (int n) => n.toString().padLeft(2, '0');
+    return '${d.year}-${two(d.month)}-${two(d.day)}';
+  }
+
+
+
+
+
+  static Future<List<LedgerEntry>> fetchCustomerLedger({
+    required String customerID,
+    required DateTime fromDate,
+    required DateTime toDate,
+    required int page,
+    required int pageSize,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final managerID = prefs.getString('managerID');
+
+    if (token == null) {
+      throw Exception('Token not found. Please login again.');
+    }
+    if (managerID == null) {
+      throw Exception('Manager ID not found.');
+    }
+
+    // TODO: adjust endpoint path if your backend differs
+    final uri = Uri.parse('$baseUrl/api/AccountLedger/GetCustomerLedger');
+
+    final body = {
+      'managerID': managerID,
+      'customerID': customerID,
+      // 'fromDate': _fmtApiDate(fromDate),
+      // 'toDate': _fmtApiDate(toDate),
+      'pageNumber': page,
+      'pageSize': pageSize,
+    };
+
+    final resp = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (resp.statusCode != 200) {
+      throw Exception('Ledger fetch failed (${resp.statusCode}): ${resp.body}');
+    }
+
+    final decoded = jsonDecode(resp.body);
+    // Adjust to your API shape. Common shapes:
+    // 1) { data: { items: [...] } }
+    // 2) { data: [...] }
+    // 3) [ ... ]
+    final dynamic container = decoded['data'] ?? decoded;
+    final List list =
+    (container is Map && container['items'] is List) ? container['items'] :
+    (container is List) ? container :
+    (container is Map && container['ledger'] is List) ? container['ledger'] :
+    <dynamic>[];
+
+    return list.map((e) => LedgerEntry.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+
+
+
+
+
+
+
+
+
 
 
 
