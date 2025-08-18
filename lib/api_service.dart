@@ -7,6 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
 import 'Model/SalesOrderItem.dart';
+import 'Model/chart_account.dart';
 import 'Model/ledger_entry.dart';
 
 class ApiException implements Exception {
@@ -491,7 +492,51 @@ class ApiService {
 
 
 
+  Future<List<ChartAccount>> getProvisionalReceiptCreditAccounts({
+    required String managerID,
+    String searchKey = '',
+    String type = 'd', // default per spec
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final baseUrl =
+        prefs.getString('baseUrl') ?? prefs.getString('base_url') ?? '';
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
 
+    if (baseUrl.isEmpty) {
+      throw Exception('Base URL not configured in SharedPreferences');
+    }
+
+    final uri = Uri.parse(
+        '$baseUrl/api/VoucherMaster/GetProvisionalReceiptCreditAccounts');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
+    final body = jsonEncode({
+      'managerID': managerID,
+      'type': type,       // always "d" unless you override
+      'searchKey': searchKey,
+    });
+
+    final res = await http.post(uri, headers: headers, body: body);
+
+    if (res.statusCode != 200) {
+      throw Exception(
+          'GetProvisionalReceiptCreditAccounts failed (${res.statusCode}): ${res.body}');
+    }
+
+    final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+    final listJson = (decoded['data']?['chartOfAccountsDropDownVM'] as List?) ?? [];
+
+    return listJson
+        .whereType<Map<String, dynamic>>()
+        .map(ChartAccount.fromJson)
+        .toList();
+  }
 
 
 
