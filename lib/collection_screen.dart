@@ -21,11 +21,11 @@ class BankAccount {
 
 class DiscountPolicy {
   final String id;
-  final String policyName;
-  DiscountPolicy({required this.id, required this.policyName});
+  final String discountPolicyName;
+  DiscountPolicy({required this.id, required this.discountPolicyName});
 
   factory DiscountPolicy.fromMap(Map<String, dynamic> m) =>
-      DiscountPolicy(id: m['id'] ?? '', policyName: m['policyName'] ?? '');
+      DiscountPolicy(id: m['id'] ?? '', discountPolicyName: m['discountPolicyName'] ?? '');
 }
 
 enum PaymentMode { cash, bankCheque }
@@ -218,7 +218,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 Expanded(
                   child: DropdownSearch<DiscountPolicy>(
                     items: _policies,
-                    itemAsString: (p) => p.policyName,
+                    itemAsString: (p) => p.discountPolicyName,
                     selectedItem: row.policy,
                     popupProps: const PopupProps.menu(showSearchBox: true),
                     dropdownDecoratorProps: const DropDownDecoratorProps(
