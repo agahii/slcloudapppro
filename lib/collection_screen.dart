@@ -8,7 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Model/chart_account.dart';
 import 'api_service.dart';
 
-// --- Local models ---
+// ──────────────────────────────────────────────────────────────────────────────
+// Local models
+// ──────────────────────────────────────────────────────────────────────────────
 
 class BankAccount {
   final String id;
@@ -24,19 +26,25 @@ class DiscountPolicy {
   final String discountPolicyName;
   DiscountPolicy({required this.id, required this.discountPolicyName});
 
-  factory DiscountPolicy.fromMap(Map<String, dynamic> m) =>
-      DiscountPolicy(id: m['id'] ?? '', discountPolicyName: m['discountPolicyName'] ?? '');
+  factory DiscountPolicy.fromMap(Map<String, dynamic> m) => DiscountPolicy(
+    id: m['id'] ?? '',
+    discountPolicyName: m['discountPolicyName'] ?? '',
+  );
 }
 
 enum PaymentMode { cash, bankCheque }
 
 class CollectionTxn {
-  ChartAccount? customer; // Using your ChartAccount model
+  ChartAccount? customer;
   DiscountPolicy? policy;
   double? amount;
 
   CollectionTxn({this.customer, this.policy, this.amount});
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Screen
+// ──────────────────────────────────────────────────────────────────────────────
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
@@ -45,7 +53,8 @@ class CollectionScreen extends StatefulWidget {
   State<CollectionScreen> createState() => _CollectionScreenState();
 }
 
-class _CollectionScreenState extends State<CollectionScreen> {
+class _CollectionScreenState extends State<CollectionScreen>
+    with TickerProviderStateMixin {
   // Payment mode + bank
   PaymentMode _mode = PaymentMode.bankCheque; // bank first on screen
   BankAccount? _selectedBank;
@@ -73,16 +82,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
     _loadPolicies();
   }
 
+  // ── Data loaders ────────────────────────────────────────────────────────────
+
   Future<void> _loadIdentity() async {
     final prefs = await SharedPreferences.getInstance();
-    // read provisionalReceiptManagerID, fallback to ''
     final mid = prefs.getString('provisionalReceiptManagerID') ?? '';
     setState(() => _managerID = mid);
   }
 
   Future<void> _loadBanksFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    // Expecting a JSON-encoded list under the key "provisionalReceiptDebitAccountsVM"
     final raw = prefs.getString('provisionalReceiptDebitAccountsVM');
     if (raw == null) {
       setState(() => _banks = []);
@@ -108,11 +117,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
       final list = await ApiService.getDiscountPolicyPOS();
       setState(() => _policies = list);
     } catch (_) {
-      // ignore and show empty
+      // ignore
     } finally {
       setState(() => _loadingPolicies = false);
     }
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _addRow() => setState(() => _rows.add(CollectionTxn()));
   void _removeRow(int i) {
@@ -125,11 +136,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
       _rows.fold(0.0, (sum, r) => sum + ((r.amount ?? 0.0)));
 
   bool _validate() {
-    if (_mode == PaymentMode.bankCheque) {
-      if (_selectedBank == null) {
-        _showSnack('Please select a bank for Bank Cheque mode.');
-        return false;
-      }
+    if (_mode == PaymentMode.bankCheque && _selectedBank == null) {
+      _showSnack('Please select a bank for Bank Cheque mode.');
+      return false;
     }
     for (int i = 0; i < _rows.length; i++) {
       final r = _rows[i];
@@ -150,67 +159,174 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  // Build one transaction row (customer, policy, amount, delete)
+  // ── UI pieces ───────────────────────────────────────────────────────────────
+
+  Widget _sectionCard({
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(14),
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+        ],
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.3)),
+      ),
+      padding: padding,
+      child: child,
+    );
+  }
+
+  Widget _chipToggle({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    IconData? icon,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? cs.primary.withOpacity(.10) : cs.surface,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: selected ? cs.primary : cs.outlineVariant.withOpacity(.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null)
+              Icon(icon, size: 18, color: selected ? cs.primary : cs.onSurface),
+            if (icon != null) const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: selected ? cs.primary : cs.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header(String title, {IconData? icon}) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        if (icon != null)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: cs.primary, size: 18),
+          ),
+        if (icon != null) const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  Widget _divider() => const SizedBox(height: 10);
+
+  // One transaction row
   Widget _buildTxnRow(int index) {
     final row = _rows[index];
+    final cs = Theme.of(context).colorScheme;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 150),
+      alignment: Alignment.topCenter,
+      child: _sectionCard(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Customer
+            // Row header with index + remove
             Row(
               children: [
-                Expanded(
-                  child: DropdownSearch<ChartAccount>(
-                    // 👇 Same pattern as in your HomeScreen:
-                    asyncItems: (String filter) async {
-                      if (_managerID.isEmpty) return <ChartAccount>[];
-
-                      final q = filter.trim();
-                      if (q.length < 3) return <ChartAccount>[];
-
-                      return await ApiService.getProvisionalReceiptCreditAccounts(
-                        managerID: _managerID,
-                        searchKey: q,
-                      );
-                    },
-                    itemAsString: (c) => c.accountName,
-                    selectedItem: row.customer,
-                    popupProps: PopupProps.menu(
-                      showSearchBox: true,
-                      isFilterOnline: true,
-                      searchFieldProps: const TextFieldProps(
-                        decoration: InputDecoration(
-                          hintText: "🔍 Search customer...",
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    dropdownDecoratorProps: const DropDownDecoratorProps(
-                      dropdownSearchDecoration: InputDecoration(
-                        labelText: 'Customer',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    onChanged: (c) => setState(() => row.customer = c),
+                Text(
+                  'Transaction ${index + 1}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface.withOpacity(.9),
                   ),
                 ),
-                const SizedBox(width: 10),
-                // Delete
-                IconButton(
+                const Spacer(),
+                IconButton.filledTonal(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red.withOpacity(.08),
+                  ),
                   onPressed: _rows.length > 1 ? () => _removeRow(index) : null,
                   icon: const Icon(Icons.delete_outline),
+                  color: Colors.redAccent,
                   tooltip: 'Remove',
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+
+            // Customer
+            DropdownSearch<ChartAccount>(
+              asyncItems: (String filter) async {
+                if (_managerID.isEmpty) return <ChartAccount>[];
+                final q = filter.trim();
+                if (q.length < 3) return <ChartAccount>[];
+
+                return await ApiService.getProvisionalReceiptCreditAccounts(
+                  managerID: _managerID,
+                  searchKey: q,
+                );
+              },
+              itemAsString: (c) => c.accountName,
+              selectedItem: row.customer,
+              popupProps: PopupProps.menu(
+                showSearchBox: true,
+                isFilterOnline: true,
+                searchFieldProps: const TextFieldProps(
+                  decoration: InputDecoration(
+                    hintText: "🔍 Search customer...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              dropdownDecoratorProps: const DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  labelText: 'Customer',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              onChanged: (c) => setState(() => row.customer = c),
+            ),
+
+            _divider(),
 
             // Policy + Amount
             Row(
@@ -225,15 +341,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       dropdownSearchDecoration: InputDecoration(
                         labelText: 'Policy',
                         border: OutlineInputBorder(),
+                        isDense: true,
                       ),
                     ),
                     onChanged: (p) => setState(() => row.policy = p),
                     enabled: !_loadingPolicies,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 SizedBox(
-                  width: 150,
+                  width: 170,
                   child: TextFormField(
                     initialValue: row.amount?.toStringAsFixed(2) ?? '',
                     keyboardType:
@@ -242,15 +359,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       FilteringTextInputFormatter.allow(
                           RegExp(r'^\d*\.?\d{0,2}')),
                     ],
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Amount',
                       hintText: '0.00',
-                      border: OutlineInputBorder(),
+                      prefixText: 'Rs. ',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
                     ),
-                    onChanged: (v) {
-                      final parsed = double.tryParse(v);
-                      setState(() => row.amount = parsed);
-                    },
+                    onChanged: (v) =>
+                        setState(() => row.amount = double.tryParse(v)),
                   ),
                 ),
               ],
@@ -261,14 +378,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
     );
   }
 
-  // Optional: build a payload preview for submit
+  // Submit payload preview (same functionality)
   Map<String, dynamic> _buildPayload() {
     return {
       "paymentMode": _mode == PaymentMode.cash ? "CASH" : "BANK_CHEQUE",
       "bankId": _mode == PaymentMode.bankCheque ? _selectedBank?.id : null,
       "transactions": _rows
           .map((r) => {
-        "customerId": r.customer?.id, // ChartAccount.id
+        "customerId": r.customer?.id,
         "policyId": r.policy?.id,
         "amount": r.amount,
       })
@@ -283,13 +400,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
     setState(() => _submitting = true);
     try {
       final payload = _buildPayload();
-      // TODO: post to your final endpoint when ready.
-      // await ApiService.submitCollections(payload);
-
       if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Payload Preview'),
           content: SingleChildScrollView(
             child: Text(const JsonEncoder.withIndent('  ').convert(payload)),
@@ -298,7 +414,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Close'),
-            )
+            ),
           ],
         ),
       );
@@ -307,90 +423,186 @@ class _CollectionScreenState extends State<CollectionScreen> {
     }
   }
 
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isCheque = _mode == PaymentMode.bankCheque;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Collections')),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
+      backgroundColor: cs.surfaceVariant.withOpacity(.15),
+      appBar: AppBar(
+        titleSpacing: 0,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text('Collections',
+            style: TextStyle(fontWeight: FontWeight.w800)),
+      ),
+      body: SafeArea(
         child: Column(
           children: [
-            // Payment mode
-            Row(
-              children: [
-                const Text('Payment Mode:'),
-                const SizedBox(width: 10),
-                ChoiceChip(
-                  label: const Text('Cash'),
-                  selected: _mode == PaymentMode.cash,
-                  onSelected: (_) => setState(() => _mode = PaymentMode.cash),
-                ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: const Text('Bank Cheque'),
-                  selected: _mode == PaymentMode.bankCheque,
-                  onSelected: (_) =>
-                      setState(() => _mode = PaymentMode.bankCheque),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Bank dropdown (first on screen; disabled if cash)
-            DropdownSearch<BankAccount>(
-              items: _banks,
-              itemAsString: (b) => b.accountName,
-              selectedItem: _selectedBank,
-              dropdownDecoratorProps: const DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Bank',
-                  border: OutlineInputBorder(),
+            // Top section: payment mode + bank
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: _sectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _header('Payment', icon: Icons.payments_rounded),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _chipToggle(
+                          label: 'Cash',
+                          icon: Icons.money_rounded,
+                          selected: _mode == PaymentMode.cash,
+                          onTap: () => setState(() => _mode = PaymentMode.cash),
+                        ),
+                        _chipToggle(
+                          label: 'Bank Cheque',
+                          icon: Icons.account_balance_rounded,
+                          selected: _mode == PaymentMode.bankCheque,
+                          onTap: () =>
+                              setState(() => _mode = PaymentMode.bankCheque),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Opacity(
+                      opacity: isCheque ? 1 : .55,
+                      child: AbsorbPointer(
+                        absorbing: !isCheque,
+                        child: DropdownSearch<BankAccount>(
+                          items: _banks,
+                          itemAsString: (b) => b.accountName,
+                          selectedItem: _selectedBank,
+                          popupProps:
+                          const PopupProps.menu(showSearchBox: true),
+                          dropdownDecoratorProps:
+                          const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: 'Bank',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                          ),
+                          onChanged: (b) => setState(() => _selectedBank = b),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              popupProps: const PopupProps.menu(showSearchBox: true),
-              onChanged:
-              isCheque ? (b) => setState(() => _selectedBank = b) : null,
-              enabled: isCheque,
             ),
 
-            const SizedBox(height: 12),
-
-            // Transactions
+            // Transactions list
             Expanded(
-              child: ListView.builder(
-                itemCount: _rows.length,
-                itemBuilder: (_, i) => _buildTxnRow(i),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Row(
+                        children: [
+                          _header('Transactions', icon: Icons.list_alt_rounded),
+                          const Spacer(),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 14),
+                            ),
+                            onPressed: _addRow,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Add'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                    SliverList.builder(
+                      itemCount: _rows.length,
+                      itemBuilder: (_, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildTxnRow(i),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 90)),
+                  ],
+                ),
               ),
             ),
 
-            // Footer row: Add btn + total + submit
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _addRow,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Transaction'),
+            // Sticky total + save
+            Container(
+              decoration: BoxDecoration(
+                color: cs.surface,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 16,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+                border: Border(
+                  top: BorderSide(
+                    color: cs.outlineVariant.withOpacity(.3),
+                  ),
                 ),
-                const Spacer(),
-                Text(
-                  'Total: ${_moneyFmt.format(_grandTotal())}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12).copyWith(top: 10),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Total: ${_moneyFmt.format(_grandTotal())}',
+                        style: TextStyle(
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: _submitting ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: _submitting
+                          ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                          : const Icon(Icons.save_outlined),
+                      label: const Text(
+                        'Save',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                FilledButton.icon(
-                  onPressed: _submitting ? null : _submit,
-                  icon: _submitting
-                      ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.save_outlined),
-                  label: const Text('Save'),
-                ),
-              ],
+              ),
             ),
           ],
         ),
