@@ -56,9 +56,10 @@ class _CollectionScreenState extends State<CollectionScreen>
   // Bank is always required (no Cash/Bank toggle)
   BankAccount? _selectedBank;
   List<BankAccount> _banks = [];
-
+  final TextEditingController _detailsCtrl = TextEditingController();
   // Manager for provisional receipt
   String _managerID = '';
+  String _employeeID = '';
 
   // Policies cache
   bool _loadingPolicies = false;
@@ -78,13 +79,23 @@ class _CollectionScreenState extends State<CollectionScreen>
     _loadBanksFromPrefs();
     _loadPolicies();
   }
+  @override
+  void dispose() {
+    _detailsCtrl.dispose(); // NEW
+    super.dispose();
+  }
 
   // ── Data loaders ────────────────────────────────────────────────────────────
 
   Future<void> _loadIdentity() async {
     final prefs = await SharedPreferences.getInstance();
     final mid = prefs.getString('provisionalReceiptManagerID') ?? '';
-    setState(() => _managerID = mid);
+    final emp = prefs.getString('employeeID') ?? '';
+
+    setState(() {
+      _managerID = mid;
+      _employeeID = emp;
+    });
   }
 
   Future<void> _loadBanksFromPrefs() async {
@@ -339,10 +350,10 @@ class _CollectionScreenState extends State<CollectionScreen>
   Map<String, dynamic> _buildPayload() {
     return {
       "instrumentNumber": "",
-      "masterNarration":"",
+      "masterNarration":_detailsCtrl.text.trim(),
       "fK_VoucherManagerMaster_ID": _managerID,
       "fK_ChartOfAccounts_ID": _selectedBank?.id,
-      "fK_Employee_ID": "",
+      "fK_Employee_ID": _employeeID,
 
       "provisionalReceiptDetailsPOSInp": _rows
           .map((r) => {
@@ -357,22 +368,12 @@ class _CollectionScreenState extends State<CollectionScreen>
 
   Future<void> _submit() async {
     if (_submitting) return; // prevent double tap
-
-
     setState(() => _submitting = true);
-
     try {
       final payload = _buildPayload();
-
-      // --- Call your API service ---
       final resp = await ApiService.addProvisionalReceipt(payload);
-
       if (!mounted) return;
-
-      // Show success message
       _showSnack("Saved successfully! Response code: ${resp['responseCode'] ?? '-'}");
-
-      // Reset form (keep bank for convenience)
       setState(() {
         _rows
           ..clear()
@@ -382,7 +383,8 @@ class _CollectionScreenState extends State<CollectionScreen>
       if (!mounted) return;
       _showSnack("Failed to save: $e");
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (!mounted) return;
+      setState(() => _submitting = false);
     }
   }
 
@@ -427,7 +429,24 @@ class _CollectionScreenState extends State<CollectionScreen>
                         ),
                       ),
                       onChanged: (b) => setState(() => _selectedBank = b),
+
+
+
+
                     ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _detailsCtrl,
+                      maxLines: 2,
+                      textInputAction: TextInputAction.newline,
+                      decoration: const InputDecoration(
+                        labelText: 'Details / Narration',
+                        hintText: 'e.g. Received via cheque #123456 from customer',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+
                   ],
                 ),
               ),
