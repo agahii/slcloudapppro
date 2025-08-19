@@ -32,8 +32,6 @@ class DiscountPolicy {
   );
 }
 
-enum PaymentMode { cash, bankCheque }
-
 class CollectionTxn {
   ChartAccount? customer;
   DiscountPolicy? policy;
@@ -55,8 +53,7 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen>
     with TickerProviderStateMixin {
-  // Payment mode + bank
-  PaymentMode _mode = PaymentMode.bankCheque; // bank first on screen
+  // Bank is always required (no Cash/Bank toggle)
   BankAccount? _selectedBank;
   List<BankAccount> _banks = [];
 
@@ -136,8 +133,8 @@ class _CollectionScreenState extends State<CollectionScreen>
       _rows.fold(0.0, (sum, r) => sum + ((r.amount ?? 0.0)));
 
   bool _validate() {
-    if (_mode == PaymentMode.bankCheque && _selectedBank == null) {
-      _showSnack('Please select a bank for Bank Cheque mode.');
+    if (_selectedBank == null) {
+      _showSnack('Please select a bank.');
       return false;
     }
     for (int i = 0; i < _rows.length; i++) {
@@ -189,45 +186,6 @@ class _CollectionScreenState extends State<CollectionScreen>
       ),
       padding: padding,
       child: child,
-    );
-  }
-
-  Widget _chipToggle({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-    IconData? icon,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? cs.primary.withOpacity(.10) : cs.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: selected ? cs.primary : cs.outlineVariant.withOpacity(.5),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null)
-              Icon(icon, size: 18, color: selected ? cs.primary : cs.onSurface),
-            if (icon != null) const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: selected ? cs.primary : cs.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -298,7 +256,6 @@ class _CollectionScreenState extends State<CollectionScreen>
                 if (_managerID.isEmpty) return <ChartAccount>[];
                 final q = filter.trim();
                 if (q.length < 3) return <ChartAccount>[];
-
                 return await ApiService.getProvisionalReceiptCreditAccounts(
                   managerID: _managerID,
                   searchKey: q,
@@ -381,8 +338,8 @@ class _CollectionScreenState extends State<CollectionScreen>
   // Submit payload preview (same functionality)
   Map<String, dynamic> _buildPayload() {
     return {
-      "paymentMode": _mode == PaymentMode.cash ? "CASH" : "BANK_CHEQUE",
-      "bankId": _mode == PaymentMode.bankCheque ? _selectedBank?.id : null,
+      "paymentMode": "BANK_CHEQUE", // always bank cheque now
+      "bankId": _selectedBank?.id,
       "transactions": _rows
           .map((r) => {
         "customerId": r.customer?.id,
@@ -428,7 +385,6 @@ class _CollectionScreenState extends State<CollectionScreen>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isCheque = _mode == PaymentMode.bankCheque;
 
     return Scaffold(
       backgroundColor: cs.surfaceVariant.withOpacity(.15),
@@ -442,56 +398,28 @@ class _CollectionScreenState extends State<CollectionScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Top section: payment mode + bank
+            // Bank (always visible)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               child: _sectionCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _header('Payment', icon: Icons.payments_rounded),
+                    _header('Bank/Collection Account', icon: Icons.account_balance_rounded),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _chipToggle(
-                          label: 'Cash',
-                          icon: Icons.money_rounded,
-                          selected: _mode == PaymentMode.cash,
-                          onTap: () => setState(() => _mode = PaymentMode.cash),
-                        ),
-                        _chipToggle(
-                          label: 'Bank Cheque',
-                          icon: Icons.account_balance_rounded,
-                          selected: _mode == PaymentMode.bankCheque,
-                          onTap: () =>
-                              setState(() => _mode = PaymentMode.bankCheque),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Opacity(
-                      opacity: isCheque ? 1 : .55,
-                      child: AbsorbPointer(
-                        absorbing: !isCheque,
-                        child: DropdownSearch<BankAccount>(
-                          items: _banks,
-                          itemAsString: (b) => b.accountName,
-                          selectedItem: _selectedBank,
-                          popupProps:
-                          const PopupProps.menu(showSearchBox: true),
-                          dropdownDecoratorProps:
-                          const DropDownDecoratorProps(
-                            dropdownSearchDecoration: InputDecoration(
-                              labelText: 'Bank',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                          ),
-                          onChanged: (b) => setState(() => _selectedBank = b),
+                    DropdownSearch<BankAccount>(
+                      items: _banks,
+                      itemAsString: (b) => b.accountName,
+                      selectedItem: _selectedBank,
+                      popupProps: const PopupProps.menu(showSearchBox: true),
+                      dropdownDecoratorProps: const DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Select Bank/Collection Account',
+                          border: OutlineInputBorder(),
+                          isDense: true,
                         ),
                       ),
+                      onChanged: (b) => setState(() => _selectedBank = b),
                     ),
                   ],
                 ),
