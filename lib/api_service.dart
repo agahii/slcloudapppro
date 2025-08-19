@@ -562,7 +562,28 @@ class ApiService {
   }
 
 
+  static Future<Map<String, dynamic>> addProvisionalReceipt(
+      Map<String, dynamic> payload) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    final uri = Uri.parse('$baseUrl/api/VoucherMaster/AddProvisionalReceipt');
 
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    } else {
+      throw Exception(
+          'AddProvisionalReceipt failed [${res.statusCode}]: ${res.body}');
+    }
+  }
 
 
 }

@@ -338,47 +338,54 @@ class _CollectionScreenState extends State<CollectionScreen>
   // Submit payload preview (same functionality)
   Map<String, dynamic> _buildPayload() {
     return {
-      "paymentMode": "BANK_CHEQUE", // always bank cheque now
-      "bankId": _selectedBank?.id,
-      "transactions": _rows
+      "instrumentNumber": "",
+      "masterNarration":"",
+      "fK_VoucherManagerMaster_ID": _managerID,
+      "fK_ChartOfAccounts_ID": _selectedBank?.id,
+      "fK_Employee_ID": "",
+
+      "provisionalReceiptDetailsPOSInp": _rows
           .map((r) => {
-        "customerId": r.customer?.id,
-        "policyId": r.policy?.id,
+        "fK_ChartOfAccounts_ID": r.customer?.id,
+        "fK_DiscountPolicy_ID": r.policy?.id,
         "amount": r.amount,
       })
           .toList(),
-      "grandTotal": _grandTotal(),
+
     };
   }
 
   Future<void> _submit() async {
-    if (!_validate()) return;
+    if (_submitting) return; // prevent double tap
+
 
     setState(() => _submitting = true);
+
     try {
       final payload = _buildPayload();
+
+      // --- Call your API service ---
+      final resp = await ApiService.addProvisionalReceipt(payload);
+
       if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Payload Preview'),
-          content: SingleChildScrollView(
-            child: Text(const JsonEncoder.withIndent('  ').convert(payload)),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
-      );
+
+      // Show success message
+      _showSnack("Saved successfully! Response code: ${resp['responseCode'] ?? '-'}");
+
+      // Reset form (keep bank for convenience)
+      setState(() {
+        _rows
+          ..clear()
+          ..add(CollectionTxn());
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack("Failed to save: $e");
     } finally {
-      setState(() => _submitting = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
+
 
   // ── Build ──────────────────────────────────────────────────────────────────
 
