@@ -130,7 +130,7 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
     if (q.length < 3) return [];
 
     try {
-      return await ApiService.fetchCustomers(managerIDSalesOrder, q);
+      return await ApiService.fetchPOCustomers(managerIDSalesOrder, q);
     } catch (e) {
       debugPrint('Customer search failed: $e');
       return [];

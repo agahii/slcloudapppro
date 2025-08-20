@@ -1015,7 +1015,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           asyncItems: (String filter) async {
                             if (filter.length < 3) return [];
-                            return await ApiService.fetchCustomers(_salesOrderMgrId, filter);
+                            return await ApiService.fetchInvCustomers(_invoiceMgrId, filter);
                           },
                           itemAsString: (Customer u) => u.customerName,
                           selectedItem: _selectedCustomer,
@@ -1052,7 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         asyncItems: (String filter) async {
                           if (filter.length < 3) return [];
-                          return await ApiService.fetchCustomers(_salesOrderMgrId, filter);
+                          return await ApiService.fetchPOCustomers(_salesOrderMgrId, filter);
                         },
                         itemAsString: (Customer u) => u.customerName,
                         selectedItem: _selectedCustomer,
