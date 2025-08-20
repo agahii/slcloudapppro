@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
+
 import 'Model/chart_account.dart';
 import 'api_service.dart';
 
@@ -53,27 +54,23 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen>
     with TickerProviderStateMixin {
-
-
-
-  String? _topMsg;           // null = hidden
-  bool _topIsError = false;  // false = success/info, true = error
+  // ── Top banner state ────────────────────────────────────────────────────────
+  String? _topMsg; // null = hidden
+  bool _topIsError = false; // false = success/info, true = error
   Timer? _topMsgTimer;
+
   void _showTopMessage(
       String msg, {
         bool isError = false,
         bool autoHide = true,
         Duration hideAfter = const Duration(seconds: 3),
       }) {
-    // cancel any previous auto-hide
     _topMsgTimer?.cancel();
-
     if (!mounted) return;
     setState(() {
       _topMsg = msg;
       _topIsError = isError;
     });
-
     if (autoHide && !isError) {
       _topMsgTimer = Timer(hideAfter, () {
         if (!mounted) return;
@@ -82,23 +79,20 @@ class _CollectionScreenState extends State<CollectionScreen>
     }
   }
 
-
-
-
-  // Bank is always required (no Cash/Bank toggle)
+  // ── Data/state ─────────────────────────────────────────────────────────────
   BankAccount? _selectedBank;
   List<BankAccount> _banks = [];
   final TextEditingController _detailsCtrl = TextEditingController();
-  // Manager for provisional receipt
+
   String _managerID = '';
   String _employeeID = '';
 
-  // Policies cache
   bool _loadingPolicies = false;
   List<DiscountPolicy> _policies = [];
 
-  // Txn rows
+  // rows must be reassignable so we can replace the whole list after save
   List<CollectionTxn> _rows = [CollectionTxn()];
+
   final _moneyFmt =
   NumberFormat.currency(locale: 'en_PK', symbol: 'Rs. ', decimalDigits: 2);
 
@@ -111,20 +105,21 @@ class _CollectionScreenState extends State<CollectionScreen>
     _loadBanksFromPrefs();
     _loadPolicies();
   }
+
   @override
   void dispose() {
     _topMsgTimer?.cancel();
-    _detailsCtrl.dispose(); // NEW
+    _detailsCtrl.dispose();
     super.dispose();
   }
 
-  // ── Data loaders ────────────────────────────────────────────────────────────
+  // ── Loaders ────────────────────────────────────────────────────────────────
 
   Future<void> _loadIdentity() async {
     final prefs = await SharedPreferences.getInstance();
     final mid = prefs.getString('provisionalReceiptManagerID') ?? '';
     final emp = prefs.getString('employeeID') ?? '';
-
+    if (!mounted) return;
     setState(() {
       _managerID = mid;
       _employeeID = emp;
@@ -135,6 +130,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('provisionalReceiptDebitAccountsVM');
     if (raw == null) {
+      if (!mounted) return;
       setState(() => _banks = []);
       return;
     }
@@ -143,23 +139,29 @@ class _CollectionScreenState extends State<CollectionScreen>
       final parsed = arr
           .map((e) => BankAccount.fromMap(Map<String, dynamic>.from(e)))
           .toList();
+      if (!mounted) return;
       setState(() {
         _banks = parsed;
-        if (_banks.isNotEmpty) _selectedBank = _banks.first;
+        // select nothing by default; validator + _canSave will gate the button
+        _selectedBank = null;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() => _banks = []);
     }
   }
 
   Future<void> _loadPolicies() async {
+    if (!mounted) return;
     setState(() => _loadingPolicies = true);
     try {
       final list = await ApiService.getDiscountPolicyPOS();
+      if (!mounted) return;
       setState(() => _policies = list);
     } catch (_) {
       // ignore
     } finally {
+      if (!mounted) return;
       setState(() => _loadingPolicies = false);
     }
   }
@@ -167,6 +169,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _addRow() => setState(() => _rows.add(CollectionTxn()));
+
   void _removeRow(int i) {
     setState(() {
       if (_rows.length > 1) _rows.removeAt(i);
@@ -176,40 +179,42 @@ class _CollectionScreenState extends State<CollectionScreen>
   double _grandTotal() =>
       _rows.fold(0.0, (sum, r) => sum + ((r.amount ?? 0.0)));
 
+  bool _isRowValid(CollectionTxn r) =>
+      r.customer != null && r.policy != null && (r.amount ?? 0) > 0;
+
+  bool get _canSave =>
+      !_submitting &&
+          _selectedBank != null &&
+          _rows.isNotEmpty &&
+          _rows.every(_isRowValid);
+
   bool _validate() {
     if (_selectedBank == null) {
-      _showSnack('Please select a bank.');
+      _showTopMessage('Please select a bank.', isError: true, autoHide: false);
       return false;
     }
     for (int i = 0; i < _rows.length; i++) {
       final r = _rows[i];
       if (r.customer == null) {
-        _showSnack('Row ${i + 1}: Please select a customer.');
+        _showTopMessage('Row ${i + 1}: Please select a customer.',
+            isError: true, autoHide: false);
         return false;
       }
       if (r.policy == null) {
-        _showSnack('Row ${i + 1}: Please select a policy.');
+        _showTopMessage('Row ${i + 1}: Please select a policy.',
+            isError: true, autoHide: false);
         return false;
       }
       if (r.amount == null || r.amount! <= 0) {
-        _showSnack('Row ${i + 1}: Please enter a valid amount.');
+        _showTopMessage('Row ${i + 1}: Please enter a valid amount.',
+            isError: true, autoHide: false);
         return false;
       }
     }
     return true;
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  // ── UI pieces ───────────────────────────────────────────────────────────────
-
+  // ── Top banner widget ──────────────────────────────────────────────────────
 
   Widget _topBanner() {
     return AnimatedSwitcher(
@@ -217,25 +222,34 @@ class _CollectionScreenState extends State<CollectionScreen>
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
       child: (_topMsg == null)
-          ? const SizedBox.shrink() // <- no space when hidden
+          ? const SizedBox.shrink() // no space when hidden
           : Padding(
         key: const ValueKey('top-banner'),
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _topIsError ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+            color: _topIsError
+                ? const Color(0xFFFFEBEE)
+                : const Color(0xFFE8F5E9),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _topIsError ? const Color(0xFFEF5350) : const Color(0xFF43A047),
+              color: _topIsError
+                  ? const Color(0xFFEF5350)
+                  : const Color(0xFF43A047),
             ),
           ),
           child: Row(
             children: [
               Icon(
-                _topIsError ? Icons.error_outline : Icons.check_circle_outline,
+                _topIsError
+                    ? Icons.error_outline
+                    : Icons.check_circle_outline,
                 size: 18,
-                color: _topIsError ? const Color(0xFFD32F2F) : const Color(0xFF2E7D32),
+                color: _topIsError
+                    ? const Color(0xFFD32F2F)
+                    : const Color(0xFF2E7D32),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -243,7 +257,9 @@ class _CollectionScreenState extends State<CollectionScreen>
                   _topMsg!,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: _topIsError ? const Color(0xFFB71C1C) : const Color(0xFF1B5E20),
+                    color: _topIsError
+                        ? const Color(0xFFB71C1C)
+                        : const Color(0xFF1B5E20),
                   ),
                 ),
               ),
@@ -262,15 +278,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     );
   }
 
-
-
-
-
-
-
-
-
-
+  // ── UI helpers ─────────────────────────────────────────────────────────────
 
   Widget _sectionCard({
     required Widget child,
@@ -358,6 +366,7 @@ class _CollectionScreenState extends State<CollectionScreen>
 
             // Customer
             DropdownSearch<ChartAccount>(
+              key: ValueKey('cust_${row.hashCode}'), // <-- forces fresh widget
               asyncItems: (String filter) async {
                 if (_managerID.isEmpty) return <ChartAccount>[];
                 final q = filter.trim();
@@ -396,6 +405,7 @@ class _CollectionScreenState extends State<CollectionScreen>
               children: [
                 Expanded(
                   child: DropdownSearch<DiscountPolicy>(
+                    key: ValueKey('pol_${row.hashCode}'), // <-- fresh widget
                     items: _policies,
                     itemAsString: (p) => p.discountPolicyName,
                     selectedItem: row.policy,
@@ -415,18 +425,20 @@ class _CollectionScreenState extends State<CollectionScreen>
                 SizedBox(
                   width: 170,
                   child: TextFormField(
+                    key: ValueKey('amt_${row.hashCode}'), // <-- fresh widget
                     initialValue: row.amount?.toStringAsFixed(2) ?? '',
                     keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d{0,2}')),
+                        RegExp(r'^\d*\.?\d{0,2}'),
+                      ),
                     ],
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Amount',
                       hintText: '0.00',
                       prefixText: 'Rs. ',
-                      border: const OutlineInputBorder(),
+                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     onChanged: (v) =>
@@ -441,15 +453,13 @@ class _CollectionScreenState extends State<CollectionScreen>
     );
   }
 
-  // Submit payload preview (same functionality)
   Map<String, dynamic> _buildPayload() {
     return {
       "instrumentNumber": "",
-      "masterNarration":_detailsCtrl.text.trim(),
+      "masterNarration": _detailsCtrl.text.trim(),
       "fK_VoucherManagerMaster_ID": _managerID,
       "fK_ChartOfAccounts_ID": _selectedBank?.id,
       "fK_Employee_ID": _employeeID,
-
       "provisionalReceiptDetailsPOSInp": _rows
           .map((r) => {
         "fK_ChartOfAccounts_ID": r.customer?.id,
@@ -457,11 +467,11 @@ class _CollectionScreenState extends State<CollectionScreen>
         "amount": r.amount,
       })
           .toList(),
-
     };
   }
 
   Future<void> _submit() async {
+    // Gating + validator for safety
     if (!_validate()) return;
     if (_submitting) return;
 
@@ -482,26 +492,31 @@ class _CollectionScreenState extends State<CollectionScreen>
       if (!mounted) return;
 
       // Success UX: show then auto-hide
-      _showTopMessage('✅ Saved successfully!', isError: false, autoHide: true);
+      _showTopMessage('✅ Saved successfully!',
+          isError: false, autoHide: true);
 
       // Reset inputs safely
       FocusScope.of(context).unfocus();
       _detailsCtrl.clear();
+
       setState(() {
-        _rows = [CollectionTxn()];
-        _selectedBank = _banks.isNotEmpty ? _banks.first : null;
+        _rows = [CollectionTxn()]; // new object -> fresh keys -> cleared fields
+        _selectedBank = null;      // set to null to visually clear bank
       });
 
     } catch (e) {
       if (!mounted) return;
-      _showTopMessage('❌ Failed to save: $e', isError: true, autoHide: false); // permanent
+      _showTopMessage('❌ Failed to save: $e',
+          isError: true, autoHide: false); // permanent
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
       }
     }
   }
+
   // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -519,14 +534,16 @@ class _CollectionScreenState extends State<CollectionScreen>
         child: Column(
           children: [
             _topBanner(),
+
+            // Bank section
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               child: _sectionCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    _header('Bank/Collection Account', icon: Icons.account_balance_rounded),
+                    _header('Bank/Collection Account',
+                        icon: Icons.account_balance_rounded),
                     const SizedBox(height: 12),
                     DropdownSearch<BankAccount>(
                       items: _banks,
@@ -541,10 +558,6 @@ class _CollectionScreenState extends State<CollectionScreen>
                         ),
                       ),
                       onChanged: (b) => setState(() => _selectedBank = b),
-
-
-
-
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -553,12 +566,12 @@ class _CollectionScreenState extends State<CollectionScreen>
                       textInputAction: TextInputAction.newline,
                       decoration: const InputDecoration(
                         labelText: 'Details / Narration',
-                        hintText: 'e.g. Received via cheque #123456 from customer',
+                        hintText:
+                        'e.g. Received via cheque #123456 from customer',
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
-
                   ],
                 ),
               ),
@@ -573,7 +586,8 @@ class _CollectionScreenState extends State<CollectionScreen>
                     SliverToBoxAdapter(
                       child: Row(
                         children: [
-                          _header('Transactions', icon: Icons.list_alt_rounded),
+                          _header('Transactions',
+                              icon: Icons.list_alt_rounded),
                           const Spacer(),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
@@ -583,8 +597,8 @@ class _CollectionScreenState extends State<CollectionScreen>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding:
-                              const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14),
                             ),
                             onPressed: _addRow,
                             icon: const Icon(Icons.add_rounded),
@@ -594,13 +608,19 @@ class _CollectionScreenState extends State<CollectionScreen>
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 10)),
+
+                    // Key each row subtree so clearing rows actually rebuilds inputs
                     SliverList.builder(
                       itemCount: _rows.length,
-                      itemBuilder: (_, i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _buildTxnRow(i),
+                      itemBuilder: (_, i) => KeyedSubtree(
+                        key: ObjectKey(_rows[i]),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _buildTxnRow(i),
+                        ),
                       ),
                     ),
+
                     const SliverToBoxAdapter(child: SizedBox(height: 90)),
                   ],
                 ),
@@ -647,7 +667,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                     ),
                     const Spacer(),
                     FilledButton.icon(
-                      onPressed: _submitting ? null : _submit,
+                      onPressed: _canSave ? _submit : null, // gated by validity
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 14),
