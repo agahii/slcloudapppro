@@ -1472,6 +1472,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Navigator.pushNamed(context, '/mySalesInvoices');
                 },
               ),
+
+      ListTile(
+        leading: Icon(Icons.payments, color: theme.primaryColor),
+        title: Text('My Cash Book', style: TextStyle(color: theme.primaryColor)),
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.pushNamed(context, '/myCashBook');
+          },
+      ),
   ],
 
     if (_salesOrderMgrId.isNotEmpty ) ...[
