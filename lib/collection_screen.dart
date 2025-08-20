@@ -4,7 +4,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'dart:async';
 import 'Model/chart_account.dart';
 import 'api_service.dart';
 
@@ -53,6 +53,38 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen>
     with TickerProviderStateMixin {
+
+
+
+  String? _topMsg;           // null = hidden
+  bool _topIsError = false;  // false = success/info, true = error
+  Timer? _topMsgTimer;
+  void _showTopMessage(
+      String msg, {
+        bool isError = false,
+        bool autoHide = true,
+        Duration hideAfter = const Duration(seconds: 3),
+      }) {
+    // cancel any previous auto-hide
+    _topMsgTimer?.cancel();
+
+    if (!mounted) return;
+    setState(() {
+      _topMsg = msg;
+      _topIsError = isError;
+    });
+
+    if (autoHide && !isError) {
+      _topMsgTimer = Timer(hideAfter, () {
+        if (!mounted) return;
+        setState(() => _topMsg = null);
+      });
+    }
+  }
+
+
+
+
   // Bank is always required (no Cash/Bank toggle)
   BankAccount? _selectedBank;
   List<BankAccount> _banks = [];
@@ -66,7 +98,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   List<DiscountPolicy> _policies = [];
 
   // Txn rows
-  final List<CollectionTxn> _rows = [CollectionTxn()];
+  List<CollectionTxn> _rows = [CollectionTxn()];
   final _moneyFmt =
   NumberFormat.currency(locale: 'en_PK', symbol: 'Rs. ', decimalDigits: 2);
 
@@ -81,6 +113,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
   @override
   void dispose() {
+    _topMsgTimer?.cancel();
     _detailsCtrl.dispose(); // NEW
     super.dispose();
   }
@@ -176,6 +209,68 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   // ── UI pieces ───────────────────────────────────────────────────────────────
+
+
+  Widget _topBanner() {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: (_topMsg == null)
+          ? const SizedBox.shrink() // <- no space when hidden
+          : Padding(
+        key: const ValueKey('top-banner'),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _topIsError ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _topIsError ? const Color(0xFFEF5350) : const Color(0xFF43A047),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _topIsError ? Icons.error_outline : Icons.check_circle_outline,
+                size: 18,
+                color: _topIsError ? const Color(0xFFD32F2F) : const Color(0xFF2E7D32),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _topMsg!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _topIsError ? const Color(0xFFB71C1C) : const Color(0xFF1B5E20),
+                  ),
+                ),
+              ),
+              if (!_topIsError)
+                IconButton(
+                  tooltip: 'Dismiss',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => setState(() => _topMsg = null),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
+
+
+
+
+
+
+
 
   Widget _sectionCard({
     required Widget child,
@@ -367,30 +462,46 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   Future<void> _submit() async {
-    if (_submitting) return; // prevent double tap
+    if (!_validate()) return;
+    if (_submitting) return;
+
     setState(() => _submitting = true);
+
     try {
       final payload = _buildPayload();
       final resp = await ApiService.addProvisionalReceipt(payload);
+
+      final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+      if (!ok) {
+        final msg = ApiService.extractServerMessage(resp);
+        if (!mounted) return;
+        _showTopMessage('❌ $msg', isError: true, autoHide: false); // permanent
+        return;
+      }
+
       if (!mounted) return;
-      _showSnack("Saved successfully! Response code: ${resp['responseCode'] ?? '-'}");
+
+      // Success UX: show then auto-hide
+      _showTopMessage('✅ Saved successfully!', isError: false, autoHide: true);
+
+      // Reset inputs safely
+      FocusScope.of(context).unfocus();
+      _detailsCtrl.clear();
       setState(() {
-        _rows
-          ..clear()
-          ..add(CollectionTxn());
+        _rows = [CollectionTxn()];
+        _selectedBank = _banks.isNotEmpty ? _banks.first : null;
       });
+
     } catch (e) {
       if (!mounted) return;
-      _showSnack("Failed to save: $e");
+      _showTopMessage('❌ Failed to save: $e', isError: true, autoHide: false); // permanent
     } finally {
-      if (!mounted) return;
-      setState(() => _submitting = false);
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
     }
   }
-
-
   // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -407,13 +518,14 @@ class _CollectionScreenState extends State<CollectionScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Bank (always visible)
+            _topBanner(),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               child: _sectionCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
                     _header('Bank/Collection Account', icon: Icons.account_balance_rounded),
                     const SizedBox(height: 12),
                     DropdownSearch<BankAccount>(

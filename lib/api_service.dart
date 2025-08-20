@@ -144,6 +144,38 @@ class ApiService {
     final response = await http.post(url, headers: headers, body: jsonEncode(payload));
     return response;
   }
+
+
+
+
+
+  static Future<http.Response> addProvisionalReceipt(
+      Map<String, dynamic> payload) async {
+
+
+
+    if (!await hasInternetConnection()) {
+      throw Exception('No internet connection.');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    final url = Uri.parse('$baseUrl/api/VoucherMaster/AddProvisionalReceipt');
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+
+    final bodyText = _utf8Body(response);
+    dynamic jsonBody;
+    try { jsonBody = json.decode(bodyText); } catch (_) { /* may be plain text/HTML */ }
+
+    return response;
+  }
+
+
+
+
   static Future<http.Response> finalizeInvoice(Map<String, dynamic> payload) async {
     if (!await hasInternetConnection()) {
       throw Exception('No internet connection.');
@@ -562,28 +594,6 @@ class ApiService {
   }
 
 
-  static Future<Map<String, dynamic>> addProvisionalReceipt(
-      Map<String, dynamic> payload) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token') ?? '';
-    final uri = Uri.parse('$baseUrl/api/VoucherMaster/AddProvisionalReceipt');
-
-    final res = await http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(payload),
-    );
-
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body) as Map<String, dynamic>;
-    } else {
-      throw Exception(
-          'AddProvisionalReceipt failed [${res.statusCode}]: ${res.body}');
-    }
-  }
 
 
 }
