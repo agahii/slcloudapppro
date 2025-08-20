@@ -1414,131 +1414,104 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      drawer: Drawer(
-        backgroundColor: Colors.white, // solid background
-        surfaceTintColor: Colors.white,
-        child: ListView(
-          children: [
-            UserAccountsDrawerHeader(
-              decoration: BoxDecoration(color: theme.primaryColor),
-              accountName: Text('$firstName $lastName'),
-              accountEmail: const Text(''),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Text(
-                  firstName.isNotEmpty ? firstName[0] : '',
-                  style: TextStyle(fontSize: 40, color: theme.primaryColor),
+        drawer: Drawer(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          child: ListView(
+            children: [
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(color: theme.primaryColor),
+                accountName: Text('$firstName $lastName'),
+                accountEmail: const Text(''),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Text(
+                    firstName.isNotEmpty ? firstName[0] : '',
+                    style: TextStyle(fontSize: 40, color: theme.primaryColor),
+                  ),
                 ),
               ),
-            ),
-
-            ListTile(
-              leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-              title: Text(
-                'Customer Ledger',
-                style: TextStyle(color: theme.primaryColor),
+        if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
+              ListTile(
+                leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
+                title: Text('Customer Ledger', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/customerLedger');
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/customerLedger');
-              },
-            ),
+],
+              // ✅ Only show when hasSO
+              if (_salesOrderMgrId.isNotEmpty) ...[
+                ListTile(
+                  leading: Icon(Icons.payments_outlined, color: theme.primaryColor),
+                  title: Text('Collections', style: TextStyle(color: theme.primaryColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/collections');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
+                  title: Text('My Sales Orders', style: TextStyle(color: theme.primaryColor)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/mySalesOrders');
+                  },
+                ),
+              ],
 
-            ListTile(
-              leading: Icon(Icons.payments_outlined, color: theme.primaryColor),
-              title: Text(
-                'Collections',
-                style: TextStyle(color: theme.primaryColor),
+
+    if (_invoiceMgrId.isNotEmpty) ...[
+
+              ListTile(
+                leading: Icon(Icons.receipt_long, color: theme.primaryColor),
+                title: Text('My Sales Invoices', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/mySalesInvoices');
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/collections');
-              },
-            ),
+  ],
+
+    if (_salesOrderMgrId.isNotEmpty ) ...[
 
 
-
-            ListTile(
-              leading: Icon(Icons.payments, color: theme.primaryColor),
-              title: Text('My Cash Book', style: TextStyle(color: theme.primaryColor)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/myCashBook');
-              },
-            ),
-
-
-
-
-            ListTile(
-              leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-              title: Text(
-                'My Sales Orders',
-                style: TextStyle(color: theme.primaryColor),
+              ListTile(
+                leading: Icon(Icons.policy, color: theme.primaryColor),
+                title: Text('Active Policy', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/activePolicy');
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/mySalesOrders');
-              },
-            ),
-
-            // ✅ New My Sales Invoices item
-            ListTile(
-              leading: Icon(Icons.receipt_long, color: theme.primaryColor),
-              title: Text(
-                'My Sales Invoices',
-                style: TextStyle(color: theme.primaryColor),
+],
+              ListTile(
+                leading: Icon(Icons.money, color: theme.primaryColor),
+                title: Text('My Expenses', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/myExpenses');
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/mySalesInvoices');
-              },
-            ),
 
-            ListTile(
-              leading: Icon(Icons.policy, color: theme.primaryColor),
-              title: Text(
-                'Active Policy',
-                style: TextStyle(color: theme.primaryColor),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/activePolicy');
-              },
-            ),
+              const Divider(),
 
-            ListTile(
-              leading: Icon(Icons.money, color: theme.primaryColor),
-              title: Text(
-                'My Expenses',
-                style: TextStyle(color: theme.primaryColor),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/myExpenses');
-              },
-            ),
-
-            const Divider(),
-
-            ListTile(
+              ListTile(
                 leading: Icon(Icons.logout, color: theme.primaryColor),
-                title: Text(
-                  'Logout',
-                  style: TextStyle(color: theme.primaryColor),
-                ),
+                title: Text('Logout', style: TextStyle(color: theme.primaryColor)),
                 onTap: () async {
                   final nav = Navigator.of(context);
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.clear();
                   nav.pushReplacementNamed('/login');
-                }
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
 
-      )
-      ,
+
       body: Column(
         children: [
           _managerToggleBar(),
