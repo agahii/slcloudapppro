@@ -254,101 +254,148 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white, // ✅ ensure white background
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 20,
           ),
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  c.customerName,
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+
+                  // Name
+                  Text(
+                    c.customer,
+                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                if ((c.area ?? '').isNotEmpty)
-                  Row(
-                    children: [
-                      const Icon(Icons.map_outlined, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          c.area!,
-                          style: Theme.of(ctx).textTheme.bodyMedium,
+                  const SizedBox(height: 16),
+
+                  // Area
+                  if ((c.area ?? '').isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(Icons.map_outlined,
+                            size: 20, color: Colors.blueGrey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            c.area!,
+                            style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                if ((c.customerAddress ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          c.customerAddress!,
-                          style: Theme.of(ctx).textTheme.bodyMedium,
+                      ],
+                    ),
+
+                  // Address
+                  if ((c.customerAddress ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 20, color: Colors.redAccent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            c.customerAddress!,
+                            style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                              fontSize: 15,
+                              color: Colors.black54,
+                              height: 1.3,
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                  ],
+
+                  // Employee
+                  if ((c.employee ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline,
+                            size: 20, color: Colors.teal),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            c.employee!,
+                            style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // Action Button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(ctx).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                       ),
-                    ],
+                      onPressed: () => _confirmLogVisit(context, c),
+                      icon: const Icon(Icons.pin_drop_outlined),
+                      label: const Text("Log Visit"),
+                    ),
                   ),
                 ],
-                if ((c.employee ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline, size: 18),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          c.employee!,
-                          style: Theme.of(ctx).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmLogVisit(context, c),
-                    icon: const Icon(Icons.pin_drop_outlined),
-                    label: const Text("Log Visit"),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
           ),
         );
       },
     );
   }
+
 
 
 
