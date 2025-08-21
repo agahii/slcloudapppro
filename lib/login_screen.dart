@@ -127,23 +127,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: isLoading ? null : loginUser,
-                          child: SizedBox(
-                            height: 20,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Opacity(
-                                  opacity: isLoading ? 0 : 1,
-                                  child: Text('Login',
-                                      style: GoogleFonts.poppins(fontSize: 16)),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Opacity(
+                                opacity: isLoading ? 0 : 1,
+                                child: Text(
+                                  'Login',
+                                  style: GoogleFonts.poppins(fontSize: 16),
                                 ),
-                                if (isLoading)
-                                  const SizedBox(
-                                    height: 20, width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                              ],
-                            ),
+                              ),
+                              if (isLoading)
+                                const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                            ],
                           ),
                         ),
                       ),
