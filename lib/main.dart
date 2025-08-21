@@ -12,6 +12,7 @@ import 'my_sales_orders_screen.dart';
 import 'splash_screen.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'main_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
         '/customerLedger': (_) => const CustomerLedgerScreen(),
         '/collections': (context) => const CollectionScreen(),
         '/myCustomers': (_) => const MyCustomersScreen(),
+        '/mainView': (_) => const MainView(),
       },
     );
   }
