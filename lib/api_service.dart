@@ -689,6 +689,34 @@ class ApiService {
   }
 
 
+  static Future<void> addCustomerGeoTag({
+    required String id,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final uri = Uri.parse("$baseUrl/api/Customer/AddCustomerGeoTag");
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {
+      "id": id,
+      "latitude": latitude,
+      "longitude": longitude,
+    };
+
+    final resp = await http.put(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+         "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (resp.statusCode != 200 && resp.statusCode != 204) {
+      throw Exception("Geo-tag failed: ${resp.statusCode} ${resp.body}");
+    }
+  }
 
 
 }

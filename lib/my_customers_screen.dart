@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/utils/location_helper.dart';
 
 import 'api_service.dart';
 import 'Model/customer_lite.dart';
@@ -24,7 +25,7 @@ class MyCustomersScreen extends StatefulWidget {
 class _MyCustomersScreenState extends State<MyCustomersScreen> {
   final TextEditingController _search = TextEditingController();
   final ScrollController _scroll = ScrollController();
-
+  final Set<String> _loggingCustomerIds = {}; // track rows currently logging
   // IDs
   String _mgrInvoice = "";
   String _mgrPO = "";
@@ -171,6 +172,68 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
     }
   }
 
+
+
+
+
+
+
+
+  Future<void> _logVisit(CustomerLite c) async {
+    if (_loggingCustomerIds.contains(c.id)) return;
+
+    setState(() => _loggingCustomerIds.add(c.id));
+    try {
+      // 1) Get GPS
+      final pos = await LocationHelper.getCurrentPosition();
+
+      // 2) PUT geo-tag with exact payload
+      await ApiService.addCustomerGeoTag(
+        id: c.id,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      );
+
+      if (!mounted) return;
+
+      // 3) Feedback (+ optional open maps)
+      final mapsUrl = "https://www.google.com/maps?q=${pos.latitude},${pos.longitude}";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Visit geo-tagged for ${c.customer}."),
+          action: SnackBarAction(
+            label: "Open Map",
+            onPressed: () {
+              // optional: open maps via url_launcher if added
+              // launchUrl(Uri.parse(mapsUrl), mode: LaunchMode.externalApplication);
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to log visit: $e")),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() => _loggingCustomerIds.remove(c.id));
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -251,7 +314,22 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                           ),
                       ],
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Log Visit button
+                        _loggingCustomerIds.contains(c.id)
+                            ? const SizedBox(
+                            width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                            : IconButton(
+                          icon: const Icon(Icons.pin_drop_outlined),
+                          tooltip: 'Log Visit',
+                          onPressed: () => _logVisit(c),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+
                     onTap: () {
                       // TODO: go to customer details / ledger
                       // Navigator.pushNamed(context, '/customerLedger', arguments: c.id);
