@@ -374,8 +374,10 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                     alignment: Alignment.centerRight,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(ctx).primaryColor,
-                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            Theme.of(ctx).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(ctx).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
