@@ -250,6 +250,105 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
 
 
 
+  void _showCustomerDetail(BuildContext context, CustomerLite c) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  c.customerName,
+                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if ((c.area ?? '').isNotEmpty)
+                  Row(
+                    children: [
+                      const Icon(Icons.map_outlined, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          c.area!,
+                          style: Theme.of(ctx).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                if ((c.customerAddress ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          c.customerAddress!,
+                          style: Theme.of(ctx).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if ((c.employee ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          c.employee!,
+                          style: Theme.of(ctx).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmLogVisit(context, c),
+                    icon: const Icon(Icons.pin_drop_outlined),
+                    label: const Text("Log Visit"),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
 
 
@@ -356,8 +455,7 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                     ),
 
                     onTap: () {
-                      // TODO: go to customer details / ledger
-                      // Navigator.pushNamed(context, '/customerLedger', arguments: c.id);
+                      _showCustomerDetail(context, c);
                     },
                   );
                 },
