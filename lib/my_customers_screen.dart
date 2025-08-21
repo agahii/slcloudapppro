@@ -458,7 +458,7 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                 controller: _scroll,
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: _items.length + (_hasMore ? 1 : 0),
-                separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+                separatorBuilder: (_, __) => const SizedBox(height: 0),
                 itemBuilder: (ctx, i) {
                   if (i >= _items.length) {
                     // Footer loader
@@ -468,44 +468,12 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                     );
                   }
                   final c = _items[i];
-                  return ListTile(
-                    leading: _Avatar(initials: _initials(c.customer)),
-                    title: Text(
-                      c.customer,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if ((c.area ?? '').isNotEmpty) Text("Area: ${c.area}"),
-                        if ((c.customerAddress ?? '').isNotEmpty)
-                          Text(
-                            c.customerAddress!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Log Visit button
-                        _loggingCustomerIds.contains(c.id)
-                            ? const SizedBox(
-                            width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                            : IconButton(
-                          icon: const Icon(Icons.pin_drop_outlined),
-                          tooltip: 'Log Visit',
-                          onPressed: () => _confirmLogVisit(context, c),
-                        ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-
-                    onTap: () {
-                      _showCustomerDetail(context, c);
-                    },
+                  return _CustomerTile(
+                    customer: c,
+                    initials: _initials(c.customer),
+                    isLogging: _loggingCustomerIds.contains(c.id),
+                    onLog: () => _confirmLogVisit(context, c),
+                    onTap: () => _showCustomerDetail(context, c),
                   );
                 },
               ),
@@ -589,6 +557,110 @@ class _MissingIdsBanner extends StatelessWidget {
         title: const Text('Manager IDs are missing'),
         subtitle: const Text('Set ManagerIDInvoice / ManagerIDPO to fetch customers.'),
         trailing: TextButton(onPressed: onFix, child: const Text('Retry')),
+      ),
+    );
+  }
+}
+class _CustomerTile extends StatelessWidget {
+  final CustomerLite customer;
+  final String initials;
+  final bool isLogging;
+  final VoidCallback onLog;
+  final VoidCallback onTap;
+
+  const _CustomerTile({
+    required this.customer,
+    required this.initials,
+    required this.isLogging,
+    required this.onLog,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Avatar(initials: initials),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer.customer,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    if ((customer.area ?? '').isNotEmpty)
+                      Row(
+                        children: [
+                          const Icon(Icons.map_outlined,
+                              size: 16, color: Colors.blueGrey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              customer.area!,
+                              style: theme.textTheme.bodySmall,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    if ((customer.customerAddress ?? '').isNotEmpty)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.location_on_outlined,
+                              size: 16, color: Colors.redAccent),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              customer.customerAddress!,
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  isLogging
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.pin_drop_outlined),
+                          tooltip: 'Log Visit',
+                          onPressed: onLog,
+                        ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
