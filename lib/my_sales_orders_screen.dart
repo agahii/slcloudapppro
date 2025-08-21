@@ -319,25 +319,42 @@ class _MySalesOrdersScreenState extends State<MySalesOrdersScreen> {
 
   Widget _chip(String key) {
     final isSelected = status == key;
-    final color = Theme.of(context).colorScheme.primary;
+    final color = _statusColor(key);
     return ChoiceChip(
       label: Text(key),
       selected: isSelected,
       selectedColor: color,
+      backgroundColor: const Color(0xFFEAEAEA),
       labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
-          fontWeight: FontWeight.w600),
+        color: isSelected ? Colors.white : Colors.black87,
+        fontWeight: FontWeight.w600,
+      ),
       onSelected: (_) {
         setState(() => status = key);
         _fetchOrders(initial: true);
       },
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side:
-        BorderSide(color: isSelected ? color : const Color(0x1F000000)),
+        side: BorderSide(
+          color: isSelected ? color : const Color(0x1F000000),
+        ),
       ),
-      backgroundColor: const Color(0xFFEAEAEA),
     );
+  }
+
+  Color _statusColor(String key) {
+    switch (key) {
+      case 'Open':
+        return Colors.blue.shade600;
+      case 'Unapprove':
+        return Colors.orange.shade600;
+      case 'Approved':
+        return Colors.green.shade600;
+      case 'Closed':
+        return Colors.red.shade700;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
   }
 
   void _showOrderDetails(SalesOrder order) {
