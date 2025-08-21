@@ -1431,7 +1431,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
               ),
+
+
+
+
+
+
         if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
+              ListTile(
+                leading: Icon(Icons.people, color: theme.primaryColor),
+                title: Text('My Customers', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/myCustomers');
+                },
+              ),
+
+        ],
+
+
+
+              if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
               ListTile(
                 leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
                 title: Text('Customer Ledger', style: TextStyle(color: theme.primaryColor)),

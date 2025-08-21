@@ -7,6 +7,7 @@ import 'customer_ledger_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'my_cash_book_screen.dart';
+import 'my_customers_screen.dart';
 import 'splash_screen.dart';
 import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
@@ -116,6 +117,7 @@ class MyApp extends StatelessWidget {
         '/myCashBook': (_) => const MyCashBookScreen(),
         '/customerLedger': (_) => const CustomerLedgerScreen(),
         '/collections': (context) => const CollectionScreen(),
+        '/myCustomers': (_) => const MyCustomersScreen(),
       },
     );
   }

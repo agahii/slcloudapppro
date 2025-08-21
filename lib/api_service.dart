@@ -6,8 +6,10 @@ import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
+import 'Model/PagedCustomers.dart';
 import 'Model/SalesOrderItem.dart';
 import 'Model/chart_account.dart';
+import 'Model/customer_lite.dart';
 import 'Model/ledger_entry.dart';
 import 'collection_screen.dart';
 
@@ -626,6 +628,64 @@ class ApiService {
     } else {
       throw Exception('Failed to load discount policies (${res.statusCode})');
     }
+  }
+
+  static Future<PagedCustomers> getCustomersPaged({
+    required String managerIDInvoice,
+    required String managerIDPO,
+    String searchKey = "",
+    required int pageNumber, // 1-based page number expected by your sample payload
+    int pageSize = 20,
+  }) async {
+    final uri = Uri.parse("$baseUrl/api/Customer/GetCustomer");
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {
+      "ManagerIDInvoice": managerIDInvoice,
+      "ManagerIDPO": managerIDPO,
+      "searchKey": searchKey,
+      "pageNumber": pageNumber,
+      "pageSize": pageSize,
+    };
+
+    final resp = await http.post(
+      uri,
+      headers: {
+        "Content-Type": "application/json",
+        // Add auth header if your project uses it:
+         "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (resp.statusCode != 200) {
+      throw Exception("Failed to load customers: ${resp.statusCode}");
+    }
+
+    final Map<String, dynamic> json = jsonDecode(resp.body);
+
+    final data = (json['data'] ?? {}) as Map<String, dynamic>;
+    final list = (data['customerDropDownVM'] ?? []) as List<dynamic>;
+
+    final items = list
+        .map((e) => CustomerLite.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
+
+    // pull paging/meta from response if present (with sensible fallbacks)
+    final int totalRecords = (json['totalRecords'] ?? 0) as int;
+    final int pageSizeResp = (json['pageSize'] ?? pageSize) as int;
+    // NOTE: API sample shows `pageIndex` — might be 0- or 1-based. We’ll trust as-is.
+    final int pageIndex = (json['pageIndex'] ?? pageNumber) as int;
+    final int totalInResp = (json['totalRecordsInResponse'] ?? items.length) as int;
+
+    return PagedCustomers(
+      items: items,
+      pageIndex: pageIndex,
+      pageSize: pageSizeResp,
+      totalRecords: totalRecords,
+      totalRecordsInResponse: totalInResp,
+    );
   }
 
 
