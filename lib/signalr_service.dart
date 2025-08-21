@@ -1,77 +1,90 @@
 import 'dart:async';
-
 import 'package:signalr_core/signalr_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Handles connection to the SignalR chat hub with automatic reconnection.
 class SignalRService {
   SignalRService._internal();
   static final SignalRService instance = SignalRService._internal();
 
+  // Prefer HTTPS in emulator/production. If you MUST use http, allow cleartext in Manifest.
   static const String _hubUrl = 'http://api.slcloud.3em.tech/chatHub';
 
   HubConnection? _connection;
-  bool _isStarting = false;
 
-  /// Returns current SignalR connection if available.
+  // Coalesce concurrent start() calls
+  Completer<void>? _startCompleter;
+
   HubConnection? get connection => _connection;
 
-  /// Starts the SignalR connection using the stored token.
   Future<void> start() async {
-    if (_isStarting) return;
+    // If a start is already in-flight, await it instead of starting again.
+    if (_startCompleter != null) {
+      return _startCompleter!.future;
+    }
+
+    // If already connected or connecting/reconnecting, do nothing.
     if (_connection != null &&
         _connection!.state != HubConnectionState.disconnected) {
       return;
     }
-    _isStarting = true;
 
-    final prefs = await SharedPreferences.getInstance();
-    final token =
-        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final completer = Completer<void>();
+    _startCompleter = completer;
 
-    _connection = HubConnectionBuilder()
-        .withUrl(
-          _hubUrl,
-          HttpConnectionOptions(
-            accessTokenFactory: () async => token,
-          ),
-        )
-        .withAutomaticReconnect()
-        .build();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      // Build a fresh connection every time we start from a fully stopped state.
+      _connection =  HubConnectionBuilder()
+          .withUrl(
+        _hubUrl,
+        HttpConnectionOptions(
+          accessTokenFactory: () async => token,
 
-    _connection!.onreconnecting((error) {
-      // ignore: avoid_print
-      print('SignalR reconnecting: ' + (error?.toString() ?? '')); 
-    });
+        ),
+      )
+          .withAutomaticReconnect([0, 2000, 5000, 10000, 20000, 30000])
+          .build();
 
-    _connection!.onreconnected((connectionId) {
-      // ignore: avoid_print
-      print('SignalR reconnected: ' + (connectionId ?? ''));
-    });
+      // Keep-alive / timeouts
+      _connection!.keepAliveIntervalInMilliseconds = 15000;
+      _connection!.serverTimeoutInMilliseconds = 60000;
 
-    _connection!.onclose((error) {
-      // ignore: avoid_print
-      print('SignalR connection closed: ' + (error?.toString() ?? ''));
-    });
+      // Lightweight logging
+      _connection!.onreconnecting((e) => print('[SignalR] reconnecting $e'));
+      _connection!.onreconnected((id) => print('[SignalR] reconnected id=$id'));
+      _connection!.onclose((e) => print('[SignalR] closed $e'));
 
-    // Attempt to start the connection until it succeeds.
-    while (_connection!.state == HubConnectionState.disconnected) {
-      try {
-        await _connection!.start();
-      } catch (_) {
-        await Future.delayed(const Duration(seconds: 5));
-      }
+      await _connection!.start();
+      print('[SignalR] started. state=${_connection!.state}');
+      if (!completer.isCompleted) completer.complete();
+    } catch (e, st) {
+      print('[SignalR] start failed: $e');
+      print(st);
+      // Complete with error exactly once
+      if (!completer.isCompleted) completer.completeError(e, st);
+      rethrow;
+    } finally {
+      // Allow new starts AFTER this one has finished (success or error)
+      _startCompleter = null;
     }
-
-    _isStarting = false;
   }
 
-  /// Stops the SignalR connection if active.
   Future<void> stop() async {
-    if (_connection != null) {
-      await _connection!.stop();
-      _connection = null;
+    // If a start is in-flight, wait for it to settle to avoid racing stop vs start.
+    final sc = _startCompleter;
+    if (sc != null) {
+      try { await sc.future; } catch (_) {/* ignore start error here */ }
+    }
+
+    final c = _connection;
+    if (c != null) {
+      try {
+        await c.stop();
+        print('[SignalR] stopped.');
+      } finally {
+        _connection = null;
+      }
     }
   }
 }
-
