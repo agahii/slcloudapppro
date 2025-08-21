@@ -9,7 +9,6 @@ import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-import 'package:google_fonts/google_fonts.dart';
 enum OrderAction { placeOrder, salesInvoice }
 enum ManagerSource { salesOrder, invoice }
 class HomeScreen extends StatefulWidget {
@@ -722,9 +721,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   // Product Name
                   Text(
                     product.skuName,
-                    style: GoogleFonts.roboto(
+                    style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
+                      fontFamily: 'Roboto', // modern clean font
                       letterSpacing: 0.2,
                     ),
                     maxLines: 2,
@@ -748,10 +748,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     children: [
                       Text(
                         'Rs. ${product.tradePrice}',
-                        style: GoogleFonts.robotoMono(
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
+                          fontFamily: 'RobotoMono', // monospace for numbers
                         ),
                       ),
                       const SizedBox(width: 12),

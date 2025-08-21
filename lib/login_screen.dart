@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -134,8 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Opacity(
                                   opacity: isLoading ? 0 : 1,
-                                  child: Text('Login',
-                                      style: GoogleFonts.poppins(fontSize: 16)),
+                                  child: const Text('Login', style: TextStyle(fontSize: 16)),
                                 ),
                                 if (isLoading)
                                   const SizedBox(
