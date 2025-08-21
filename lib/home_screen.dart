@@ -1144,8 +1144,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          side: BorderSide(color: Theme.of(context).colorScheme.error),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -1157,8 +1157,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -1420,14 +1420,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: ListView(
             children: [
               UserAccountsDrawerHeader(
-                decoration: BoxDecoration(color: theme.primaryColor),
+                decoration: BoxDecoration(color: theme.colorScheme.primary),
                 accountName: Text('$firstName $lastName'),
                 accountEmail: const Text(''),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Text(
                     firstName.isNotEmpty ? firstName[0] : '',
-                    style: TextStyle(fontSize: 40, color: theme.primaryColor),
+                    style: TextStyle(fontSize: 40, color: theme.colorScheme.primary),
                   ),
                 ),
               ),
@@ -1439,8 +1439,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
               ListTile(
-                leading: Icon(Icons.people, color: theme.primaryColor),
-                title: Text('My Customers', style: TextStyle(color: theme.primaryColor)),
+                leading: Icon(Icons.people, color: theme.colorScheme.primary),
+                title: Text('My Customers', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/myCustomers');
@@ -1453,8 +1453,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
               ListTile(
-                leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-                title: Text('Customer Ledger', style: TextStyle(color: theme.primaryColor)),
+                leading:
+                    Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
+                title: Text('Customer Ledger', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/customerLedger');
@@ -1464,16 +1465,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               // ✅ Only show when hasSO
               if (_salesOrderMgrId.isNotEmpty) ...[
                 ListTile(
-                  leading: Icon(Icons.payments_outlined, color: theme.primaryColor),
-                  title: Text('Collections', style: TextStyle(color: theme.primaryColor)),
+                  leading: Icon(Icons.payments_outlined, color: theme.colorScheme.primary),
+                  title: Text('Collections', style: TextStyle(color: theme.colorScheme.primary)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/collections');
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-                  title: Text('My Sales Orders', style: TextStyle(color: theme.primaryColor)),
+                  leading: Icon(Icons.account_balance_wallet, color: theme.colorScheme.primary),
+                  title: Text('My Sales Orders', style: TextStyle(color: theme.colorScheme.primary)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/mySalesOrders');
@@ -1485,8 +1486,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (_invoiceMgrId.isNotEmpty) ...[
 
               ListTile(
-                leading: Icon(Icons.receipt_long, color: theme.primaryColor),
-                title: Text('My Sales Invoices', style: TextStyle(color: theme.primaryColor)),
+                leading: Icon(Icons.receipt_long, color: theme.colorScheme.primary),
+                title: Text('My Sales Invoices', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/mySalesInvoices');
@@ -1494,8 +1495,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
 
       ListTile(
-        leading: Icon(Icons.payments, color: theme.primaryColor),
-        title: Text('My Cash Book', style: TextStyle(color: theme.primaryColor)),
+        leading: Icon(Icons.payments, color: theme.colorScheme.primary),
+        title: Text('My Cash Book', style: TextStyle(color: theme.colorScheme.primary)),
         onTap: () {
           Navigator.pop(context);
           Navigator.pushNamed(context, '/myCashBook');
@@ -1507,8 +1508,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
               ListTile(
-                leading: Icon(Icons.policy, color: theme.primaryColor),
-                title: Text('Active Policy', style: TextStyle(color: theme.primaryColor)),
+                leading: Icon(Icons.policy, color: theme.colorScheme.primary),
+                title: Text('Active Policy', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/activePolicy');
@@ -1516,8 +1517,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
 ],
               ListTile(
-                leading: Icon(Icons.money, color: theme.primaryColor),
-                title: Text('My Expenses', style: TextStyle(color: theme.primaryColor)),
+                leading: Icon(Icons.money, color: theme.colorScheme.primary),
+                title: Text('My Expenses', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/myExpenses');
@@ -1527,8 +1528,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const Divider(),
 
               ListTile(
-                leading: Icon(Icons.logout, color: theme.primaryColor),
-                title: Text('Logout', style: TextStyle(color: theme.primaryColor)),
+                leading: Icon(Icons.logout, color: theme.colorScheme.primary),
+                title: Text('Logout', style: TextStyle(color: theme.colorScheme.primary)),
                 onTap: () async {
                   final nav = Navigator.of(context);
                   final prefs = await SharedPreferences.getInstance();
@@ -1592,7 +1593,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor), // brand color on focus
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.primary), // brand color on focus
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
               ),

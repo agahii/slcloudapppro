@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
-import 'login_screen.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
 import 'my_cash_book_screen.dart';
 import 'my_customers_screen.dart';
-import 'splash_screen.dart';
-import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
+import 'my_sales_orders_screen.dart';
+import 'splash_screen.dart';
+import 'theme/app_colors.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,17 +19,6 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // Your brand colors
-  static const Color primaryColor = Color(0xFF0D47A1); // Buttons/AppBar
-  static const Color accentColor = Colors.white;
-
-  // Your login gradient colors reused app-wide
-  static const List<Color> appGradient = [
-    Color(0xFF0F2027),
-    Color(0xFF203A43),
-    Color(0xFF2C5364),
-  ];
 
   Future<bool> isTokenValid() async {
     final prefs = await SharedPreferences.getInstance();
@@ -45,63 +35,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = ThemeData(
-      useMaterial3: true,
-      // Transparent so the gradient behind shows through
-      scaffoldBackgroundColor: Colors.transparent,
-      // Keep your old primary-based styling
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.dark, // looks great over the dark gradient
-        primary: primaryColor,
-        onPrimary: accentColor,
-      ),
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
-      iconTheme: const IconThemeData(color: primaryColor),
-      drawerTheme: const DrawerThemeData(backgroundColor: Colors.transparent),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: accentColor,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.08),
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.75)),
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-        prefixIconColor: Colors.white,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-      ),
-    );
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: base,
+      theme: AppTheme.dark(),
       // Paint the gradient BEHIND all screens
       builder: (context, child) => Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: appGradient,
+            colors: AppColors.gradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -111,7 +52,7 @@ class MyApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
-        '/home' : (_) => const HomeScreen(),
+        '/home': (_) => const HomeScreen(),
         '/mySalesOrders': (_) => const MySalesOrdersScreen(),
         '/mySalesInvoices': (_) => const MySalesInvoicesScreen(),
         '/myCashBook': (_) => const MyCashBookScreen(),

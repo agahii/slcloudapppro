@@ -62,11 +62,13 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Image.asset('assets/images/logo.png', height: 100),
               const SizedBox(height: 16),
-              Text('Welcome Back!',
-                  style: t.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  )),
+              Text(
+                'Welcome Back!',
+                style: t.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               const SizedBox(height: 30),
 
               // Glass card container that matches theme InputDecoration
@@ -147,13 +149,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('Forgot password?',
-                            style: TextStyle(color: Colors.white70)),
+                        child: Text(
+                          'Forgot password?',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('Don\'t have an account? Sign Up',
-                            style: TextStyle(color: Colors.white70)),
+                        child: Text(
+                          'Don\'t have an account? Sign Up',
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
+                        ),
                       ),
                     ],
                   ),
