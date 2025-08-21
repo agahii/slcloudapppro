@@ -161,18 +161,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          'Don\'t have an account? Sign Up',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
