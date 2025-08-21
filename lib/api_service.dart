@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,13 +59,40 @@ class ApiService {
         ? text
         : (r.reasonPhrase ?? 'Request failed (${r.statusCode}).');
   }
-  static Future<Map<String, dynamic>> attemptLogin(String email, String password) async {
+
+  static Future<http.Response> _post(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
+    try {
+      return await http
+          .post(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw ApiException(408, 'Request timed out');
+    } catch (e) {
+      throw ApiException(-1, e.toString());
+    }
+  }
+
+  static Future<http.Response> _put(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
+    try {
+      return await http
+          .put(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw ApiException(408, 'Request timed out');
+    } catch (e) {
+      throw ApiException(-1, e.toString());
+    }
+  }
+  static Future<Map<String, dynamic>> attemptLogin(
+      String email, String password) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final url = Uri.parse('$baseUrl/api/Account/loginMobile');
 
-    final response = await http.post(
+    final response = await _post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'mobile': email, 'password': password}),
@@ -99,20 +127,22 @@ class ApiService {
         return {'success': false, 'message': json['message']};
       }
     } else {
-      return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
     }
   }
   static Future<List<Customer>> fetchPOCustomers(String managerID, String searchKey) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
-    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetCustomer');
+    final url =
+        Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetCustomer');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
-    final response = await http.post(
+    final response = await _post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -126,7 +156,8 @@ class ApiService {
       final list = data['data']['customerDropDownVM'] as List;
       return list.map((item) => Customer.fromJson(item)).toList();
     } else {
-      throw Exception('Failed to load customers');
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
     }
   }
 
@@ -134,15 +165,15 @@ class ApiService {
 
   static Future<List<Customer>> fetchInvCustomers(String managerID, String searchKey) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetCustomer');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
-    final response = await http.post(
+    final response = await _post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -156,7 +187,8 @@ class ApiService {
       final list = data['data']['customerDropDownVM'] as List;
       return list.map((item) => Customer.fromJson(item)).toList();
     } else {
-      throw Exception('Failed to load customers');
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
     }
   }
 
@@ -166,20 +198,25 @@ class ApiService {
 
   static Future<http.Response> finalizeSalesOrder(Map<String, dynamic> payload) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/Add');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
-    return response;
+    final response =
+        await _post(url, headers: headers, body: jsonEncode(payload));
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response;
+    } else {
+      throw ApiException(response.statusCode, extractServerMessage(response));
+    }
   }
 
 
@@ -192,7 +229,7 @@ class ApiService {
 
 
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
@@ -201,13 +238,25 @@ class ApiService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+    final response =
+        await _post(url, headers: headers, body: jsonEncode(payload));
 
     final bodyText = _utf8Body(response);
     dynamic jsonBody;
-    try { jsonBody = json.decode(bodyText); } catch (_) { /* may be plain text/HTML */ }
+    try {
+      jsonBody = json.decode(bodyText);
+    } catch (_) {
+      // may be plain text/HTML
+    }
+    if (jsonBody != null) {
+      print('addProvisionalReceipt response: $jsonBody');
+    }
 
-    return response;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response;
+    } else {
+      throw ApiException(response.statusCode, extractServerMessage(response));
+    }
   }
 
 
@@ -215,24 +264,36 @@ class ApiService {
 
   static Future<http.Response> finalizeInvoice(Map<String, dynamic> payload) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final url = Uri.parse('$baseUrl/api/InvoiceMaster/AddPos');
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
-    final response = await http.post(url, headers: headers, body: jsonEncode(payload));
+    final response =
+        await _post(url, headers: headers, body: jsonEncode(payload));
     final bodyText = _utf8Body(response);
     dynamic jsonBody;
-    try { jsonBody = json.decode(bodyText); } catch (_) { /* may be plain text/HTML */ }
+    try {
+      jsonBody = json.decode(bodyText);
+    } catch (_) {
+      // may be plain text/HTML
+    }
+    if (jsonBody != null) {
+      print('finalizeInvoice response: $jsonBody');
+    }
 
-    return response;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response;
+    } else {
+      throw ApiException(response.statusCode, extractServerMessage(response));
+    }
   }
   static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
@@ -243,12 +304,12 @@ class ApiService {
     String searchKey = "",
   }) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
     final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetSKUPOS');
     final payload = {
@@ -263,7 +324,7 @@ class ApiService {
     };
 
 
-    final response = await http.post(
+    final response = await _post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -277,7 +338,8 @@ class ApiService {
       final List skuList = data['data']['skuVMPOS'];
       return skuList.map((item) => Product.fromJson(item)).toList();
     } else {
-      throw Exception('Failed to load products');
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
     }
   }
 
@@ -292,12 +354,12 @@ class ApiService {
     String searchKey = "",
   }) async {
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
     final url = Uri.parse('$baseUrl/api/InvoiceMaster/GetSKUPOS');
     final payload = {
@@ -311,7 +373,7 @@ class ApiService {
     };
 
 
-    final response = await http.post(
+    final response = await _post(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -325,7 +387,8 @@ class ApiService {
       final List skuList = data['data']['skuVMPOS'];
       return skuList.map((item) => Product.fromJson(item)).toList();
     } else {
-      throw Exception('Failed to load products');
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
     }
   }
 
@@ -344,15 +407,14 @@ class ApiService {
     required int pageNumber,
     required int pageSize,
   }) async {
-
-
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
-
-
 
     final payload = {
       "managerID": managerID,
@@ -361,11 +423,11 @@ class ApiService {
       "pageSize": pageSize,
     };
 
-    final res = await http.post(
+    final res = await _post(
       Uri.parse("$baseUrl/api/InvoiceMaster/GetEmployeeInvoice"),
       headers: {
         "Content-Type": "application/json",
-            'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(payload),
     );
@@ -375,7 +437,7 @@ class ApiService {
       final List data = json['data'] ?? [];
       return data.map((e) => SalesInvoice.fromJson(e)).toList();
     } else {
-      throw Exception("Failed to fetch invoices");
+      throw ApiException(res.statusCode, extractServerMessage(res));
     }
   }
 
@@ -388,21 +450,19 @@ class ApiService {
     required String searchKey,
     required String status, // "ALL" | "OPEN" | "CLOSED"
   }) async {
-
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
 
-
-
     // If your backend expects POST with body:
-    final uri = Uri.parse("$baseUrl/api/PurchaseSalesOrderMaster/GetEmployeeOrder"); // <-- TODO: confirm endpoint
+    final uri = Uri.parse(
+        "$baseUrl/api/PurchaseSalesOrderMaster/GetEmployeeOrder"); // <-- TODO: confirm endpoint
 
     final body = {
       "managerID": managerID,
@@ -412,7 +472,7 @@ class ApiService {
       "status": status, // tell backend how you encode filters; otherwise ignore
     };
 
-    final resp = await http.post(
+    final resp = await _post(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -434,7 +494,7 @@ class ApiService {
           .map((e) => SalesOrder.fromJson(e as Map<String, dynamic>))
           .toList();
     } else {
-      throw Exception("Server ${resp.statusCode}: ${resp.body}");
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
     }
   }
 
@@ -447,15 +507,14 @@ class ApiService {
     required int pageSize,
     String searchKey = "",
   }) async {
-
     if (!await hasInternetConnection()) {
-      throw Exception('No internet connection.');
+      throw ApiException(0, 'No internet connection.');
     }
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
 
     // Same pattern as fetchMySalesOrders
@@ -468,7 +527,7 @@ class ApiService {
       "searchKey": searchKey,
     };
 
-    final resp = await http.post(
+    final resp = await _post(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -490,7 +549,7 @@ class ApiService {
           .map((e) => CashBookEntry.fromJson(e as Map<String, dynamic>))
           .toList();
     } else {
-      throw Exception("Server ${resp.statusCode}: ${resp.body}");
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
     }
   }
 
@@ -513,14 +572,16 @@ class ApiService {
     required int page,
     required int pageSize,
   }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-
     if (token == null) {
-      throw Exception('Token not found. Please login again.');
+      throw ApiException(401, 'Token not found. Please login again.');
     }
-
 
     // TODO: adjust endpoint path if your backend differs
     final uri = Uri.parse('$baseUrl/api/Ledger/GetPOSCustomerLedger');
@@ -532,7 +593,7 @@ class ApiService {
       "searchKey": "",
     };
 
-    final resp = await http.post(
+    final resp = await _post(
       uri,
       headers: {
         'Content-Type': 'application/json',
@@ -542,7 +603,7 @@ class ApiService {
     );
 
     if (resp.statusCode != 200) {
-      throw Exception('Ledger fetch failed (${resp.statusCode}): ${resp.body}');
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
     }
 
     final decoded = jsonDecode(resp.body);
@@ -566,6 +627,9 @@ class ApiService {
     required String managerID,
     String searchKey = '',
   }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
     final prefs = await SharedPreferences.getInstance();
 
     final token =
@@ -586,11 +650,10 @@ class ApiService {
       'searchKey': searchKey,
     });
 
-    final res = await http.post(uri, headers: headers, body: body);
+    final res = await _post(uri, headers: headers, body: body);
 
     if (res.statusCode != 200) {
-      throw Exception(
-          'GetProvisionalReceiptCreditAccounts failed (${res.statusCode}): ${res.body}');
+      throw ApiException(res.statusCode, extractServerMessage(res));
     }
 
     final decoded = jsonDecode(res.body) as Map<String, dynamic>;
@@ -607,6 +670,9 @@ class ApiService {
 
 
   static Future<List<DiscountPolicy>> getDiscountPolicyPOS() async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
     final url = Uri.parse('$baseUrl/api/DiscountPolicy/GetDiscountPolicyPOS');
     final prefs = await SharedPreferences.getInstance();
     final token =
@@ -618,7 +684,7 @@ class ApiService {
       if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
 
-    final res = await http.post(url,headers: headers, body: jsonEncode({}));
+    final res = await _post(url, headers: headers, body: jsonEncode({}));
     if (res.statusCode == 200) {
       final json = jsonDecode(res.body);
       final list = (json['data'] ?? []) as List;
@@ -626,7 +692,7 @@ class ApiService {
           .map((e) => DiscountPolicy.fromMap(Map<String, dynamic>.from(e)))
           .toList();
     } else {
-      throw Exception('Failed to load discount policies (${res.statusCode})');
+      throw ApiException(res.statusCode, extractServerMessage(res));
     }
   }
 
@@ -637,6 +703,9 @@ class ApiService {
     required int pageNumber, // 1-based page number expected by your sample payload
     int pageSize = 20,
   }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
     final uri = Uri.parse("$baseUrl/api/Customer/GetCustomer");
     final prefs = await SharedPreferences.getInstance();
     final token =
@@ -649,18 +718,18 @@ class ApiService {
       "pageSize": pageSize,
     };
 
-    final resp = await http.post(
+    final resp = await _post(
       uri,
       headers: {
         "Content-Type": "application/json",
         // Add auth header if your project uses it:
-         "Authorization": "Bearer $token",
+        "Authorization": "Bearer $token",
       },
       body: jsonEncode(payload),
     );
 
     if (resp.statusCode != 200) {
-      throw Exception("Failed to load customers: ${resp.statusCode}");
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
     }
 
     final Map<String, dynamic> json = jsonDecode(resp.body);
@@ -694,6 +763,9 @@ class ApiService {
     required double latitude,
     required double longitude,
   }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
     final uri = Uri.parse("$baseUrl/api/Customer/AddCustomerGeoTag");
     final prefs = await SharedPreferences.getInstance();
     final token =
@@ -704,17 +776,17 @@ class ApiService {
       "longitude": longitude,
     };
 
-    final resp = await http.put(
+    final resp = await _put(
       uri,
       headers: {
         "Content-Type": "application/json",
-         "Authorization": "Bearer $token",
+        "Authorization": "Bearer $token",
       },
       body: jsonEncode(payload),
     );
 
     if (resp.statusCode != 200 && resp.statusCode != 204) {
-      throw Exception("Geo-tag failed: ${resp.statusCode} ${resp.body}");
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
     }
   }
 
