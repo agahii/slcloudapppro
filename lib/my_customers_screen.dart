@@ -213,7 +213,7 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to log visit: $e")),
+        SnackBar(content: Text("Failed to Tag: $e")),
       );
     } finally {
       if (!mounted) return;
@@ -222,6 +222,31 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
   }
 
 
+  Future<void> _confirmLogVisit(BuildContext context, CustomerLite c) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Confirm Tagging'),
+          content: Text('Do you want to Tag location for "${c.customer}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      _logVisit(c);
+    }
+  }
 
 
 
@@ -298,7 +323,7 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                   return ListTile(
                     leading: _Avatar(initials: _initials(c.customer)),
                     title: Text(
-                      c.customerName,
+                      c.customer,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -324,7 +349,7 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
                             : IconButton(
                           icon: const Icon(Icons.pin_drop_outlined),
                           tooltip: 'Log Visit',
-                          onPressed: () => _logVisit(c),
+                          onPressed: () => _confirmLogVisit(context, c),
                         ),
                         const Icon(Icons.chevron_right),
                       ],
