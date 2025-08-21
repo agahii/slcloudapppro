@@ -1539,24 +1539,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 },
               ),
             ],
+          ),
         ),
-        ),
-      bottomNavigationBar: const BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Users',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.call),
-            label: 'Call',
-          ),
-        ],
-      ),
+
 
       body: Column(
         children: [
