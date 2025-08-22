@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.modern(),
+      theme: AppTheme.dark(),
       // Paint the gradient BEHIND all screens
       builder: (context, child) => Container(
         decoration: const BoxDecoration(
