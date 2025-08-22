@@ -19,7 +19,7 @@
  
      final hubConnection = HubConnectionBuilder()
          .withUrl(
-           '${ApiService.baseUrl}/notificationsHub',
+           'https://api.slcloud.3em.tech/chatHub',
            HttpConnectionOptions(
              accessTokenFactory: () async => token,
            ),
