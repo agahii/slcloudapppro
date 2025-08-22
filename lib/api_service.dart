@@ -23,7 +23,7 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 class ApiService {
-  static const String baseUrl = 'http://api.slcloud.3em.tech';
+  static const String baseUrl = 'https://api.slcloud.3em.tech';
   //static const String baseUrl = 'http://localhost:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
   static Future<bool> hasInternetConnection() async {
