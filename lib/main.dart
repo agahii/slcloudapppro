@@ -11,13 +11,40 @@ import 'my_customers_screen.dart';
 import 'splash_screen.dart';
 import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
+import 'signalr_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // If a JWT token is already stored, start the SignalR connection so it's
+  // ready by the time the UI is rendered.
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+  if (token != null) {
+    try {
+      await SignalRService.instance.start(token);
+    } catch (_) {
+      // Ignore errors during early startup; login flow will retry if needed.
+    }
+  }
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void dispose() {
+    // Gracefully close the SignalR connection when the app is disposed.
+    SignalRService.instance.stop();
+    super.dispose();
+  }
 
   // Your brand colors
   static const Color primaryColor = Color(0xFF0D47A1); // Buttons/AppBar

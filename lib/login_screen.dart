@@ -34,8 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response['success'] == true) {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
-        final signalRService = SignalRService();
-        await signalRService.start(token!).then((_) {
+        await SignalRService.instance.start(token!).then((_) {
           print("SignalR started!");
         }).catchError((err) {
           print("Error starting SignalR: $err");

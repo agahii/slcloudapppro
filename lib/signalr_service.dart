@@ -2,7 +2,12 @@ import 'dart:io';
 import 'package:signalr_core/signalr_core.dart';
 import 'package:http/io_client.dart';
 
+/// A simple singleton wrapper around [HubConnection] so a single
+/// SignalR connection can be shared across the entire app lifecycle.
 class SignalRService {
+  SignalRService._internal();
+  static final SignalRService instance = SignalRService._internal();
+
   HubConnection? _connection;
 
   Future<void> start(String userToken) async {
