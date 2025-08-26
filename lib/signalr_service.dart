@@ -17,7 +17,6 @@ class SignalRService {
       HttpConnectionOptions(
         accessTokenFactory: () async => userToken,
         transport: HttpTransportType.webSockets,
-        skipNegotiation: true,
       ),
     )
         .withAutomaticReconnect()
