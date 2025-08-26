@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'signalr_service.dart';
 class LoginScreen extends StatefulWidget {
@@ -31,7 +32,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (response['success'] == true) {
-         SignalRService.instance.start();
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        final signalRService = SignalRService();
+        signalRService.start(token!).then((_) {
+          print("SignalR started!");
+        }).catchError((err) {
+          print("Error starting SignalR: $err");
+        });
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         final msg = (response['message'] ?? 'Login failed').toString();

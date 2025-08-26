@@ -1,92 +1,50 @@
-import 'dart:async';
+import 'dart:io';
 import 'package:signalr_core/signalr_core.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/io_client.dart';
 
 class SignalRService {
-  SignalRService._internal();
-  static final SignalRService instance = SignalRService._internal();
-
-  // Prefer HTTPS in emulator/production. If you MUST use http, allow cleartext in Manifest.
-  static const String _hubUrl = 'https://api.slcloud.3em.tech/chatHub';
-
   HubConnection? _connection;
 
-  // Coalesce concurrent start() calls
-  Completer<void>? _startCompleter;
+  Future<void> start(String userToken) async {
+    // --- DEV ONLY: enable to test TLS chain problems ---
+    // final insecureClient = IOClient(
+    //   HttpClient()..badCertificateCallback = (cert, host, port) => true,
+    // );
 
-  HubConnection? get connection => _connection;
+    _connection = HubConnectionBuilder()
+        .withUrl(
+      'https://api.slcloud.3em.tech/chatHub',
+      HttpConnectionOptions(
+        accessTokenFactory: () async => userToken,
+        transport: HttpTransportType.webSockets,
+        skipNegotiation: true,
+      ),
+    )
+        .withAutomaticReconnect()
+        .build();
 
-  Future<void> start() async {
-    // If a start is already in-flight, await it instead of starting again.
-    if (_startCompleter != null) {
-      return _startCompleter!.future;
-    }
+    // 4) Keepalive / timeouts
+    _connection!.serverTimeoutInMilliseconds = 60000;
+    _connection!.keepAliveIntervalInMilliseconds = 15000;
 
-    // If already connected or connecting/reconnecting, do nothing.
-    if (_connection != null &&
-        _connection!.state != HubConnectionState.disconnected) {
-      return;
-    }
+    // Optional logging
+    _connection!.onclose((e) => print('SignalR closed: $e'));
+    _connection!.onreconnected((_) => print('SignalR reconnected'));
+    _connection!.onreconnecting((e) => print('SignalR reconnecting: $e'));
 
-    final completer = Completer<void>();
-    _startCompleter = completer;
-
+    // Start
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = await prefs.getString('token');
-      print('[SignalR] using token=$token');
-      // Build a fresh connection every time we start from a fully stopped state.
-      _connection =  HubConnectionBuilder()
-          .withUrl(
-        _hubUrl,
-        HttpConnectionOptions(
-          transport: HttpTransportType.webSockets,
-          accessTokenFactory: () async => token,
-
-        ),
-      )
-          .withAutomaticReconnect([0, 2000, 5000, 10000, 20000, 30000])
-          .build();
-
-      // Keep-alive / timeouts
-      _connection!.keepAliveIntervalInMilliseconds = 15000;
-      _connection!.serverTimeoutInMilliseconds = 60000;
-
-      // Lightweight logging
-      _connection!.onreconnecting((e) => print('[SignalR] reconnecting $e'));
-      _connection!.onreconnected((id) => print('[SignalR] reconnected id=$id'));
-      _connection!.onclose((e) => print('[SignalR] closed $e'));
-
       await _connection!.start();
-      print('[SignalR] started. state=${_connection!.state}');
-      if (!completer.isCompleted) completer.complete();
-    } catch (e, st) {
-      print('[SignalR] start failed: $e');
-      print(st);
-      // Complete with error exactly once
-      if (!completer.isCompleted) completer.completeError(e, st);
+      print('SignalR connected: ${_connection!.connectionId}');
+    } on Exception catch (e) {
+      print('SignalR start error: $e');
       rethrow;
-    } finally {
-      // Allow new starts AFTER this one has finished (success or error)
-      _startCompleter = null;
     }
   }
 
-  Future<void> stop() async {
-    // If a start is in-flight, wait for it to settle to avoid racing stop vs start.
-    final sc = _startCompleter;
-    if (sc != null) {
-      try { await sc.future; } catch (_) {/* ignore start error here */ }
-    }
+  Future<void> stop() async => _connection?.stop();
 
-    final c = _connection;
-    if (c != null) {
-      try {
-        await c.stop();
-        print('[SignalR] stopped.');
-      } finally {
-        _connection = null;
-      }
-    }
+  Future<void> sendToServer(String method, Object? arg) async {
+    await _connection?.invoke(method, args: [arg]);
   }
 }
