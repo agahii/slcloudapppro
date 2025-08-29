@@ -28,7 +28,26 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final res = await ApiService.getAllowedIps(page: _page, pageSize: _pageSize);
+      final sort = [
+        {'dir': 'asc', 'field': 'ipAddress'},
+      ];
+      final filter = {
+        'logic': 'and',
+        'filters': [
+          {
+            'operator': 'contains',
+            'value': '',
+            'field': 'ipAddress',
+            'ignoreCase': true,
+          }
+        ],
+      };
+      final res = await ApiService.getAllowedIps(
+        page: _page,
+        pageSize: _pageSize,
+        sort: sort,
+        filter: filter,
+      );
       setState(() {
         _items = res.items;
         _totalRecords = res.totalRecords;
