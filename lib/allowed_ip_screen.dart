@@ -34,12 +34,12 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
       final filter = {
         'logic': 'and',
         'filters': [
-          {
-            'operator': 'contains',
-            'value': '',
-            'field': 'ipAddress',
-            'ignoreCase': true,
-          }
+          // {
+          //   'operator': '',
+          //   'value': '',
+          //   'field': '',
+          //   'ignoreCase': true,
+          // }
         ],
       };
       final res = await ApiService.getAllowedIps(
