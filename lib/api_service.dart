@@ -833,8 +833,8 @@ class ApiService {
 
      for (int i = 0; i < sort.length; i++) {
       final s = sort[i];
-      payload['sort[$i][dir]'] = s['dir'];
-      payload['sort[$i][field]'] = s['field'];
+      payload['sort[$i][dir]'] = s['dir'] as Object;
+      payload['sort[$i][field]'] = s['field'] as Object;
     }
 
     if (filter != null) {
