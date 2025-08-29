@@ -34,11 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response['success'] == true) {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
-        await SignalRService.instance.start(token!).then((_) {
-          print("SignalR started!");
-        }).catchError((err) {
-          print("Error starting SignalR: $err");
-        });
+        // await SignalRService.instance.start(token!).then((_) {
+        //   print("SignalR started!");
+        // }).catchError((err) {
+        //   print("Error starting SignalR: $err");
+        // });
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         final msg = (response['message'] ?? 'Login failed').toString();

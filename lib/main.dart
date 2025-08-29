@@ -23,7 +23,7 @@ Future<void> main() async {
   final token = prefs.getString('token');
   if (token != null) {
     try {
-      await SignalRService.instance.start(token);
+     // await SignalRService.instance.start(token);
     } catch (_) {
       // Ignore errors during early startup; login flow will retry if needed.
     }
