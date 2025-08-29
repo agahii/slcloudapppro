@@ -820,18 +820,21 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final token =
         prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
-    final Map<String, dynamic> payload = {
+
+    final payload = {
+
       'isForDropDown': isForDropDown,
       'take': pageSize,
       'skip': (page - 1) * pageSize,
       'page': page,
       'pageSize': pageSize,
+
     };
 
-    for (int i = 0; i < sort.length; i++) {
+     for (int i = 0; i < sort.length; i++) {
       final s = sort[i];
-      payload['sort[$i][dir]'] = s['dir'] ?? '';
-      payload['sort[$i][field]'] = s['field'] ?? '';
+      payload['sort[$i][dir]'] = s['dir'];
+      payload['sort[$i][field]'] = s['field'];
     }
 
     if (filter != null) {
