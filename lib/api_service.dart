@@ -809,6 +809,9 @@ class ApiService {
   static Future<PagedAllowedIp> getAllowedIps({
     int page = 1,
     int pageSize = 20,
+    List<Map<String, String>> sort = const [],
+    Map<String, dynamic>? filter,
+    bool isForDropDown = false,
   }) async {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
@@ -817,19 +820,43 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final token =
         prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
-    final payload = {
+    final Map<String, dynamic> payload = {
+      'isForDropDown': isForDropDown,
       'take': pageSize,
       'skip': (page - 1) * pageSize,
       'page': page,
       'pageSize': pageSize,
     };
 
+    for (int i = 0; i < sort.length; i++) {
+      final s = sort[i];
+      payload['sort[$i][dir]'] = s['dir'] ?? '';
+      payload['sort[$i][field]'] = s['field'] ?? '';
+    }
+
+    if (filter != null) {
+      payload['filter[logic]'] = filter['logic'];
+      final filters = filter['filters'] as List<dynamic>? ?? [];
+      for (int i = 0; i < filters.length; i++) {
+        final f = filters[i] as Map<String, dynamic>;
+        payload['filter[filters][$i][operator]'] = f['operator'];
+        payload['filter[filters][$i][value]'] = f['value'];
+        payload['filter[filters][$i][field]'] = f['field'];
+        if (f.containsKey('ignoreCase')) {
+          payload['filter[filters][$i][ignoreCase]'] = f['ignoreCase'];
+        }
+      }
+    }
+
+    final formPayload =
+        payload.map((key, value) => MapEntry(key, value.toString()));
+
     final resp = await _post(uri,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(payload));
+        body: formPayload);
 
     if (resp.statusCode != 200) {
       throw ApiException(resp.statusCode, extractServerMessage(resp));
