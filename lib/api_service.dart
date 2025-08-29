@@ -12,6 +12,7 @@ import 'Model/SalesOrderItem.dart';
 import 'Model/chart_account.dart';
 import 'Model/customer_lite.dart';
 import 'Model/ledger_entry.dart';
+import 'Model/allowed_ip.dart';
 import 'collection_screen.dart';
 
 class ApiException implements Exception {
@@ -78,6 +79,19 @@ class ApiService {
     try {
       return await http
           .put(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw ApiException(408, 'Request timed out');
+    } catch (e) {
+      throw ApiException(-1, e.toString());
+    }
+  }
+
+  static Future<http.Response> _delete(Uri url,
+      {Map<String, String>? headers, Object? body}) async {
+    try {
+      return await http
+          .delete(url, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
     } on TimeoutException {
       throw ApiException(408, 'Request timed out');
@@ -789,6 +803,159 @@ class ApiService {
 
     if (resp.statusCode != 200 && resp.statusCode != 204) {
       throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+  }
+
+  static Future<PagedAllowedIp> getAllowedIps({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+    final uri = Uri.parse('$baseUrl/api/AllowedIP/Get');
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {
+      'take': pageSize,
+      'skip': (page - 1) * pageSize,
+      'page': page,
+      'pageSize': pageSize,
+    };
+
+    final resp = await _post(uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload));
+
+    if (resp.statusCode != 200) {
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+
+    final Map<String, dynamic> json = jsonDecode(resp.body);
+    final int code = (json['responseCode'] ?? 0) as int;
+    if (code != 0 && code != 1000) {
+      throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+    }
+
+    final List<dynamic> list = (json['data'] ?? []) as List<dynamic>;
+    final items = list
+        .map((e) => AllowedIp.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    final totalRecords = (json['totalRecords'] ?? 0) as int;
+    final pageSizeResp = (json['pageSize'] ?? pageSize) as int;
+    final pageIndex = (json['pageIndex'] ?? page) as int;
+    final totalInResp =
+        (json['totalRecordsInResponse'] ?? items.length) as int;
+
+    return PagedAllowedIp(
+      items: items,
+      pageIndex: pageIndex,
+      pageSize: pageSizeResp,
+      totalRecords: totalRecords,
+      totalRecordsInResponse: totalInResp,
+    );
+  }
+
+  static Future<void> addAllowedIp({
+    required String ipAddress,
+    String desc = '',
+    required bool isActive,
+    required DateTime validUntil,
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+    final uri = Uri.parse('$baseUrl/api/AllowedIP/Add');
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {
+      'ipAddress': ipAddress,
+      'desc': desc,
+      'isActive': isActive,
+      'validUntil': validUntil.toIso8601String(),
+    };
+    final resp = await _post(uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload));
+    if (resp.statusCode != 200) {
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+    final Map<String, dynamic> json = jsonDecode(resp.body);
+    final int code = (json['responseCode'] ?? 0) as int;
+    if (code != 0 && code != 1000) {
+      throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+    }
+  }
+
+  static Future<void> updateAllowedIp({
+    required String id,
+    required String ipAddress,
+    String desc = '',
+    required bool isActive,
+    required DateTime validUntil,
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+    final uri = Uri.parse('$baseUrl/api/AllowedIP/Update');
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {
+      'id': id,
+      'ipAddress': ipAddress,
+      'desc': desc,
+      'isActive': isActive,
+      'validUntil': validUntil.toIso8601String(),
+    };
+    final resp = await _put(uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload));
+    if (resp.statusCode != 200) {
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+    final Map<String, dynamic> json = jsonDecode(resp.body);
+    final int code = (json['responseCode'] ?? 0) as int;
+    if (code != 0 && code != 1000) {
+      throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+    }
+  }
+
+  static Future<void> deleteAllowedIp(String id) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+    final uri = Uri.parse('$baseUrl/api/AllowedIP/Delete');
+    final prefs = await SharedPreferences.getInstance();
+    final token =
+        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final payload = {'id': id};
+    final resp = await _delete(uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload));
+    if (resp.statusCode != 200 && resp.statusCode != 204) {
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+    if (resp.body.isNotEmpty) {
+      final Map<String, dynamic> json = jsonDecode(resp.body);
+      final int code = (json['responseCode'] ?? 0) as int;
+      if (code != 0 && code != 1000) {
+        throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+      }
     }
   }
 
