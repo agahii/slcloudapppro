@@ -823,6 +823,7 @@ class ApiService {
 
     final payload = {
 
+
       'isForDropDown': isForDropDown,
       'take': pageSize,
       'skip': (page - 1) * pageSize,
@@ -831,10 +832,12 @@ class ApiService {
 
     };
 
-     for (int i = 0; i < sort.length; i++) {
+
+    for (int i = 0; i < sort.length; i++) {
       final s = sort[i];
-      payload['sort[$i][dir]'] = s['dir'] as Object;
-      payload['sort[$i][field]'] = s['field'] as Object;
+      payload['sort[$i][dir]'] = s['dir'] ?? '';
+      payload['sort[$i][field]'] = s['field'] ?? '';
+
     }
 
     if (filter != null) {
@@ -851,12 +854,13 @@ class ApiService {
       }
     }
 
+
     final resp = await _post(uri,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(payload));
+        body: formPayload);
 
     if (resp.statusCode != 200) {
       throw ApiException(resp.statusCode, extractServerMessage(resp));
