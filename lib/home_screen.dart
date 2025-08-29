@@ -1434,7 +1434,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
 
-
+              ListTile(
+                leading: Icon(Icons.people, color: theme.primaryColor),
+                title: Text('Allowed IP', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/allowedIPs');
+                },
+              ),
 
 
         if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
