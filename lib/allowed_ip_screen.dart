@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import 'Model/allowed_ip.dart';
@@ -34,12 +33,7 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
       final filter = {
         'logic': 'and',
         'filters': [
-          // {
-          //   'operator': '',
-          //   'value': '',
-          //   'field': '',
-          //   'ignoreCase': true,
-          // }
+          // add filters if needed
         ],
       };
       final res = await ApiService.getAllowedIps(
@@ -107,95 +101,231 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
   String _fmtDate(DateTime? d) {
     if (d == null) return '';
     final l = d.toLocal();
-    return '${l.year.toString().padLeft(4, '0')}-${l.month.toString().padLeft(2, '0')}-${l.day.toString().padLeft(2, '0')} ${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+    return '${l.year.toString().padLeft(4, '0')}-${l.month.toString().padLeft(2, '0')}-${l.day.toString().padLeft(2, '0')} '
+        '${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Allowed IPs')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: ElevatedButton(
-                      onPressed: () => _openForm(),
-                      child: const Text('Add New'),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: _items.isEmpty
-                      ? const Center(child: Text('No Allowed IPs.'))
-                      : SingleChildScrollView(
-                          scrollDirection: Axis.vertical,
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text('IP Address')),
-                              DataColumn(label: Text('Description')),
-                              DataColumn(label: Text('Is Active')),
-                              DataColumn(label: Text('Valid Until')),
-                              DataColumn(label: Text('Actions')),
-                            ],
-                            rows: _items.map((ip) {
-                              return DataRow(cells: [
-                                DataCell(Text(ip.ipAddress)),
-                                DataCell(Text(ip.desc)),
-                                DataCell(Icon(ip.isActive ? Icons.check : Icons.close)),
-                                DataCell(Text(_fmtDate(ip.validUntil))),
-                                DataCell(Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () => _openForm(data: ip),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () => _confirmDelete(ip),
-                                    ),
-                                  ],
-                                )),
-                              ]);
-                            }).toList(),
-                          ),
-                        ),
-                ),
-                if (_items.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: _hasPrev
-                              ? () {
-                                  setState(() => _page--);
-                                  _load();
-                                }
-                              : null,
-                          icon: const Icon(Icons.chevron_left),
-                        ),
-                        Text('Page $_page'),
-                        IconButton(
-                          onPressed: _hasNext
-                              ? () {
-                                  setState(() => _page++);
-                                  _load();
-                                }
-                              : null,
-                          icon: const Icon(Icons.chevron_right),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton.icon(
+                onPressed: () => _openForm(),
+                icon: const Icon(Icons.add),
+                label: const Text('Add New'),
+              ),
             ),
+          ),
+          Expanded(
+            child: _items.isEmpty
+                ? const Center(child: Text('No Allowed IPs.'))
+                : LayoutBuilder(
+              builder: (ctx, constraints) {
+                // Responsive grid: 1 col (phones), 2 cols (tablets), 3+ cols (wide)
+                int crossAxisCount = 1;
+                if (constraints.maxWidth >= 1200) {
+                  crossAxisCount = 4;
+                } else if (constraints.maxWidth >= 900) {
+                  crossAxisCount = 3;
+                } else if (constraints.maxWidth >= 600) {
+                  crossAxisCount = 2;
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _load,
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      // Slightly wide cards to fit more content
+                      childAspectRatio: crossAxisCount == 1 ? 2.0 : 1.6,
+                    ),
+                    itemCount: _items.length,
+                    itemBuilder: (ctx, i) {
+                      final item = _items[i];
+                      return _AllowedIpCard(
+                        item: item,
+                        fmtDate: _fmtDate,
+                        onEdit: () => _openForm(data: item),
+                        onDelete: () => _confirmDelete(item),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_items.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: _hasPrev
+                        ? () {
+                      setState(() => _page--);
+                      _load();
+                    }
+                        : null,
+                    icon: const Icon(Icons.chevron_left),
+                    tooltip: 'Previous',
+                  ),
+                  Text('Page $_page'),
+                  IconButton(
+                    onPressed: _hasNext
+                        ? () {
+                      setState(() => _page++);
+                      _load();
+                    }
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                    tooltip: 'Next',
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AllowedIpCard extends StatelessWidget {
+  final AllowedIp item;
+  final String Function(DateTime?) fmtDate;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _AllowedIpCard({
+    required this.item,
+    required this.fmtDate,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final isExpired = item.validUntil != null && item.validUntil!.isBefore(DateTime.now());
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onEdit, // tap card to edit (optional)
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: IP + actions
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.ipAddress,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Edit',
+                    icon: const Icon(Icons.edit),
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    tooltip: 'Delete',
+                    icon: const Icon(Icons.delete),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 6),
+
+              // Description
+              if ((item.desc).trim().isNotEmpty)
+                Text(
+                  item.desc,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium,
+                ),
+
+              const SizedBox(height: 10),
+
+              // Chips row: Active/Inactive, ValidUntil, Expired flag
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(
+                    label: Text(item.isActive ? 'Active' : 'Inactive'),
+                    avatar: Icon(
+                      item.isActive ? Icons.check_circle : Icons.cancel,
+                      size: 18,
+                    ),
+                    backgroundColor: item.isActive
+                        ? cs.primaryContainer
+                        : cs.tertiaryContainer,
+                    labelStyle: TextStyle(
+                      color: item.isActive
+                          ? cs.onPrimaryContainer
+                          : cs.onTertiaryContainer,
+                    ),
+                  ),
+                  if (item.validUntil != null)
+                    Chip(
+                      label: Text('Valid: ${fmtDate(item.validUntil)}'),
+                      avatar: const Icon(Icons.schedule, size: 18),
+                      backgroundColor: cs.secondaryContainer,
+                      labelStyle: TextStyle(color: cs.onSecondaryContainer),
+                    ),
+                  if (isExpired)
+                    Chip(
+                      label: const Text('Expired'),
+                      backgroundColor: cs.errorContainer,
+                      labelStyle: TextStyle(color: cs.onErrorContainer),
+                    ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // Footer meta (ID) if you want to show more data:
+              Text(
+                'ID: ${item.id}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -293,7 +423,8 @@ class _AllowedIpFormState extends State<_AllowedIpForm> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Valid Until'),
                 subtitle: Text(
-                    _validUntil != null ? _validUntil!.toLocal().toString() : 'Select date'),
+                  _validUntil != null ? _validUntil!.toLocal().toString() : 'Select date',
+                ),
                 trailing: IconButton(
                   icon: const Icon(Icons.calendar_today),
                   onPressed: _pickDate,
@@ -332,9 +463,9 @@ class _AllowedIpFormState extends State<_AllowedIpForm> {
               }
               if (context.mounted) {
                 Navigator.pop(context, true);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content:
-                        Text(editing ? 'Updated successfully' : 'Added successfully')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(editing ? 'Updated successfully' : 'Added successfully')),
+                );
               }
             } catch (e) {
               if (context.mounted) {
@@ -349,4 +480,3 @@ class _AllowedIpFormState extends State<_AllowedIpForm> {
     );
   }
 }
-

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/Model/customer.dart';
@@ -904,29 +906,50 @@ class ApiService {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
     }
+
     final uri = Uri.parse('$baseUrl/api/AllowedIP/Add');
     final prefs = await SharedPreferences.getInstance();
-    final token =
-        prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+    final token = prefs.getString('token') ?? prefs.getString('accessToken') ?? '';
+
+    // Format to "YYYY-MM-DDTHH:mm:ss.SSS" (no timezone suffix), like your Postman body
+    final df = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    final validUntilStr = df.format(validUntil.toLocal());
+
     final payload = {
       'ipAddress': ipAddress,
       'desc': desc,
-      'isActive': isActive,
-      'validUntil': validUntil.toIso8601String(),
+      'isActive': isActive,          // boolean (no quotes) ✅
+      'validUntil': validUntilStr,   // e.g., 2025-08-22T05:21:00.000
     };
-    final resp = await _post(uri,
+
+    try {
+      final resp = await http
+          .post(
+        uri,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(payload));
-    if (resp.statusCode != 200) {
-      throw ApiException(resp.statusCode, extractServerMessage(resp));
-    }
-    final Map<String, dynamic> json = jsonDecode(resp.body);
-    final int code = (json['responseCode'] ?? 0) as int;
-    if (code != 0 && code != 1000) {
-      throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+        body: jsonEncode(payload),
+      )
+          .timeout(const Duration(seconds: 30));
+
+      if (resp.statusCode != 200) {
+        throw ApiException(resp.statusCode, extractServerMessage(resp));
+      }
+
+      final Map<String, dynamic> json = jsonDecode(resp.body);
+      final int code = (json['responseCode'] ?? 0) as int;
+      if (code != 0 && code != 1000) {
+        throw ApiException(resp.statusCode, json['message'] ?? 'Failed');
+      }
+    } on TimeoutException {
+      throw ApiException(408, 'Request timed out');
+    } on SocketException {
+      throw ApiException(0, 'No internet connection.');
+    } catch (e) {
+      throw ApiException(-1, e.toString());
     }
   }
 
