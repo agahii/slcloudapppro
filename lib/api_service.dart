@@ -27,7 +27,7 @@ class ApiException implements Exception {
 }
 class ApiService {
   static const String baseUrl = 'https://api.slcloud.3em.tech';
-  //static const String baseUrl = 'http://localhost:7271';
+  //static const String baseUrl = 'http://10.0.2.2:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
   static Future<bool> hasInternetConnection() async {
     var connectivityResult = await Connectivity().checkConnectivity();

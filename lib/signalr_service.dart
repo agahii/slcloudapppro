@@ -21,7 +21,7 @@ class SignalRService {
       'https://api.slcloud.3em.tech/chatHub',
       HttpConnectionOptions(
         accessTokenFactory: () async => userToken,
-        transport: HttpTransportType.webSockets,
+       // transport: HttpTransportType.webSockets,
       ),
     )
         .withAutomaticReconnect()
