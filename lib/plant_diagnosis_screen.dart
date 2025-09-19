@@ -20,13 +20,13 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
   String? _errorMessage;
   Map<String, dynamic>? _prediction;
 
-  Future<void> _takePhoto() async {
+  Future<void> _pickImage(ImageSource source) async {
     setState(() {
       _errorMessage = null;
       _prediction = null;
     });
     try {
-      final result = await _picker.pickImage(source: ImageSource.camera);
+      final result = await _picker.pickImage(source: source);
       if (result == null) {
         return;
       }
@@ -35,7 +35,7 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Unable to open the camera. Please try again.';
+        _errorMessage = 'Unable to access the selected source. Please try again.';
       });
     }
   }
@@ -44,7 +44,7 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
     final image = _capturedImage;
     if (image == null) {
       setState(() {
-        _errorMessage = 'Please capture a photo first.';
+        _errorMessage = 'Please capture or choose a photo first.';
       });
       return;
     }
@@ -141,7 +141,7 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '1. Tap "Capture Photo" to open the camera.\n'
+              '1. Capture a new photo or choose one from your device.\n'
               '2. Review the preview, then tap "Upload" to send the image to '
               'the local prediction service running on your computer.',
               style: theme.textTheme.bodyMedium,
@@ -150,7 +150,17 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
             OutlinedButton.icon(
               icon: const Icon(Icons.photo_camera),
               label: const Text('Capture Photo'),
-              onPressed: _isUploading ? null : _takePhoto,
+              onPressed: _isUploading
+                  ? null
+                  : () => _pickImage(ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.photo_library),
+              label: const Text('Choose from Gallery'),
+              onPressed: _isUploading
+                  ? null
+                  : () => _pickImage(ImageSource.gallery),
             ),
             if (_capturedImage != null) ...[
               const SizedBox(height: 16),
