@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/print_invoice.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+
 enum OrderAction { placeOrder, salesInvoice }
+
 enum ManagerSource { salesOrder, invoice }
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -19,8 +23,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-
-
   String _salesOrderMgrId = '';
   String _stockLocationId = '';
   String _invoiceMgrId = '';
@@ -49,7 +51,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final double price = double.tryParse(product.tradePrice) ?? 0;
     final int stock = product.stockInHand.round();
-    final int initialQty = (_cart[product.skuCode] ?? 0) > 0 ? _cart[product.skuCode]! : 1;
+    final int initialQty = (_cart[product.skuCode] ?? 0) > 0
+        ? _cart[product.skuCode]!
+        : 1;
 
     final qty = ValueNotifier<int>(initialQty);
     final controller = TextEditingController(text: initialQty.toString());
@@ -90,13 +94,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             side: const BorderSide(color: Color(0x1F000000)),
             backgroundColor: const Color(0x0D000000),
             selectedColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
               elevation: 0,
             ),
@@ -105,7 +113,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.black87,
               side: const BorderSide(color: Colors.black26),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
@@ -148,9 +158,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     icon: Icons.remove_rounded,
                     onTap: v > 1
                         ? () {
-                      qty.value = v - 1;
-                      controller.text = qty.value.toString();
-                    }
+                            qty.value = v - 1;
+                            controller.text = qty.value.toString();
+                          }
                         : null,
                   ),
                   const SizedBox(width: 8),
@@ -168,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       decoration: const InputDecoration(
                         isDense: true,
-                        border: InputBorder.none,     // cleaner inside the pill
+                        border: InputBorder.none, // cleaner inside the pill
                         contentPadding: EdgeInsets.zero,
                       ),
                       onChanged: (_) => syncFromText(),
@@ -201,11 +211,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 label: Text('$n'),
                 selected: selected,
                 labelStyle: TextStyle(
-                  color: selected ? Colors.white : Colors.black87, // white when selected
+                  color: selected
+                      ? Colors.white
+                      : Colors.black87, // white when selected
                   fontWeight: FontWeight.w600,
                 ),
                 selectedColor: theme.colorScheme.primary, // solid brand color
-                backgroundColor: const Color(0xFFE0E0E0), // light grey when unselected
+                backgroundColor: const Color(
+                  0xFFE0E0E0,
+                ), // light grey when unselected
                 onSelected: (_) {
                   qty.value = n;
                   controller.text = '$n';
@@ -223,15 +237,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         }
 
-
-
         return Theme(
           data: sheetTheme,
           child: Container(
             decoration: BoxDecoration(
               // Subtle “card-in-sheet” look
               color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x14000000),
@@ -242,7 +256,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             child: Padding(
               padding: EdgeInsets.only(
-                left: 16, right: 16, top: 12,
+                left: 16,
+                right: 16,
+                top: 12,
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
               ),
               child: Column(
@@ -250,7 +266,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   // Drag handle
                   Container(
-                    width: 44, height: 5, margin: const EdgeInsets.only(bottom: 16),
+                    width: 44,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: const Color(0x22000000),
                       borderRadius: BorderRadius.circular(4),
@@ -265,27 +283,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(12),
                         child: product.imageUrls.isNotEmpty
                             ? Image.network(
-                          ApiService.imageBaseUrl + product.imageUrls,
-                          width: 68,
-                          height: 68,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 68,
-                            height: 68,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.broken_image, color: Colors.grey),
-                          ),
-                        )
+                                ApiService.imageBaseUrl + product.imageUrls,
+                                width: 68,
+                                height: 68,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 68,
+                                  height: 68,
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
                             : Container(
-                          width: 68,
-                          height: 68,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        ),
+                                width: 68,
+                                height: 68,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.image,
+                                  color: Colors.grey,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -300,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.2,
-                                  color: Colors.black87,
+                                color: Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -334,14 +358,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.inventory_2_rounded, size: 18, color: theme.colorScheme.primary),
+                            Icon(
+                              Icons.inventory_2_rounded,
+                              size: 18,
+                              color: theme.colorScheme.primary,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Quantity',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color:  Colors.black87,
+                                color: Colors.black87,
                               ),
                             ),
                           ],
@@ -364,11 +392,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       alignment: Alignment.centerRight,
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 180),
-                        transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
+                        transitionBuilder: (c, a) =>
+                            FadeTransition(opacity: a, child: c),
                         child: Text(
                           'Total: Rs. ${(v * price).toStringAsFixed(2)}',
                           key: ValueKey(v),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
@@ -389,16 +421,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: ValueListenableBuilder<int>(
                           valueListenable: qty,
                           builder: (_, v, __) {
-                            final canAdd = v >= 1 && (stock == 0 ? true : v <= stock);
+                            final canAdd =
+                                v >= 1 && (stock == 0 ? true : v <= stock);
                             return ElevatedButton(
                               onPressed: canAdd
                                   ? () {
-                                setState(() => _cart[product.skuCode] = v);
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${product.skuName} • qty $v added')),
-                                );
-                              }
+                                      setState(
+                                        () => _cart[product.skuCode] = v,
+                                      );
+                                      Navigator.pop(ctx);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            '${product.skuName} • qty $v added',
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   : null,
                               child: const Text('Add to Cart'),
                             );
@@ -413,7 +454,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         );
       },
-
     );
   }
 
@@ -422,7 +462,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _initManagersAndFirstLoad();
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 100 &&
           !isLoading &&
           hasMore) {
         fetchProducts();
@@ -432,15 +473,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {});
     });
   }
+
   Future<void> _initManagersAndFirstLoad() async {
     await loadUserData();
 
     final prefs = await SharedPreferences.getInstance();
-    _salesOrderMgrId = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
-    _invoiceMgrId    = prefs.getString('invoiceManagerID')?.trim() ?? '';
+    _salesOrderMgrId =
+        prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
+    _invoiceMgrId = prefs.getString('invoiceManagerID')?.trim() ?? '';
     _stockLocationId = prefs.getString('stockLocationID')?.trim() ?? '';
 
-    final hasSO  = _salesOrderMgrId.isNotEmpty;
+    final hasSO = _salesOrderMgrId.isNotEmpty;
     final hasInv = _invoiceMgrId.isNotEmpty;
 
     setState(() {
@@ -461,6 +504,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     _resetAndFetch();
   }
+
   void _resetAndFetch() {
     setState(() {
       currentPage = 1;
@@ -469,6 +513,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
     fetchProducts();
   }
+
   Future<void> loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -481,25 +526,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       debugPrint('Error loading user data: \$e');
     }
   }
+
   String? _resolveActiveManagerId() {
     if (_managerSource == null) return null;
-    if (_managerSource == ManagerSource.salesOrder) return _salesOrderMgrId.isNotEmpty ? _salesOrderMgrId : null;
-    if (_managerSource == ManagerSource.invoice)    return _invoiceMgrId.isNotEmpty ? _invoiceMgrId : null;
+    if (_managerSource == ManagerSource.salesOrder)
+      return _salesOrderMgrId.isNotEmpty ? _salesOrderMgrId : null;
+    if (_managerSource == ManagerSource.invoice)
+      return _invoiceMgrId.isNotEmpty ? _invoiceMgrId : null;
     return null;
   }
+
   Future<void> fetchProducts() async {
     final activeId = _resolveActiveManagerId();
     if (activeId == null || activeId.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No manager ID available to fetch products.')),
+          const SnackBar(
+            content: Text('No manager ID available to fetch products.'),
+          ),
         );
       });
       return;
     }
     setState(() => isLoading = true);
     try {
-
       List<Product> newProducts = [];
       if (_managerSource == ManagerSource.salesOrder) {
         newProducts = await ApiService.fetchProductsFromOrderManager(
@@ -508,7 +558,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           page: currentPage,
           pageSize: pageSize,
           searchKey: searchKey,
-
         );
       }
       if (_managerSource == ManagerSource.invoice) {
@@ -530,15 +579,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
     setState(() => isLoading = false);
   }
+
   Future<void> _clearCart() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear Cart?'),
-        content: const Text('Are you sure you want to remove all items from the cart?'),
+        content: const Text(
+          'Are you sure you want to remove all items from the cart?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear'),
+          ),
         ],
       ),
     );
@@ -548,6 +606,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     }
   }
+
   Widget _managerToggleBar() {
     if (!_showManagerSwitch) {
       // Optional: show small chip if only one manager is active
@@ -566,8 +625,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       child: SegmentedButton<ManagerSource>(
         segments: const <ButtonSegment<ManagerSource>>[
-          ButtonSegment(value: ManagerSource.salesOrder, label: Text('Sales Order')),
-          ButtonSegment(value: ManagerSource.invoice,    label: Text('Invoice')),
+          ButtonSegment(
+            value: ManagerSource.salesOrder,
+            label: Text('Sales Order'),
+          ),
+          ButtonSegment(value: ManagerSource.invoice, label: Text('Invoice')),
         ],
         selected: {_managerSource ?? ManagerSource.salesOrder},
         onSelectionChanged: (newSel) {
@@ -587,17 +649,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           });
           fetchProducts();
         },
-
       ),
     );
   }
+
   Widget _fabButtons() {
     // Determine dynamic label & action type based on selected manager source
     final bool isInvoice = _managerSource == ManagerSource.invoice;
     final String actionLabel = isInvoice ? 'Create Invoice' : 'Place Order';
-    final IconData actionIcon = isInvoice ? Icons.receipt_long : Icons.shopping_bag;
-    final OrderAction actionType =
-    isInvoice ? OrderAction.salesInvoice : OrderAction.placeOrder;
+    final IconData actionIcon = isInvoice
+        ? Icons.receipt_long
+        : Icons.shopping_bag;
+    final OrderAction actionType = isInvoice
+        ? OrderAction.salesInvoice
+        : OrderAction.placeOrder;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -609,15 +674,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               if (_cart.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cart is empty')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
               } else {
                 _showOrderSummaryDialog(actionType);
               }
             },
             icon: Icon(actionIcon, color: Colors.white),
-            label: Text(actionLabel, style: const TextStyle(color: Colors.white)),
+            label: Text(
+              actionLabel,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -634,15 +702,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
+
   Widget _buildExpandableFAB() {
     return Positioned(
       left: fabOffset.dx,
       top: fabOffset.dy,
       child: Draggable(
-        feedback: Material(
-          color: Colors.transparent,
-          child: _fabButtons(),
-        ),
+        feedback: Material(color: Colors.transparent, child: _fabButtons()),
         childWhenDragging: const SizedBox.shrink(),
         onDraggableCanceled: (_, offset) {
           setState(() => fabOffset = offset);
@@ -651,6 +717,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
   Widget _buildProductItem(Product product) {
     return Dismissible(
       key: ValueKey(product.skuCode),
@@ -669,13 +736,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: _productCard(product),
     );
   }
+
   Widget _productCard(Product product) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -686,27 +752,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               borderRadius: BorderRadius.circular(10),
               child: product.imageUrls.isNotEmpty
                   ? Image.network(
-                ApiService.imageBaseUrl + product.imageUrls,
-                width: 90,
-                height: 90,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 90,
-                  height: 90,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, size: 30, color: Colors.grey),
-                ),
-              )
+                      ApiService.imageBaseUrl + product.imageUrls,
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 90,
+                        height: 90,
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 30,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
                   : Container(
-                width: 90,
-                height: 90,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.image, size: 30, color: Colors.grey),
-              ),
+                      width: 90,
+                      height: 90,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.image,
+                        size: 30,
+                        color: Colors.grey,
+                      ),
+                    ),
             ),
 
             const SizedBox(width: 14),
@@ -755,7 +829,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: product.stockInHand > 0
                               ? Colors.orange.withValues(alpha: 0.1)
@@ -763,7 +840,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: product.stockInHand > 0 ? Colors.orange : Colors.red,
+                            color: product.stockInHand > 0
+                                ? Colors.orange
+                                : Colors.red,
                             width: 0.8,
                           ),
                         ),
@@ -774,7 +853,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: product.stockInHand > 0 ? Colors.orange[800] : Colors.red[800],
+                            color: product.stockInHand > 0
+                                ? Colors.orange[800]
+                                : Colors.red[800],
                           ),
                         ),
                       ),
@@ -782,12 +863,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
+
   void _showOrderSummaryDialog(OrderAction action) {
     final bool isInvoice = action == OrderAction.salesInvoice;
     String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
@@ -795,7 +877,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Controllers persist for dialog lifetime
     final TextEditingController addressController = TextEditingController();
     final TextEditingController walkInNameController = TextEditingController();
-    final TextEditingController walkInMobileController = TextEditingController();
+    final TextEditingController walkInMobileController =
+        TextEditingController();
     Future<List<Map<String, dynamic>>> _loadBanksFromPrefs() async {
       final prefs = await SharedPreferences.getInstance();
       final banksString = prefs.getString('banks');
@@ -812,8 +895,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bool isSubmitting = false;
         List<Map<String, dynamic>> bankPayments = [];
 
-
-
         bool finalizeDisabled(List cartItems) {
           if (cartItems.isEmpty || isSubmitting) return true;
 
@@ -829,11 +910,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
         }
 
-
-
-
-
-        Future<void> _openBankPaymentPopup(void Function(void Function()) setStateDialog) async {
+        Future<void> _openBankPaymentPopup(
+          void Function(void Function()) setStateDialog,
+        ) async {
           final banks = await _loadBanksFromPrefs();
           String? selectedBankId;
           String? selectedBankName;
@@ -844,7 +923,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             builder: (ctx) {
               return AlertDialog(
                 // Shrink overall dialog margins on small screens
-                insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
                 title: const Text("Select Bank & Amount"),
                 content: ConstrainedBox(
                   // ✅ Hard limit the dialog’s content width
@@ -860,15 +942,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             labelText: "Bank",
                             isDense: true, // ✅ More compact height
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                          menuMaxHeight: 300, // ✅ Keep the menu from covering the whole screen
+                          menuMaxHeight:
+                              300, // ✅ Keep the menu from covering the whole screen
                           items: banks.map<DropdownMenuItem<String>>((bank) {
                             return DropdownMenuItem<String>(
                               value: bank['bankID'] as String,
                               child: Text(
                                 bank['bankName'] as String,
-                                overflow: TextOverflow.ellipsis, // ✅ Ellipsize long names
+                                overflow: TextOverflow
+                                    .ellipsis, // ✅ Ellipsize long names
                                 softWrap: false,
                               ),
                             );
@@ -876,7 +963,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           onChanged: (val) {
                             selectedBankId = val;
                             if (val != null) {
-                              final match = banks.firstWhere((b) => b['bankID'] == val);
+                              final match = banks.firstWhere(
+                                (b) => b['bankID'] == val,
+                              );
                               selectedBankName = match['bankName'] as String?;
                             }
                           },
@@ -887,12 +976,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         // --- Amount ---
                         TextField(
                           controller: amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(
                             labelText: "Amount",
                             border: OutlineInputBorder(),
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
                         ),
                       ],
@@ -908,7 +1002,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     onPressed: () {
                       final raw = amountController.text.trim();
                       final amount = double.tryParse(raw) ?? 0;
-                      if (selectedBankId != null && raw.isNotEmpty && amount > 0) {
+                      if (selectedBankId != null &&
+                          raw.isNotEmpty &&
+                          amount > 0) {
                         setStateDialog(() {
                           bankPayments.add({
                             "bankID": selectedBankId,
@@ -929,7 +1025,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+            final cartItems = _products
+                .where((p) => _cart.containsKey(p.skuCode))
+                .toList();
 
             double grandTotal = 0;
             for (var item in cartItems) {
@@ -939,23 +1037,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                dialogTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 600,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    const Text(
+                      "👤 Customer",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 6),
 
                     if (isInvoice) ...[
                       // Walk-in vs Registered toggle
                       SegmentedButton<bool>(
                         segments: const [
-                          ButtonSegment<bool>(value: true, label: Text('Walk-in customer')),
-                          ButtonSegment<bool>(value: false, label: Text('Registered customer')),
+                          ButtonSegment<bool>(
+                            value: true,
+                            label: Text('Walk-in customer'),
+                          ),
+                          ButtonSegment<bool>(
+                            value: false,
+                            label: Text('Registered customer'),
+                          ),
                         ],
                         selected: {isWalkIn},
                         onSelectionChanged: (s) {
@@ -963,7 +1081,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             isWalkIn = s.first;
                             if (isWalkIn) {
                               _selectedCustomer = null;
-                              addressController.text = ''; // no delivery address for walk-in
+                              addressController.text =
+                                  ''; // no delivery address for walk-in
                             }
                           });
                         },
@@ -983,7 +1102,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         TextField(
                           controller: walkInMobileController,
                           keyboardType: TextInputType.phone,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                           decoration: const InputDecoration(
                             labelText: "Mobile Number (optional)",
                             hintText: "03XXXXXXXXX",
@@ -1002,10 +1123,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 border: OutlineInputBorder(),
                               ),
                             ),
-                            itemBuilder: (context, Customer customer, isSelected) => ListTile(
-                              title: Text(customer.customerName),
-                              subtitle: Text(customer.customerAddress),
-                            ),
+                            itemBuilder:
+                                (context, Customer customer, isSelected) =>
+                                    ListTile(
+                                      title: Text(customer.customerName),
+                                      subtitle: Text(customer.customerAddress),
+                                    ),
                           ),
                           dropdownDecoratorProps: const DropDownDecoratorProps(
                             dropdownSearchDecoration: InputDecoration(
@@ -1015,14 +1138,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           asyncItems: (String filter) async {
                             if (filter.length < 3) return [];
-                            return await ApiService.fetchInvCustomers(_invoiceMgrId, filter);
+                            return await ApiService.fetchInvCustomers(
+                              _invoiceMgrId,
+                              filter,
+                            );
                           },
                           itemAsString: (Customer u) => u.customerName,
                           selectedItem: _selectedCustomer,
                           onChanged: (Customer? customer) {
                             setStateDialog(() {
                               _selectedCustomer = customer;
-                              addressController.text = customer?.customerAddress ?? '';
+                              addressController.text =
+                                  customer?.customerAddress ?? '';
                             });
                           },
                         ),
@@ -1039,10 +1166,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                          itemBuilder: (context, Customer customer, isSelected) => ListTile(
-                            title: Text(customer.customerName),
-                            subtitle: Text(customer.customerAddress),
-                          ),
+                          itemBuilder:
+                              (context, Customer customer, isSelected) =>
+                                  ListTile(
+                                    title: Text(customer.customerName),
+                                    subtitle: Text(customer.customerAddress),
+                                  ),
                         ),
                         dropdownDecoratorProps: const DropDownDecoratorProps(
                           dropdownSearchDecoration: InputDecoration(
@@ -1052,14 +1181,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         asyncItems: (String filter) async {
                           if (filter.length < 3) return [];
-                          return await ApiService.fetchPOCustomers(_salesOrderMgrId, filter);
+                          return await ApiService.fetchPOCustomers(
+                            _salesOrderMgrId,
+                            filter,
+                          );
                         },
                         itemAsString: (Customer u) => u.customerName,
                         selectedItem: _selectedCustomer,
                         onChanged: (Customer? customer) {
                           setStateDialog(() {
                             _selectedCustomer = customer;
-                            addressController.text = customer?.customerAddress ?? '';
+                            addressController.text =
+                                customer?.customerAddress ?? '';
                           });
                         },
                       ),
@@ -1069,7 +1202,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     // DELIVERY ADDRESS: hide for walk-in invoice
                     if (!(isInvoice && isWalkIn)) ...[
-                      const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      const Text(
+                        "🏠 Delivery Address",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: addressController,
@@ -1084,35 +1223,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
 
                     const Divider(),
-                    Text("🛒 Items (${cartItems.length})", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(
+                      "🛒 Items (${cartItems.length})",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 8),
 
                     Expanded(
                       child: cartItems.isEmpty
                           ? const Center(child: Text("Cart is empty."))
                           : ListView.builder(
-                        itemCount: cartItems.length,
-                        itemBuilder: (context, index) {
-                          final item = cartItems[index];
-                          final qty = _cart[item.skuCode]!;
-                          return _OrderItemTile(
-                            item: item,
-                            qty: qty,
-                            onQtyChanged: (newQty) {
-                              if (newQty < 1) return;
-                              setStateDialog(() {
-                                _cart[item.skuCode] = newQty;
-                              });
-                            },
-                            onRemove: () {
-                              setState(() {
-                                _cart.remove(item.skuCode);
-                              });
-                              setStateDialog(() {});
-                            },
-                          );
-                        },
-                      ),
+                              itemCount: cartItems.length,
+                              itemBuilder: (context, index) {
+                                final item = cartItems[index];
+                                final qty = _cart[item.skuCode]!;
+                                return _OrderItemTile(
+                                  item: item,
+                                  qty: qty,
+                                  onQtyChanged: (newQty) {
+                                    if (newQty < 1) return;
+                                    setStateDialog(() {
+                                      _cart[item.skuCode] = newQty;
+                                    });
+                                  },
+                                  onRemove: () {
+                                    setState(() {
+                                      _cart.remove(item.skuCode);
+                                    });
+                                    setStateDialog(() {});
+                                  },
+                                );
+                              },
+                            ),
                     ),
 
                     const Divider(),
@@ -1120,7 +1265,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       alignment: Alignment.centerRight,
                       child: Text(
                         'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
                     ),
                   ],
@@ -1129,8 +1278,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 Row(
                   children: [
-
-
                     if (isInvoice) ...[
                       IconButton(
                         tooltip: 'Add bank payment',
@@ -1140,14 +1287,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(width: 8),
                     ],
 
-
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Cancel'),
@@ -1160,203 +1308,274 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: finalizeDisabled(cartItems)
                             ? null
                             : () async {
-                          setStateDialog(() => isSubmitting = true); // lock UI
+                                setStateDialog(
+                                  () => isSubmitting = true,
+                                ); // lock UI
 
-                          final prefs = await SharedPreferences.getInstance();
-                          final employeeID = prefs.getString('employeeID');
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                final employeeID = prefs.getString(
+                                  'employeeID',
+                                );
 
-                          if (action == OrderAction.placeOrder) {
-                            // Registered customer required
-                            final payload = {
-                              "fK_Customer_ID": _selectedCustomer!.id,
-                              "fK_Employee_ID": employeeID,
-                              "deliveryAddress": addressController.text,
-                              "isBankGuarantee": false,
-                              "isClosed": false,
-                              "fK_PurchaseSalesOrderManagerMaster_ID":
-                              prefs.getString('salesPurchaseOrderManagerID') ?? '',
-                              "docDate": DateTime.now().toIso8601String(),
-                              "expectedDelRecDate": null,
-                              "bankGuaranteeIssueDate": null,
-                              "bankGuaranteeExpiryDate": null,
-                              "proformaInvoiceDate": null,
-                              "lcReceived": false,
-                              "transShipmentAllow": false,
-                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
-                                final qty = _cart[item.skuCode]!;
-                                final rate = double.tryParse(item.tradePrice) ?? 0;
-                                return {
-                                  "id": "",
-                                  "fK_ChartOfAccounts_ID": null,
-                                  "fK_Sku_ID": item.id,
-                                  "fK_SKUPacking_ID": item.defaultPackingID,
-                                  "quantity": qty,
-                                  "agreedRate": rate,
-                                  "totalAmount": qty * rate,
-                                  "totalAmountInLocalCurrency": 0,
-                                  "specialInstruction": "",
-                                  "skuName": "",
-                                  "packingName": "",
-                                };
-                              }).toList(),
-                              "purchaseSalesOrderShipmentDetailsInp": [],
-                            };
+                                if (action == OrderAction.placeOrder) {
+                                  // Registered customer required
+                                  final payload = {
+                                    "fK_Customer_ID": _selectedCustomer!.id,
+                                    "fK_Employee_ID": employeeID,
+                                    "deliveryAddress": addressController.text,
+                                    "isBankGuarantee": false,
+                                    "isClosed": false,
+                                    "fK_PurchaseSalesOrderManagerMaster_ID":
+                                        prefs.getString(
+                                          'salesPurchaseOrderManagerID',
+                                        ) ??
+                                        '',
+                                    "docDate": DateTime.now().toIso8601String(),
+                                    "expectedDelRecDate": null,
+                                    "bankGuaranteeIssueDate": null,
+                                    "bankGuaranteeExpiryDate": null,
+                                    "proformaInvoiceDate": null,
+                                    "lcReceived": false,
+                                    "transShipmentAllow": false,
+                                    "purchaseSalesOrderDetailsInp": cartItems
+                                        .map((item) {
+                                          final qty = _cart[item.skuCode]!;
+                                          final rate =
+                                              double.tryParse(
+                                                item.tradePrice,
+                                              ) ??
+                                              0;
+                                          return {
+                                            "id": "",
+                                            "fK_ChartOfAccounts_ID": null,
+                                            "fK_Sku_ID": item.id,
+                                            "fK_SKUPacking_ID":
+                                                item.defaultPackingID,
+                                            "quantity": qty,
+                                            "agreedRate": rate,
+                                            "totalAmount": qty * rate,
+                                            "totalAmountInLocalCurrency": 0,
+                                            "specialInstruction": "",
+                                            "skuName": "",
+                                            "packingName": "",
+                                          };
+                                        })
+                                        .toList(),
+                                    "purchaseSalesOrderShipmentDetailsInp": [],
+                                  };
 
-                            try {
-                              final response = await ApiService.finalizeSalesOrder(payload);
-                              if (response.statusCode == 200 || response.statusCode == 201) {
-                                setState(() => _cart.clear());
-                                setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
-                                await Future.delayed(const Duration(seconds: 2));
-                                if (context.mounted) Navigator.pop(context);
-                              } else {
-                                final msg = ApiService.extractServerMessage(response);
-                                setStateDialog(() => dialogTitle = '❌ $msg');
-                              }
-                            } catch (e) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
-                            } finally {
-                              setStateDialog(() => isSubmitting = false);
-                            }
-                          }
-
-                          if (action == OrderAction.salesInvoice) {
-                            final customerId = isWalkIn
-                                ? (prefs.getString('walkInCustomerID') ?? '')
-                                : (_selectedCustomer?.id ?? '');
-
-                            String? _bankID;
-                            double _bankTotal = 0.0;
-                            // recompute totals safely
-                            double bankTotal = 0;
-                            for (final bp in bankPayments) {
-                              _bankID=bp['bankID'] as String;
-                              _bankTotal = (bp['amount'] as double?) ?? 0.0;
-                              bankTotal += (bp['amount'] as double?) ?? 0.0;
-                            }
-                            final double cashAfterBank = (grandTotal - bankTotal).clamp(0, double.infinity);
-
-
-
-
-
-
-
-
-
-                            final payload = {
-                              "fK_Customer_ID": customerId,
-                              "fK_Employee_ID": employeeID,
-                              // For walk-in: no delivery address
-                              "deliveryAddress": isWalkIn ? "" : addressController.text,
-                              "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
-                              "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
-                              "docDate": DateTime.now().toIso8601String(),
-
-
-                              if (_bankID != null && _bankTotal > 0) ...{
-                                "fK_ChartOfAccounts_ID_Bank": _bankID,
-                                "bankReceived": _bankTotal,
-                              },
-
-
-                              // Walk-in extras (your API can accept these or ignore if not present)
-                              "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
-                              "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
-                              "cashReceived": cashAfterBank,
-
-                              "invoiceDetailsInp": cartItems.map((item) {
-                                final qty = _cart[item.skuCode]!;
-                                final rate = double.tryParse(item.tradePrice) ?? 0;
-                                return {
-                                  "id": "",
-                                  "fK_ChartOfAccounts_ID": null,
-                                  "fK_Sku_ID": item.id,
-                                  "fK_SKUPacking_ID": item.defaultPackingID,
-                                  "quantity": qty,
-                                  "rate": rate,
-                                  "amount": qty * rate,
-                                  "discountPercentage": 0,
-                                  "discountAmount": 0,
-                                  "totalAmount": qty * rate,
-                                  "valueExclusiveTax": 0,
-                                  "taxPercentage": 0,
-                                  "taxAmount": 0,
-                                  "valueInclusiveTax": 0,
-                                  "freightCharges": 0,
-                                  "notes": isWalkIn
-                                      ? "Walk-in: ${walkInNameController.text.trim()} / ${walkInMobileController.text.trim()}"
-                                      : "",
-                                  "batchNumber": "",
-                                };
-                              }).toList(),
-                              "invoiceGdnGrnDetailsInp": [],
-                            };
-
-                            try {
-                              final resp = await ApiService.finalizeInvoice(payload);
-
-                              // 1) Check HTTP status first
-                              final ok = resp.statusCode >= 200 && resp.statusCode < 300;
-                              if (!ok) {
-                                final msg = ApiService.extractServerMessage(resp);
-                                setStateDialog(() => dialogTitle = '❌ $msg');
-                                return;
-                              }
-
-                              // 2) Parse body → data
-                              Map<String, dynamic> invData;
-                              try {
-                                final body = jsonDecode(resp.body);
-                                final data = body['data'];
-                                if (data is Map) {
-                                  invData = Map<String, dynamic>.from(data as Map);
-                                } else {
-                                  // Data missing or wrong shape
-                                  setStateDialog(() => dialogTitle = '⚠️ Invalid server response (no data).');
-                                  return;
+                                  try {
+                                    final response =
+                                        await ApiService.finalizeSalesOrder(
+                                          payload,
+                                        );
+                                    if (response.statusCode == 200 ||
+                                        response.statusCode == 201) {
+                                      setState(() => _cart.clear());
+                                      setStateDialog(
+                                        () => dialogTitle =
+                                            '✅ Order placed successfully!',
+                                      );
+                                      await Future.delayed(
+                                        const Duration(seconds: 2),
+                                      );
+                                      if (context.mounted)
+                                        Navigator.pop(context);
+                                    } else {
+                                      final msg =
+                                          ApiService.extractServerMessage(
+                                            response,
+                                          );
+                                      setStateDialog(
+                                        () => dialogTitle = '❌ $msg',
+                                      );
+                                    }
+                                  } catch (e) {
+                                    setStateDialog(
+                                      () => dialogTitle = '⚠️ Error: $e',
+                                    );
+                                  } finally {
+                                    setStateDialog(() => isSubmitting = false);
+                                  }
                                 }
-                              } catch (e) {
-                                setStateDialog(() => dialogTitle = '⚠️ Could not read invoice from server.');
-                                return;
-                              }
 
-                              // 3) Success UI updates
-                              setState(() => _cart.clear());
-                              setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
+                                if (action == OrderAction.salesInvoice) {
+                                  final customerId = isWalkIn
+                                      ? (prefs.getString('walkInCustomerID') ??
+                                            '')
+                                      : (_selectedCustomer?.id ?? '');
 
-                              // 4) Close the summary dialog
-                              if (!context.mounted) return;
-                              Navigator.pop(context);
+                                  String? _bankID;
+                                  double _bankTotal = 0.0;
+                                  // recompute totals safely
+                                  double bankTotal = 0;
+                                  for (final bp in bankPayments) {
+                                    _bankID = bp['bankID'] as String;
+                                    _bankTotal =
+                                        (bp['amount'] as double?) ?? 0.0;
+                                    bankTotal +=
+                                        (bp['amount'] as double?) ?? 0.0;
+                                  }
+                                  final double cashAfterBank =
+                                      (grandTotal - bankTotal).clamp(
+                                        0,
+                                        double.infinity,
+                                      );
 
-                              // 5) Go to print/preview screen
-                              if (!context.mounted) return;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => InvoicePrintPage(inv: invData),
-                                ),
-                              );
-                            } catch (e, st) {
-                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
-                              debugPrint('finalizeInvoice error: $e\n$st');
-                            } finally {
-                              setStateDialog(() => isSubmitting = false);
-                            }
+                                  final payload = {
+                                    "fK_Customer_ID": customerId,
+                                    "fK_Employee_ID": employeeID,
+                                    // For walk-in: no delivery address
+                                    "deliveryAddress": isWalkIn
+                                        ? ""
+                                        : addressController.text,
+                                    "fK_StockLocation_ID":
+                                        prefs.getString('stockLocationID') ??
+                                        '',
+                                    "fK_InvoiceManagerMaster_ID":
+                                        prefs.getString('invoiceManagerID') ??
+                                        '',
+                                    "docDate": DateTime.now().toIso8601String(),
 
-                          }
-                        },
+                                    if (_bankID != null && _bankTotal > 0) ...{
+                                      "fK_ChartOfAccounts_ID_Bank": _bankID,
+                                      "bankReceived": _bankTotal,
+                                    },
+
+                                    // Walk-in extras (your API can accept these or ignore if not present)
+                                    "customerNamePOS": isWalkIn
+                                        ? walkInNameController.text.trim()
+                                        : "",
+                                    "mobileNumber": isWalkIn
+                                        ? walkInMobileController.text.trim()
+                                        : "",
+                                    "cashReceived": cashAfterBank,
+
+                                    "invoiceDetailsInp": cartItems.map((item) {
+                                      final qty = _cart[item.skuCode]!;
+                                      final rate =
+                                          double.tryParse(item.tradePrice) ?? 0;
+                                      return {
+                                        "id": "",
+                                        "fK_ChartOfAccounts_ID": null,
+                                        "fK_Sku_ID": item.id,
+                                        "fK_SKUPacking_ID":
+                                            item.defaultPackingID,
+                                        "quantity": qty,
+                                        "rate": rate,
+                                        "amount": qty * rate,
+                                        "discountPercentage": 0,
+                                        "discountAmount": 0,
+                                        "totalAmount": qty * rate,
+                                        "valueExclusiveTax": 0,
+                                        "taxPercentage": 0,
+                                        "taxAmount": 0,
+                                        "valueInclusiveTax": 0,
+                                        "freightCharges": 0,
+                                        "notes": isWalkIn
+                                            ? "Walk-in: ${walkInNameController.text.trim()} / ${walkInMobileController.text.trim()}"
+                                            : "",
+                                        "batchNumber": "",
+                                      };
+                                    }).toList(),
+                                    "invoiceGdnGrnDetailsInp": [],
+                                  };
+
+                                  try {
+                                    final resp =
+                                        await ApiService.finalizeInvoice(
+                                          payload,
+                                        );
+
+                                    // 1) Check HTTP status first
+                                    final ok =
+                                        resp.statusCode >= 200 &&
+                                        resp.statusCode < 300;
+                                    if (!ok) {
+                                      final msg =
+                                          ApiService.extractServerMessage(resp);
+                                      setStateDialog(
+                                        () => dialogTitle = '❌ $msg',
+                                      );
+                                      return;
+                                    }
+
+                                    // 2) Parse body → data
+                                    Map<String, dynamic> invData;
+                                    try {
+                                      final body = jsonDecode(resp.body);
+                                      final data = body['data'];
+                                      if (data is Map) {
+                                        invData = Map<String, dynamic>.from(
+                                          data as Map,
+                                        );
+                                      } else {
+                                        // Data missing or wrong shape
+                                        setStateDialog(
+                                          () => dialogTitle =
+                                              '⚠️ Invalid server response (no data).',
+                                        );
+                                        return;
+                                      }
+                                    } catch (e) {
+                                      setStateDialog(
+                                        () => dialogTitle =
+                                            '⚠️ Could not read invoice from server.',
+                                      );
+                                      return;
+                                    }
+
+                                    // 3) Success UI updates
+                                    setState(() => _cart.clear());
+                                    setStateDialog(
+                                      () => dialogTitle =
+                                          '✅ Invoice Created successfully!',
+                                    );
+
+                                    // 4) Close the summary dialog
+                                    if (!context.mounted) return;
+                                    Navigator.pop(context);
+
+                                    // 5) Go to print/preview screen
+                                    if (!context.mounted) return;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            InvoicePrintPage(inv: invData),
+                                      ),
+                                    );
+                                  } catch (e, st) {
+                                    setStateDialog(
+                                      () => dialogTitle = '⚠️ Error: $e',
+                                    );
+                                    debugPrint(
+                                      'finalizeInvoice error: $e\n$st',
+                                    );
+                                  } finally {
+                                    setStateDialog(() => isSubmitting = false);
+                                  }
+                                }
+                              },
                         child: isSubmitting
                             ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                        )
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
                             : Text(isInvoice ? '🧾 Save' : '📝 Save'),
                       ),
                     ),
@@ -1370,13 +1589,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-
   @override
   void dispose() {
     _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1403,7 +1622,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   top: 6,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
                     child: Text(
                       '${_cart.length}',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -1414,138 +1636,122 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-        drawer: Drawer(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          child: ListView(
-            children: [
-              UserAccountsDrawerHeader(
-                decoration: BoxDecoration(color: theme.primaryColor),
-                accountName: Text('$firstName $lastName'),
-                accountEmail: const Text(''),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    firstName.isNotEmpty ? firstName[0] : '',
-                    style: TextStyle(fontSize: 40, color: theme.primaryColor),
+      drawer: Drawer(
+        backgroundColor: AppColors.g1,
+        surfaceTintColor: AppColors.primaryContainer,
+        child: ListView(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: BoxDecoration(
+                color: AppColors.primary
+              ),
+              accountName: Text('$firstName $lastName',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+              accountEmail: const Text(''),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                child: Text(
+                  firstName.isNotEmpty ? firstName[0] : '',
+                  style: TextStyle(
+                    fontSize: 40,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
+            ),
 
+            _buildDrawerItem(
+              context,
+              icon: Icons.people,
+              title: 'Allowed IP',
+              route: '/allowedIPs',
+            ),
 
-
-              ListTile(
-                leading: Icon(Icons.people, color: theme.primaryColor),
-                title: Text('Allowed IP', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/allowedIPs');
-                },
-              ),
-
-
-        if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
-              ListTile(
-                leading: Icon(Icons.people, color: theme.primaryColor),
-                title: Text('My Customers', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/myCustomers');
-                },
-              ),
-
-        ],
-
-
-
-              if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
-              ListTile(
-                leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-                title: Text('Customer Ledger', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/customerLedger');
-                },
-              ),
-],
-              // ✅ Only show when hasSO
-              if (_salesOrderMgrId.isNotEmpty) ...[
-                ListTile(
-                  leading: Icon(Icons.payments_outlined, color: theme.primaryColor),
-                  title: Text('Collections', style: TextStyle(color: theme.primaryColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/collections');
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.account_balance_wallet, color: theme.primaryColor),
-                  title: Text('My Sales Orders', style: TextStyle(color: theme.primaryColor)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, '/mySalesOrders');
-                  },
-                ),
-              ],
-
-
-    if (_invoiceMgrId.isNotEmpty) ...[
-
-              ListTile(
-                leading: Icon(Icons.receipt_long, color: theme.primaryColor),
-                title: Text('My Sales Invoices', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/mySalesInvoices');
-                },
-              ),
-
-      ListTile(
-        leading: Icon(Icons.payments, color: theme.primaryColor),
-        title: Text('My Cash Book', style: TextStyle(color: theme.primaryColor)),
-        onTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/myCashBook');
-          },
-      ),
-  ],
-
-    if (_salesOrderMgrId.isNotEmpty ) ...[
-
-
-              ListTile(
-                leading: Icon(Icons.policy, color: theme.primaryColor),
-                title: Text('Active Policy', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/activePolicy');
-                },
-              ),
-],
-              ListTile(
-                leading: Icon(Icons.money, color: theme.primaryColor),
-                title: Text('My Expenses', style: TextStyle(color: theme.primaryColor)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/myExpenses');
-                },
-              ),
-
-              const Divider(),
-
-              ListTile(
-                leading: Icon(Icons.logout, color: theme.primaryColor),
-                title: Text('Logout', style: TextStyle(color: theme.primaryColor)),
-                onTap: () async {
-                  final nav = Navigator.of(context);
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.clear();
-                  nav.pushReplacementNamed('/login');
-                },
+            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
+              _buildDrawerItem(
+                context,
+                icon: Icons.people,
+                title: 'My Customers',
+                route: '/myCustomers',
               ),
             ],
-          ),
+
+            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
+              _buildDrawerItem(
+                context,
+                icon: Icons.account_balance_wallet,
+                title: 'Customer Ledger',
+                route: '/customerLedger',
+              ),
+            ],
+
+            if (_salesOrderMgrId.isNotEmpty) ...[
+              _buildDrawerItem(
+                context,
+                icon: Icons.payments_outlined,
+                title: 'Collections',
+                route: '/collections',
+              ),
+              _buildDrawerItem(
+                context,
+                icon: Icons.account_balance_wallet,
+                title: 'My Sales Orders',
+                route: '/mySalesOrders',
+              ),
+
+              _buildDrawerItem(
+                context,
+                icon: Icons.account_balance_wallet,
+                title: 'My Stock',
+                route: '/my_stock_screen',
+              ),
+            ],
+
+            if (_invoiceMgrId.isNotEmpty) ...[
+              _buildDrawerItem(
+                context,
+                icon: Icons.receipt_long,
+                title: 'My Sales Invoices',
+                route: '/mySalesInvoices',
+              ),
+              _buildDrawerItem(
+                context,
+                icon: Icons.payments,
+                title: 'My Cash Book',
+                route: '/myCashBook',
+              ),
+            ],
+
+           /* if (_salesOrderMgrId.isNotEmpty) ...[
+              _buildDrawerItem(
+                context,
+                icon: Icons.policy,
+                title: 'Active Policy',
+                route: '/activePolicy',
+              ),
+            ],
+
+            _buildDrawerItem(
+              context,
+              icon: Icons.money,
+              title: 'My Expenses',
+              route: '/myExpenses',
+            ),*/
+
+            _buildDrawerItem(
+              context,
+              icon: Icons.logout,
+              title: 'Logout',
+              onTap: () async {
+                final nav = Navigator.of(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                nav.pushReplacementNamed('/login');
+              },
+            ),
+          ],
         ),
+      ),
 
 
       body: Column(
@@ -1555,40 +1761,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.black87),          // make typed text visible
+              style: const TextStyle(
+                color: Colors.black87,
+              ), // make typed text visible
               cursorColor: Colors.black54,
               decoration: InputDecoration(
                 hintText: 'Search products...',
-                hintStyle: const TextStyle(color: Colors.black45),    // visible hint
+                hintStyle: const TextStyle(
+                  color: Colors.black45,
+                ), // visible hint
                 filled: true,
-                fillColor: Colors.white,                               // solid light background
+                fillColor: Colors.white, // solid light background
                 prefixIcon: isLoading
                     ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black54), // visible spinner
-                    ),
-                  ),
-                )
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.black54,
+                            ), // visible spinner
+                          ),
+                        ),
+                      )
                     : const Icon(Icons.search, color: Colors.black54),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.black54),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      searchKey = '';
-                      currentPage = 1;
-                      _products.clear();
-                      hasMore = true;
-                    });
-                    fetchProducts();
-                  },
-                )
+                        icon: const Icon(Icons.clear, color: Colors.black54),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            searchKey = '';
+                            currentPage = 1;
+                            _products.clear();
+                            hasMore = true;
+                          });
+                          fetchProducts();
+                        },
+                      )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1599,9 +1811,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor), // brand color on focus
+                  borderSide: BorderSide(
+                    color: Theme.of(context).primaryColor,
+                  ), // brand color on focus
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 0),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 0,
+                ),
               ),
               textInputAction: TextInputAction.search,
               onChanged: (value) {
@@ -1617,34 +1834,64 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 });
               },
             ),
-          )
-          ,
+          ),
           const Divider(),
           Expanded(
             child: _products.isEmpty
                 ? Center(
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('No products found.'),
-            )
+                    child: isLoading
+                        ? const CircularProgressIndicator()
+                        : const Text('No products found.'),
+                  )
                 : ListView.builder(
-              controller: _scrollController,
-              itemCount: _products.length + (isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index < _products.length) {
-                  return _buildProductItem(_products[index]);
-                } else {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-              },
-            ),
+                    controller: _scrollController,
+                    itemCount: _products.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index < _products.length) {
+                        return _buildProductItem(_products[index]);
+                      } else {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                    },
+                  ),
           ),
         ],
       ),
       floatingActionButton: Stack(children: [_buildExpandableFAB()]),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        String? route,
+        VoidCallback? onTap,
+      }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(icon, color: colorScheme.onSurface),
+          title: Text(
+            title,
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
+          onTap: () {
+            Navigator.pop(context);
+            if (route != null) {
+              Navigator.pushNamed(context, route);
+            } else {
+              onTap?.call();
+            }
+          },
+        ),
+        Divider(color: Theme.of(context).dividerColor, height: 1),
+      ],
     );
   }
   // void _switchManager(ManagerSource next) {
@@ -1670,8 +1917,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   //   // fetch with the new active manager id
   //   fetchProducts();
   // }
-
 }
+
 class _RoundIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
@@ -1691,14 +1938,23 @@ class _RoundIconButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0x11000000)),
           boxShadow: const [
-            BoxShadow(color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
-        child: Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.black26),
+        child: Icon(
+          icon,
+          size: 20,
+          color: enabled ? Colors.black87 : Colors.black26,
+        ),
       ),
     );
   }
 }
+
 class _OrderItemTile extends StatelessWidget {
   final Product item;
   final int qty;
@@ -1728,31 +1984,40 @@ class _OrderItemTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(8), // reduced padding
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center, // align center vertically
+          crossAxisAlignment:
+              CrossAxisAlignment.center, // align center vertically
           children: [
             // Thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(8), // slightly smaller radius
               child: item.imageUrls.isNotEmpty
                   ? Image.network(
-                ApiService.imageBaseUrl + item.imageUrls,
-                width: 48,
-                height: 48, // reduced size
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 48,
-                  height: 48,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported, size: 18, color: Colors.grey),
-                ),
-              )
+                      ApiService.imageBaseUrl + item.imageUrls,
+                      width: 48,
+                      height: 48, // reduced size
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 48,
+                        height: 48,
+                        color: Colors.grey[200],
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
                   : Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                color: Colors.grey[200],
-                child: const Icon(Icons.image, size: 18, color: Colors.grey),
-              ),
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.image,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                    ),
             ),
 
             const SizedBox(width: 8),
@@ -1806,7 +2071,10 @@ class _OrderItemTile extends StatelessWidget {
                   iconSize: 18,
                   splashRadius: 16,
                   onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
                 ),
               ],
             ),
@@ -1814,9 +2082,9 @@ class _OrderItemTile extends StatelessWidget {
         ),
       ),
     );
-
   }
 }
+
 class _QtyPillStepper extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
@@ -1831,7 +2099,10 @@ class _QtyPillStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // much smaller
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 2,
+      ), // much smaller
       decoration: BoxDecoration(
         color: const Color(0xFFF4F6F8),
         borderRadius: BorderRadius.circular(20),
@@ -1872,5 +2143,3 @@ class _QtyPillStepper extends StatelessWidget {
     );
   }
 }
-
-

@@ -117,13 +117,19 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.only(left: 16,top: 10,bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
               child: ElevatedButton.icon(
                 onPressed: () => _openForm(),
-                icon: const Icon(Icons.add),
-                label: const Text('Add New'),
+                icon: Padding(
+                  padding: const EdgeInsets.only(left: 3,right: 1),
+                  child: Icon(Icons.add),
+                ),
+                label: Padding(
+                  padding: const EdgeInsets.only(left: 1,right: 5),
+                  child: Text('Add New'),
+                ),
               ),
             ),
           ),
@@ -402,22 +408,25 @@ class _AllowedIpFormState extends State<_AllowedIpForm> {
         child: Form(
           key: _formKey,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: _ip,
                 decoration: const InputDecoration(labelText: 'IP Address'),
                 validator: _validateIp,
               ),
-              TextFormField(
-                controller: _desc,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLength: 200,
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: TextFormField(
+                  controller: _desc,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLength: 200,
+                ),
               ),
               SwitchListTile(
-                title: const Text('Is Active'),
+                title: Text('Is Active',textAlign: TextAlign.start),
                 value: _isActive,
                 onChanged: (v) => setState(() => _isActive = v),
+                contentPadding: EdgeInsets.zero,
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,

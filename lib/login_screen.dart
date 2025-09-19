@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                    /*  const SizedBox(height: 8),
                       TextButton(
                         onPressed: () {},
                         child: const Text('Forgot password?',
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {},
                         child: const Text('Don\'t have an account? Sign Up',
                             style: TextStyle(color: Colors.white70)),
-                      ),
+                      ),*/
                     ],
                   ),
                 ),

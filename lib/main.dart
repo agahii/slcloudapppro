@@ -8,6 +8,7 @@ import 'login_screen.dart';
 import 'home_screen.dart';
 import 'my_cash_book_screen.dart';
 import 'my_customers_screen.dart';
+import 'my_stock_screen.dart';
 import 'splash_screen.dart';
 import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
@@ -147,6 +148,7 @@ class _MyAppState extends State<MyApp> {
         '/collections': (context) => const CollectionScreen(),
         '/myCustomers': (_) => const MyCustomersScreen(),
         '/allowedIPs': (_) => const AllowedIpScreen(),
+        '/my_stock_screen': (_) => const MyStockScreen(),
       },
     );
   }

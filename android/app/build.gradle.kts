@@ -5,9 +5,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+subprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
+            extensions.configure<com.android.build.gradle.BaseExtension> {
+                compileSdkVersion(36)
+                buildToolsVersion = "36.0.0"
+            }
+        }
+    }
+}
+
 android {
     namespace = "com.example.slcloudapppro"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -24,8 +35,8 @@ android {
         applicationId = "com.example.slcloudapppro"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 21              // keep or raise as needed
-        targetSdk = 34           // <-- set explicitly (≥31 for Android 12)
+        minSdk = flutter.minSdkVersion              // keep or raise as needed
+        targetSdk = 36        // <-- set explicitly (≥31 for Android 12)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

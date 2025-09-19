@@ -9,6 +9,7 @@ import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
+import 'package:slcloudapppro/Model/my_stock_model.dart';
 import 'Model/PagedCustomers.dart';
 import 'Model/SalesOrderItem.dart';
 import 'Model/chart_account.dart';
@@ -26,7 +27,7 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 class ApiService {
-  static const String baseUrl = 'https://api.slcloud.3em.tech';
+  static const String baseUrl = 'http://api.slcloudpos.3em.tech';
   //static const String baseUrl = 'http://10.0.2.2:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
   static Future<bool> hasInternetConnection() async {
@@ -578,7 +579,69 @@ class ApiService {
 
 
 
+  static Future<List<MyStockModel>> fetchMyStock({
 
+    String SkuID = '',
+    required String StockLocationID,
+    required bool hasBalance,
+    required String fromDate,
+    required String toDate,
+  }) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) {
+      throw ApiException(401, 'Token not found. Please login again.');
+    }
+
+    // TODO: adjust endpoint path if your backend differs
+    final uri = Uri.parse('$baseUrl/api/LedgerStock/GetSKUBalancesSTockLocationWiseAsync');
+
+    final body = {
+      "SkuID": SkuID,
+      "DateFrom": fromDate,
+      "DateTill": toDate,
+      "StockLocationID": StockLocationID,
+      "hasBalance": hasBalance,
+    };
+
+    final resp = await _post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (resp.statusCode != 200) {
+      throw ApiException(resp.statusCode, extractServerMessage(resp));
+    }
+
+    final decoded = jsonDecode(resp.body);
+    print("DEBUG decoded: $decoded");
+
+    List list = [];
+
+    if (decoded is List) {
+      list = decoded;
+    } else if (decoded is Map) {
+      if (decoded['data'] is List) {
+        list = decoded['data'];
+      } else if (decoded['data'] is Map && decoded['data']['items'] is List) {
+        list = decoded['data']['items'];
+      } else if (decoded['ledger'] is List) {
+        list = decoded['ledger'];
+      }
+    }
+
+    return list.map((e) => MyStockModel.fromJson(e as Map<String, dynamic>)).toList();
+
+  }
 
   static Future<List<LedgerEntry>> fetchCustomerLedger({
 

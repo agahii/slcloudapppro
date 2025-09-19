@@ -44,18 +44,12 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
     _restoreLastCustomer();
   }
 
-
-
   Future<void> _loadManagerID() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       managerIDSalesOrder = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
     });
   }
-
-
-
-
 
   Future<void> _restoreLastCustomer() async {
     // Optional: restore last selected customer
