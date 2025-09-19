@@ -43,7 +43,11 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+        <key>UIApplicationSupportsIndirectInputEvents</key>
+        <true/>
+        <key>NSCameraUsageDescription</key>
+        <string>This app requires camera access to capture plant photos for diagnosis.</string>
+        <key>NSPhotoLibraryAddUsageDescription</key>
+        <string>Photos are saved to your library when you capture images for diagnosis.</string>
 </dict>
 </plist>
