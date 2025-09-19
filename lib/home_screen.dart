@@ -1443,6 +1443,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 },
               ),
 
+              ListTile(
+                leading: Icon(Icons.local_florist, color: theme.primaryColor),
+                title: Text('Plant Diagnosis', style: TextStyle(color: theme.primaryColor)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/plantDiagnosis');
+                },
+              ),
+
 
         if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
               ListTile(

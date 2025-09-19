@@ -22,6 +22,7 @@ dependencies:
   shared_preferences: ^2.2.2
   google_fonts: ^6.1.0
   signalr_core: ^1.1.2
+  image_picker: ^1.0.7
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -13,6 +13,7 @@ import 'my_sales_orders_screen.dart';
 import 'my_sales_invoices_screen.dart';
 import 'signalr_service.dart';
 import 'allowed_ip_screen.dart';
+import 'plant_diagnosis_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -147,6 +148,7 @@ class _MyAppState extends State<MyApp> {
         '/collections': (context) => const CollectionScreen(),
         '/myCustomers': (_) => const MyCustomersScreen(),
         '/allowedIPs': (_) => const AllowedIpScreen(),
+        '/plantDiagnosis': (_) => const PlantDiagnosisScreen(),
       },
     );
   }
