@@ -14,6 +14,7 @@ class SignalRService {
   bool get isConnected => _connection?.state == HubConnectionState.connected;
 
   HubConnectionState? get state => _connection?.state;
+  String? get connectionId => _connection?.connectionId;
 
   Future<void> start(String userToken) async {
     // --- DEV ONLY: enable to test TLS chain problems ---
@@ -72,5 +73,20 @@ class SignalRService {
 
   Future<void> sendToServer(String method, Object? arg) async {
     await _connection?.invoke(method, args: [arg]);
+  }
+
+  // Expose lightweight helpers to attach/detach handlers and invoke hub methods,
+  // so features like chat can register to hub events without direct access.
+  void on(String methodName, void Function(List<Object?>? args) handler) {
+    _connection?.on(methodName, handler);
+  }
+
+  void off(String methodName) {
+    _connection?.off(methodName);
+  }
+
+  Future<dynamic> invoke(String methodName, {List<Object?>? args}) async {
+    if (_connection == null) return null;
+    return await _connection!.invoke(methodName, args: args);
   }
 }

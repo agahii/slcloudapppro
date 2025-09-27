@@ -6,6 +6,7 @@ import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'shell/main_shell.dart';
 import 'my_cash_book_screen.dart';
 import 'my_customers_screen.dart';
 import 'splash_screen.dart';
@@ -14,6 +15,8 @@ import 'my_sales_invoices_screen.dart';
 import 'signalr_service.dart';
 import 'allowed_ip_screen.dart';
 import 'plant_diagnosis_screen.dart';
+import 'chat/views/users_online_screen.dart';
+import 'chat/views/chat_thread_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -140,7 +143,7 @@ class _MyAppState extends State<MyApp> {
       home: const SplashScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
-        '/home' : (_) => const HomeScreen(),
+        '/home' : (_) => const MainShell(),
         '/mySalesOrders': (_) => const MySalesOrdersScreen(),
         '/mySalesInvoices': (_) => const MySalesInvoicesScreen(),
         '/myCashBook': (_) => const MyCashBookScreen(),
@@ -149,6 +152,13 @@ class _MyAppState extends State<MyApp> {
         '/myCustomers': (_) => const MyCustomersScreen(),
         '/allowedIPs': (_) => const AllowedIpScreen(),
         '/plantDiagnosis': (_) => const PlantDiagnosisScreen(),
+        '/chat/users': (_) => const UsersOnlineScreen(),
+        '/chat/thread': (ctx) {
+          final args = ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
+          final peerId = args?['peerId']?.toString() ?? '';
+          final name = args?['name']?.toString() ?? 'Chat';
+          return ChatThreadScreen(peerId: peerId, displayName: name);
+        },
       },
     );
   }
