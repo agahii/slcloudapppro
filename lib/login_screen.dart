@@ -32,13 +32,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (response['success'] == true) {
-        // final prefs = await SharedPreferences.getInstance();
-        // final token = prefs.getString('token');
-        // await SignalRService.instance.start(token!).then((_) {
-        //   print("SignalR started!");
-        // }).catchError((err) {
-        //   print("Error starting SignalR: $err");
-        // });
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        if (token != null && token.isNotEmpty) {
+          try {
+            await SignalRService.instance.start(token);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Connected to SignalR')),
+              );
+            }
+          } catch (err) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('SignalR failed: $err')),
+              );
+            }
+          }
+        }
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         final msg = (response['message'] ?? 'Login failed').toString();

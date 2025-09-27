@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:connectivity_plus_platform_interface/connectivity_plus_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,18 +19,25 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    // Use in‑memory storage for SharedPreferences.
+    // Use in-memory storage for SharedPreferences.
     SharedPreferences.setMockInitialValues({});
     // Replace the real connectivity provider with the fake one.
     ConnectivityPlatform.instance = FakeConnectivity();
+    // Allow real HTTP; Flutter test overrides block it by default.
+    HttpOverrides.global = null;
   });
 
   test('connects to SignalR hub', () async {
-    // Credentials can be supplied via --dart-define to avoid hardcoding.
-    final login = await ApiService.attemptLogin(
-      const String.fromEnvironment('TEST_USERNAME', defaultValue: '923212255434'),
-      const String.fromEnvironment('TEST_PASSWORD', defaultValue: 'Ba@leno99'),
-    );
+    // Provide credentials via --dart-define; we avoid hardcoding secrets.
+    final username = const String.fromEnvironment('TEST_USERNAME');
+    final password = const String.fromEnvironment('TEST_PASSWORD');
+    if (username.isEmpty || password.isEmpty) {
+      // Skip if creds are not provided; prevents accidental secret leakage.
+      print('SKIP: Provide TEST_USERNAME and TEST_PASSWORD via --dart-define.');
+      return;
+    }
+
+    final login = await ApiService.attemptLogin(username, password);
     expect(login['success'], true, reason: 'Login failed');
 
     final prefs = await SharedPreferences.getInstance();
@@ -37,20 +46,19 @@ void main() {
 
     final hub = HubConnectionBuilder()
         .withUrl(
-      'https://api.slcloud.3em.tech/chatHub',
-      HttpConnectionOptions(
-        transport: HttpTransportType.webSockets,
-        accessTokenFactory: () async => token,
-      ),
-    )
+          'https://api.slcloud.3em.tech/chatHub',
+          // No explicit transport: client negotiates and will prefer WebSockets when available.
+          HttpConnectionOptions(accessTokenFactory: () async => token),
+        )
         .withAutomaticReconnect([0, 2000, 5000])
         .build();
 
     try {
+      // Allow more time for initial connect on long polling servers
       await hub.start();
       expect(hub.state, HubConnectionState.connected);
     } finally {
       await hub.stop();
     }
-  });
+  }, timeout: const Timeout(Duration(seconds: 70)));
 }

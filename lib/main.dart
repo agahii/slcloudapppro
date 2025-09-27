@@ -22,13 +22,13 @@ Future<void> main() async {
   // ready by the time the UI is rendered.
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  // if (token != null) {
-  //   try {
-  //     await SignalRService.instance.start(token);
-  //   } catch (_) {
-  //     // Ignore errors during early startup; login flow will retry if needed.
-  //   }
-  // }
+  if (token != null) {
+    try {
+      await SignalRService.instance.start(token);
+    } catch (_) {
+      // Ignore errors during early startup; login flow will retry if needed.
+    }
+  }
 
   runApp(const MyApp());
 }
