@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/print_invoice.dart';
 import 'package:slcloudapppro/theme/app_colors.dart';
+import 'package:slcloudapppro/utils/barcode_scanner_page.dart';
 import 'api_service.dart';
 import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
@@ -35,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final Map<String, int> _cart = {};
   final TextEditingController _searchController = TextEditingController();
   String searchKey = "";
+  String barcode = "";
   String firstName = '';
   String lastName = '';
   final ScrollController _scrollController = ScrollController();
@@ -46,6 +48,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // final String managerIDSalesOrder = '';
   // final String managerIDSalesInvoice = '';
   bool isFabExpanded = false;
+  late String actionLabel ;
+  late OrderAction actionType= OrderAction.placeOrder;
+
+  void scanBarcodeAndFetchProduct() async {
+    String result = await BarcodeScannerService.scanBarcode();
+    if (!mounted) return;
+    setState(() {
+      barcode = result;
+      _searchController.text = barcode;
+    });
+
+    if (result.isNotEmpty) {
+      fetchProducts();
+    }
+  }
+
 
   Future<void> _showAddToCartSheet(Product product) async {
     final theme = Theme.of(context);
@@ -70,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.onSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -400,6 +418,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
+                            color: Colors.black
                           ),
                         ),
                       ),
@@ -552,21 +571,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       List<Product> newProducts = [];
       if (_managerSource == ManagerSource.salesOrder) {
+        newProducts.clear();
         newProducts = await ApiService.fetchProductsFromOrderManager(
           managerID: activeId,
           stockLocationID: _stockLocationId,
           page: currentPage,
           pageSize: pageSize,
           searchKey: searchKey,
+          barcode: barcode
         );
       }
       if (_managerSource == ManagerSource.invoice) {
+        newProducts.clear();
         newProducts = await ApiService.fetchProductsFromInvoiceManager(
           managerID: activeId,
           stockLocationID: _stockLocationId,
           page: currentPage,
           pageSize: pageSize,
           searchKey: searchKey,
+          barCode: barcode
         );
       }
       setState(() {
@@ -631,17 +654,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           ButtonSegment(value: ManagerSource.invoice, label: Text('Invoice')),
         ],
-        selected: {_managerSource ?? ManagerSource.salesOrder},
+        selected: {
+          _managerSource ?? ManagerSource.salesOrder
+        },
         onSelectionChanged: (newSel) {
+          final bool isInvoice = _managerSource == ManagerSource.invoice;
+          actionLabel = isInvoice ? 'Create Invoice' : 'Place Order';
+          actionType = isInvoice
+              ? OrderAction.placeOrder
+              : OrderAction.salesInvoice;
           final next = newSel.first;
           if (next == _managerSource) return;
-
           setState(() {
             _managerSource = next;
-
             // ✅ Clear cart when switching between Sales Order / Invoice
             _cart.clear();
-
             // Reset paging and product list
             currentPage = 1;
             _products.clear();
@@ -912,7 +939,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         Future<void> _openBankPaymentPopup(
           void Function(void Function()) setStateDialog,
-        ) async {
+        ) async
+        {
           final banks = await _loadBanksFromPrefs();
           String? selectedBankId;
           String? selectedBankName;
@@ -1371,7 +1399,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         .toList(),
                                     "purchaseSalesOrderShipmentDetailsInp": [],
                                   };
-
                                   try {
                                     final response =
                                         await ApiService.finalizeSalesOrder(
@@ -1614,7 +1641,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
-                onPressed: () {},
+                onPressed: () {
+                  if (_cart.isEmpty) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
+                  } else {
+                    _showOrderSummaryDialog(actionType);
+                  }
+                },
               ),
               if (_cart.isNotEmpty)
                 Positioned(
@@ -1692,6 +1727,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 title: 'Collections',
                 route: '/collections',
               ),
+
+              _buildDrawerItem(
+                context,
+                icon: Icons.call_received,
+                title: 'Good Receive Note',
+                route: '/good_recieve_note_screen',
+              ),
+
+              _buildDrawerItem(
+                context,
+                icon: Icons.call_made,
+                title: 'GRN Discard',
+                route: '/grn_discard_screen',
+              ),
+
               _buildDrawerItem(
                 context,
                 icon: Icons.account_balance_wallet,
@@ -1737,7 +1787,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               title: 'My Expenses',
               route: '/myExpenses',
             ),*/
-
             _buildDrawerItem(
               context,
               icon: Icons.logout,
@@ -1752,8 +1801,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-
-
       body: Column(
         children: [
           _managerToggleBar(),
@@ -1771,7 +1818,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Colors.black45,
                 ), // visible hint
                 filled: true,
-                fillColor: Colors.white, // solid light background
+                fillColor: Colors.white, 
+                icon: IconButton(
+                  onPressed: scanBarcodeAndFetchProduct,
+                  icon: Icon(Icons.qr_code_scanner),
+                ),
                 prefixIcon: isLoading
                     ? const Padding(
                         padding: EdgeInsets.all(12),
@@ -1795,6 +1846,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           setState(() {
                             searchKey = '';
                             currentPage = 1;
+                            barcode= '';
                             _products.clear();
                             hasMore = true;
                           });
@@ -1860,19 +1912,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      floatingActionButton: Stack(children: [_buildExpandableFAB()]),
+      //floatingActionButton: Stack(children: [_buildExpandableFAB()]),
     );
   }
 
-  Widget _buildDrawerItem(
-      BuildContext context, {
+  Widget _buildDrawerItem(BuildContext context, {
         required IconData icon,
         required String title,
         String? route,
         VoidCallback? onTap,
-      }) {
+      })
+  {
     final colorScheme = Theme.of(context).colorScheme;
-
     return Column(
       children: [
         ListTile(
@@ -1894,29 +1945,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
-  // void _switchManager(ManagerSource next) {
-  //   if (next == _managerSource) return;
-  //
-  //   setState(() {
-  //     _managerSource = next;
-  //
-  //     // 👇 clear cart on mode change
-  //     _cart.clear();
-  //
-  //     // also reset paging & products so list reloads for new mode
-  //     currentPage = 1;
-  //     _products.clear();
-  //     hasMore = true;
-  //   });
-  //
-  //   // tiny heads-up
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text('Mode changed. Cart cleared.')),
-  //   );
-  //
-  //   // fetch with the new active manager id
-  //   fetchProducts();
-  // }
 }
 
 class _RoundIconButton extends StatelessWidget {

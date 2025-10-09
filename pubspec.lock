@@ -166,6 +166,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_barcode_scanner_plus:
+    dependency: "direct main"
+    description:
+      name: flutter_barcode_scanner_plus
+      sha256: "75bcf27d12ad6cd075dcfc8d838cffc254dab89cf9d33ec470faa1f9b4f97296"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.8"
   flutter_driver:
     dependency: transitive
     description: flutter
@@ -179,6 +187,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_plugin_android_lifecycle:
+    dependency: transitive
+    description:
+      name: flutter_plugin_android_lifecycle
+      sha256: b0694b7fb1689b0e6cc193b3f1fcac6423c4f93c74fb20b806c6b6f196db0c31
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.30"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -475,10 +491,10 @@ packages:
     dependency: transitive
     description:
       name: pool
-      sha256: "20fe868b6314b322ea036ba325e6fc0711a22948856475e2c2b6306e8ab39c2a"
+      sha256: "978783255c543aa3586a1b3c21f6e9d720eb315376a915872c61ef8b5c20177d"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.1"
+    version: "1.5.2"
   posix:
     dependency: transitive
     description:
@@ -750,4 +766,4 @@ packages:
     version: "6.5.0"
 sdks:
   dart: ">=3.8.1 <4.0.0"
-  flutter: ">=3.27.0"
+  flutter: ">=3.29.0"

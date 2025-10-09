@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
+import 'good_recieve_note_screen.dart';
+import 'grn_discard_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 import 'my_cash_book_screen.dart';
@@ -149,6 +151,8 @@ class _MyAppState extends State<MyApp> {
         '/myCustomers': (_) => const MyCustomersScreen(),
         '/allowedIPs': (_) => const AllowedIpScreen(),
         '/my_stock_screen': (_) => const MyStockScreen(),
+        '/good_recieve_note_screen': (_) =>  PurchaseFormPage(),
+        '/grn_discard_screen': (_) =>  DiscardFormPage(),
       },
     );
   }

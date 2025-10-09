@@ -35,10 +35,6 @@ class ApiService {
     return connectivityResult != ConnectivityResult.none;
   }
 
-
-
-
-
   static String _utf8Body(http.Response r) =>
       utf8.decode(r.bodyBytes, allowMalformed: true);
 
@@ -148,6 +144,7 @@ class ApiService {
           response.statusCode, extractServerMessage(response));
     }
   }
+
   static Future<List<Customer>> fetchPOCustomers(String managerID, String searchKey) async {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
@@ -179,6 +176,35 @@ class ApiService {
   }
 
 
+  static Future<List<Customer>> fetchVander(String managerID, String searchKey) async {
+    if (!await hasInternetConnection()) {
+      throw ApiException(0, 'No internet connection.');
+    }
+    final url =
+    Uri.parse('$baseUrl/api/GdnGrnMaster/GetCustomer');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      throw ApiException(401, 'Token not found. Please login again.');
+    }
+    final response = await _post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"managerID": managerID, "searchKey": searchKey}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final list = data['data']['customerDropDownVM'] as List;
+      return list.map((item) => Customer.fromJson(item)).toList();
+    } else {
+      throw ApiException(
+          response.statusCode, extractServerMessage(response));
+    }
+  }
 
   static Future<List<Customer>> fetchInvCustomers(String managerID, String searchKey) async {
     if (!await hasInternetConnection()) {
@@ -312,6 +338,7 @@ class ApiService {
       throw ApiException(response.statusCode, extractServerMessage(response));
     }
   }
+
   static Future<List<Product>> fetchProductsFromOrderManager({
     required String managerID,
     required String stockLocationID,
@@ -319,6 +346,7 @@ class ApiService {
     int page = 1,
     int pageSize = 20,
     String searchKey = "",
+    String barcode = ""
   }) async {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
@@ -333,7 +361,7 @@ class ApiService {
 
       "managerID": managerID,
       "searchKey": searchKey,
-      "barCode": "",
+      "barCode": barcode,
       "categoryID": "",
       "pageNumber": page,
       "pageSize": pageSize,
@@ -351,6 +379,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
+
       final data = json.decode(response.body);
       final List skuList = data['data']['skuVMPOS'];
       return skuList.map((item) => Product.fromJson(item)).toList();
@@ -369,6 +398,7 @@ class ApiService {
     int page = 1,
     int pageSize = 20,
     String searchKey = "",
+    String barCode = "",
   }) async {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
@@ -382,7 +412,7 @@ class ApiService {
     final payload = {
       "managerID": managerID,
       "searchKey": searchKey,
-      "barCode": "",
+      "barCode": barCode,
       "categoryID": "",
       "pageNumber": page,
       "pageSize": pageSize,
