@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -196,7 +197,7 @@ class _PlantDiagnosisScreenState extends State<PlantDiagnosisScreen> {
               ),
             ],
             _buildPredictionCard(),
-            if (Platform.isAndroid)
+            if (!kIsWeb && Platform.isAndroid)
               Padding(
                 padding: const EdgeInsets.only(top: 24),
                 child: Text(
