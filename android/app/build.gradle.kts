@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.slcloudapppro"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    // ndkVersion = "27.0.12077973"  // Temporarily commented out
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
