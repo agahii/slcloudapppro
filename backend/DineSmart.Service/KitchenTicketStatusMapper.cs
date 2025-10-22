@@ -1,7 +1,7 @@
 using DataKitchenTicketStatus = DineSmart.Data.Enums.KitchenTicketStatus;
 using DtoKitchenTicketStatus = DineSmart.Dto.Kitchen.KitchenTicketStatus;
 
-namespace DineSmart.Services;
+namespace DineSmart.Service;
 
 /// <summary>
 /// Provides helpers for translating kitchen ticket statuses between layers while
