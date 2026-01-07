@@ -87,6 +87,10 @@ class SignalRService {
 
   Future<dynamic> invoke(String methodName, {List<Object?>? args}) async {
     if (_connection == null) return null;
+    if (_connection!.state != HubConnectionState.connected) {
+      print('Cannot invoke $methodName: connection is in ${_connection!.state} state');
+      return null;
+    }
     return await _connection!.invoke(methodName, args: args);
   }
 }

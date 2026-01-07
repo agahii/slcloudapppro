@@ -26,7 +26,7 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 class ApiService {
-  static const String baseUrl = 'https://api.slcloud.3em.tech';
+  static const String baseUrl = 'http://api.aasanaccounts.com';
   //static const String baseUrl = 'http://10.0.2.2:7271';
   static const String imageBaseUrl = '$baseUrl/files/';
   static Future<bool> hasInternetConnection() async {
@@ -106,12 +106,12 @@ class ApiService {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
     }
-    final url = Uri.parse('$baseUrl/api/Account/loginMobile');
+    final url = Uri.parse('$baseUrl/api/Account/login');
 
     final response = await _post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'mobile': email, 'password': password}),
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     if (response.statusCode == 200) {
