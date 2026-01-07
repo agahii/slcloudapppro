@@ -598,6 +598,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (newProducts.length < pageSize) hasMore = false;
       });
     } catch (e) {
+
       debugPrint('Error loading products: $e');
     }
     setState(() => isLoading = false);
@@ -1720,7 +1721,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
 
-            if (_salesOrderMgrId.isNotEmpty) ...[
+            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
               _buildDrawerItem(
                 context,
                 icon: Icons.payments_outlined,
@@ -1730,9 +1731,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               _buildDrawerItem(
                 context,
+                icon: Icons.inventory_outlined,
+                title: 'Stock Taking',
+                route: '/stock_taking_screen',
+              ),
+
+              _buildDrawerItem(
+                context,
                 icon: Icons.call_received,
                 title: 'Good Receive Note',
-                route: '/good_recieve_note_screen',
+                route: '/good_receive_note_screen',
               ),
 
               _buildDrawerItem(
@@ -2002,7 +2010,6 @@ class _OrderItemTile extends StatelessWidget {
     final theme = Theme.of(context);
     final price = double.tryParse(item.tradePrice) ?? 0;
     final total = price * qty;
-
     return Card(
       color: Colors.white,
       elevation: 2,

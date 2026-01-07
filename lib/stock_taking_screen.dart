@@ -1,152 +1,22 @@
-import 'dart:convert';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/theme/app_colors.dart';
 import 'package:slcloudapppro/utils/barcode_scanner_page.dart';
 
-import 'Model/customer.dart';
+import 'Model/Product.dart';
+import 'Model/cart_item_model.dart';
 import 'api_service.dart';
 
-/*
-class ApiException implements Exception {
-  final int code;
-  final String message;
-  ApiException(this.code, this.message);
-}
-
-Future<bool> hasInternetConnection() async {
-  // Implement actual connectivity check here
-  return true;
-}
-
-Future<http.Response> _post(Uri url,
-    {required Map<String, String> headers, required String body}) async {
-  return await http.post(url, headers: headers, body: body);
-}
-
-const String baseUrl = 'https://yourapi.baseurl.com';
-
-class Product {
-  final String id;
-  final String defaultPackingID;
-  final String skuName;
-  final String skuCode;
-  final String tradePrice;
-  final String categoryName;
-  final String imageUrls;
-  final String brandName;
-  final double stockInHand;
-
-  Product({
-    required this.id,
-    required this.defaultPackingID,
-    required this.skuName,
-    required this.skuCode,
-    required this.tradePrice,
-    required this.categoryName,
-    required this.imageUrls,
-    required this.brandName,
-    required this.stockInHand,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['id'],
-      defaultPackingID: json['defaultPackingID'],
-      skuName: json['skuName'],
-      skuCode: json['skuCode'],
-      tradePrice: json['tradePrice'],
-      categoryName: json['categoryName'],
-      imageUrls: json['imageUrls'],
-      brandName: json['brandName'],
-      stockInHand: (json['stockInHand'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-}
-
-class ApiService {
-  static Future<List<Product>> fetchProductsFromOrderManager({
-    required String managerID,
-    required String stockLocationID,
-    int page = 1,
-    int pageSize = 20,
-    String searchKey = "",
-    String barcode = "",
-  }) async {
-    if (!await hasInternetConnection()) {
-      throw ApiException(0, 'No internet connection.');
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token == null) {
-      throw ApiException(401, 'Token not found. Please login again.');
-    }
-    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetSKUPOS');
-    final payload = {
-      "managerID": managerID,
-      "searchKey": searchKey,
-      "barCode": barcode,
-      "categoryID": "",
-      "pageNumber": page,
-      "pageSize": pageSize,
-      "stockLocationID": stockLocationID
-    };
-
-    final response = await _post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(payload),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List skuList = data['data']['skuVMPOS'];
-      return skuList.map((item) => Product.fromJson(item)).toList();
-    } else {
-      throw ApiException(response.statusCode, 'Failed to fetch products.');
-    }
-  }
-}
-*/
-
-class CartItem {
-  final Product product;
-  String packing;
-  int quantity;
-  String expiryDate;
-
-  CartItem({
-    required this.product,
-    required this.packing,
-    required this.quantity,
-    required this.expiryDate,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': product.id,
-      'skuCode': product.skuCode,
-      'packing': packing,
-      'quantity': quantity,
-      'expiryDate': expiryDate,
-    };
-  }
-}
-
-class PurchaseFormPage extends StatefulWidget {
-  const PurchaseFormPage({Key? key}) : super(key: key);
+class StockTakingScreen extends StatefulWidget {
+  const StockTakingScreen({super.key});
 
   @override
-  _PurchaseFormPageState createState() => _PurchaseFormPageState();
+  StockTakingScreenState createState() {
+    return StockTakingScreenState();
+  }
 }
 
-class _PurchaseFormPageState extends State<PurchaseFormPage> {
+class StockTakingScreenState extends State<StockTakingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   List<String> vendors = ['THE FLEX SHOP (MALIK SAFDAR DGK)(100010)'];
@@ -159,7 +29,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
   TextEditingController searchController = TextEditingController();
   TextEditingController barcodeController = TextEditingController();
   TextEditingController notesController = TextEditingController();
-   TextEditingController addressController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
   final List<String> packingOptions = ['Piece', 'Kg', 'Box'];
 
@@ -173,7 +43,6 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
 
   String searchKey = '';
   String barcode = '';
-  Customer? _selectedCustomer;
 
   @override
   void initState() {
@@ -189,7 +58,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
         prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
     _invoiceMgrId = prefs.getString('invoiceManagerID')?.trim() ?? '';
     stockLocationId = prefs.getString('stockLocationID')?.trim() ?? '';
-    if(managerID.isNotEmpty || stockLocationId.isNotEmpty){
+    if(_invoiceMgrId.isNotEmpty || stockLocationId.isNotEmpty){
       fetchProducts();
     }
   }
@@ -206,7 +75,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
     setState(() => isLoading = true);
     try {
       final List<Product> newProducts = await ApiService.fetchProductsFromOrderManager(
-        managerID: managerID,
+        managerID: _invoiceMgrId,
         stockLocationID: stockLocationId,
         page: currentPage,
         pageSize: pageSize,
@@ -513,7 +382,6 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
     );
   }
 
-
   Widget _OrderItemTile({
     required CartItem item,
     required ValueChanged<int> onQtyChanged,
@@ -713,13 +581,10 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
       barcode = result;
       searchController.text = barcode;
     });
-
     if (result.isNotEmpty) {
       fetchProducts();
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -727,7 +592,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Good Receive Note'),
+        title: const Text('Stock Taking'),
         actions: [
           Stack(
             alignment: Alignment.center,
@@ -758,7 +623,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
           key: _formKey,
           child: Column(
             children: [
-              Padding(
+             /* Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
@@ -813,7 +678,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
                     ),
                   ],
                 ),
-              ),
+              ),*/
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(

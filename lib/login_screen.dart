@@ -10,7 +10,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController(text: '923212255434');
+//  final emailController = TextEditingController(text: '923212255434');
+  //final passwordController = TextEditingController(text: 'Ba@leno99');
+  //final emailController = TextEditingController(text: 'Zerrittaflowerspk@gmail.com');
+  //final passwordController = TextEditingController(text: 'Ba@leno99');
+  final emailController = TextEditingController(text: 'Demo@gmail.com');
   final passwordController = TextEditingController(text: 'Ba@leno99');
 
   final _formKey = GlobalKey<FormState>();
@@ -124,9 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         validator: (v) =>
                         (v == null || v.isEmpty) ? 'Required' : null,
                       ),
-
                       const SizedBox(height: 24),
-
                       // Login button
                       SizedBox(
                         width: double.infinity,
