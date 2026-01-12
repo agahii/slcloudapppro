@@ -12,10 +12,9 @@ import 'dart:async';
 import 'package:slcloudapppro/Model/customer.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
+import 'check_out_screen.dart';
 enum OrderAction { placeOrder, salesInvoice }
-
 enum ManagerSource { salesOrder, invoice }
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -24,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+
+
   String _salesOrderMgrId = '';
   String _stockLocationId = '';
   String _invoiceMgrId = '';
@@ -69,12 +70,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final theme = Theme.of(context);
     final double price = double.tryParse(product.tradePrice) ?? 0;
     final int stock = product.stockInHand.round();
-    final int initialQty = (_cart[product.skuCode] ?? 0) > 0
-        ? _cart[product.skuCode]!
-        : 1;
+    final int initialQty = (_cart[product.skuCode] ?? 0) > 0 ? _cart[product.skuCode]! : 1;
 
     final qty = ValueNotifier<int>(initialQty);
     final controller = TextEditingController(text: initialQty.toString());
+
+    // Discount controllers
+    final discountPercentController = TextEditingController(text: '0');
+    final discountAmountController = TextEditingController(text: '0.00');
+    final discountPercent = ValueNotifier<double>(0);
+    final discountAmount = ValueNotifier<double>(0);
 
     void syncFromText() {
       final n = int.tryParse(controller.text) ?? 0;
@@ -84,133 +89,122 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ..selection = TextSelection.collapsed(offset: controller.text.length);
     }
 
+    void updateDiscountFromPercent() {
+      final percent = double.tryParse(discountPercentController.text) ?? 0;
+      discountPercent.value = percent.clamp(0, 100);
+      final subtotal = qty.value * price;
+      discountAmount.value = (subtotal * discountPercent.value / 100);
+      discountAmountController.text = discountAmount.value.toStringAsFixed(2);
+    }
+
+    void updateDiscountFromAmount() {
+      final amount = double.tryParse(discountAmountController.text) ?? 0;
+      final subtotal = qty.value * price;
+      discountAmount.value = amount.clamp(0, subtotal);
+      discountPercent.value = subtotal > 0 ? (discountAmount.value / subtotal * 100) : 0;
+      discountPercentController.text = discountPercent.value.toStringAsFixed(0);
+      discountAmountController.text = discountAmount.value.toStringAsFixed(2);
+    }
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.onSurface,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        final sheetTheme = theme.copyWith(
-          // High-contrast text/icons on white
-          iconTheme: const IconThemeData(color: Colors.black87),
-          textTheme: theme.textTheme.apply(
-            bodyColor: Colors.black87,
-            displayColor: Colors.black87,
-          ),
-          inputDecorationTheme: const InputDecorationTheme(
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          ),
-          chipTheme: theme.chipTheme.copyWith(
-            labelStyle: const TextStyle(color: Colors.black87),
-            side: const BorderSide(color: Color(0x1F000000)),
-            backgroundColor: const Color(0x0D000000),
-            selectedColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              elevation: 0,
-            ),
-          ),
-          outlinedButtonTheme: OutlinedButtonThemeData(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.black87,
-              side: const BorderSide(color: Colors.black26),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        );
-
         Widget stockChip() => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: stock > 0
-                ? Colors.green.withValues(alpha: 0.10)
-                : Colors.red.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: stock > 0 ? Colors.green : Colors.red),
+            color: const Color(0xFFE0F7ED),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            stock > 0 ? 'Stock: $stock' : 'Out of stock',
-            style: TextStyle(
-              fontSize: 11,
+            'Stock: $stock',
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: stock > 0 ? Colors.green[800] : Colors.red[800],
+              color: Color(0xFF00A86B),
             ),
           ),
         );
 
-        // Rounded "pill" stepper for a premium look
         Widget qtyStepper() => ValueListenableBuilder<int>(
           valueListenable: qty,
           builder: (_, v, __) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF4F6F8),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0x11000000)),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _RoundIconButton(
-                    icon: Icons.remove_rounded,
+                  InkWell(
                     onTap: v > 1
                         ? () {
-                            qty.value = v - 1;
-                            controller.text = qty.value.toString();
-                          }
-                        : null,
+                      qty.value = v - 1;
+                      controller.text = qty.value.toString();
+                      updateDiscountFromPercent();
+                    }
+                    : null,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.remove,
+                        size: 18,
+                        color: v > 1 ? Colors.black87 : Colors.grey,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
                   SizedBox(
-                    width: 64,
+                    width: 50,
                     child: TextField(
                       controller: controller,
                       textAlign: TextAlign.center,
                       keyboardType: TextInputType.number,
                       style: const TextStyle(
                         color: Colors.black87,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        letterSpacing: 0.2,
                       ),
                       decoration: const InputDecoration(
                         isDense: true,
-                        border: InputBorder.none, // cleaner inside the pill
+                        border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      onChanged: (_) => syncFromText(),
-                      onSubmitted: (_) => syncFromText(),
+                      onChanged: (_) {
+                        syncFromText();
+                        updateDiscountFromPercent();
+                      },
+                      onSubmitted: (_) {
+                        syncFromText();
+                        updateDiscountFromPercent();
+                      },
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _RoundIconButton(
-                    icon: Icons.add_rounded,
+                  InkWell(
                     onTap: () {
-                      // if (stock > 0 && v >= stock) return; // optional cap
                       qty.value = v + 1;
                       controller.text = qty.value.toString();
+                      updateDiscountFromPercent();
                     },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.add,
+                        size: 18,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -219,256 +213,428 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
 
         Widget quickChips() {
-          final options = [1, 3, 5, 10];
+          final options = [1, 3, 5, 10, 25];
           return Wrap(
+          direction: Axis.horizontal,
+            alignment: WrapAlignment.start,
+            crossAxisAlignment: WrapCrossAlignment.start,
             spacing: 8,
             runSpacing: 8,
             children: options.map((n) {
-              final selected = int.tryParse(controller.text) == n;
-              return ChoiceChip(
-                label: Text('$n'),
-                selected: selected,
-                labelStyle: TextStyle(
-                  color: selected
-                      ? Colors.white
-                      : Colors.black87, // white when selected
-                  fontWeight: FontWeight.w600,
-                ),
-                selectedColor: theme.colorScheme.primary, // solid brand color
-                backgroundColor: const Color(
-                  0xFFE0E0E0,
-                ), // light grey when unselected
-                onSelected: (_) {
-                  qty.value = n;
-                  controller.text = '$n';
+              return ValueListenableBuilder<int>(
+                valueListenable: qty,
+                builder: (_, v, __) {
+                  final selected = v == n;
+                  return InkWell(
+                    onTap: () {
+                      qty.value = n;
+                      controller.text = '$n';
+                      updateDiscountFromPercent();
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected ? AppColors.mainButtonsColor : Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: selected ? AppColors.mainButtonsColor : const Color(0xFFE0E0E0),
+                        ),
+                      ),
+                      child: Text(
+                        '$n',
+                        style: TextStyle(
+                          color: selected ? Colors.black : Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  );
                 },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: selected
-                        ? theme.colorScheme.primary
-                        : const Color(0x1F000000),
-                  ),
-                ),
               );
             }).toList(),
           );
         }
 
-        return Theme(
-          data: sheetTheme,
-          child: Container(
-            decoration: BoxDecoration(
-              // Subtle “card-in-sheet” look
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 20,
-                  offset: Offset(0, -2),
-                ),
-              ],
+        return Container(
+          //height: MediaQuery.of(context).size.height * 0.50,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 12,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 30,
             ),
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 12,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Drag handle
-                  Container(
-                    width: 44,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    alignment: Alignment.center,
+                    width: 50,
                     height: 5,
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: const Color(0x22000000),
-                      borderRadius: BorderRadius.circular(4),
+                      color: AppColors.greyColor,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
+                ),
 
-                  // Header row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: product.imageUrls.isNotEmpty
-                            ? Image.network(
-                                ApiService.imageBaseUrl + product.imageUrls,
-                                width: 68,
-                                height: 68,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  width: 68,
-                                  height: 68,
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                width: 68,
-                                height: 68,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.image,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.skuName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.2,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                Text(
-                                  'Rs. ${price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                stockChip(),
-                              ],
-                            ),
-                          ],
+                // Header row with image and product info
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: product.imageUrls.isNotEmpty
+                          ? Image.network(
+                        ApiService.imageBaseUrl + product.imageUrls,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.broken_image, color: Colors.grey),
                         ),
+                      )
+                          : Container(
+                        width: 60,
+                        height: 60,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.image, color: Colors.grey),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.skuName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Text(
+                                'Rs. ${price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.priceGreenColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (stock > 0) stockChip(),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
 
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
+                const SizedBox(height: 20),
 
-                  // Quantity section label + stepper
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Row(
+                Divider(height: 1,color: AppColors.appBackgroundGreyColor,),
+
+                const SizedBox(height: 20),
+                // Quantity section
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.shopping_bag_rounded,
+                      size: 25,
+                      color: AppColors.mainButtonsColor,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Quantity',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    qtyStepper(),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+                // Quick quantity chips
+                quickChips(),
+                const SizedBox(height: 40),
+                // Discount section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Discount (Optional)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.inventory_2_rounded,
-                              size: 18,
-                              color: theme.colorScheme.primary,
+                        Expanded(
+                          child: TextField(
+                            controller: discountPercentController,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(
+                              color: Colors.black, // typed text color
+                              fontSize: 16,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Quantity',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
+                            decoration: InputDecoration(
+                              prefixText: '% ',
+                              hintText: '0',
+                              prefixStyle:  TextStyle(
+                                color: AppColors.greyColor,
+                              ),
+                              hintStyle: TextStyle(
+                                color: AppColors.greyColor,
+                              ),
+                              filled: true,
+                              fillColor: AppColors.whiteColor,
+                              // Default border
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.borderGreyColor, width: 0.5),
+                              ),
+
+                              // When enabled but not focused
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.greyColor, width: 0.5),
+                              ),
+
+                              // When focused (clicked)
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.mainButtonsColor, width: 2),
+                              ),
+
+                              // When error
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.red, width: 2),
+                              ),
+
+                              // When error + focused
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.red, width: 2),
+                              ),
+
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
                               ),
                             ),
-                          ],
+                            onChanged: (_) => updateDiscountFromPercent(),
+                          ),
                         ),
-                        const Spacer(),
-                        qtyStepper(),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: discountAmountController,
+                            keyboardType: TextInputType.number,
+                            readOnly: true,
+                            style: TextStyle(
+                              color: Colors.black, // typed text color
+                              fontSize: 16,
+                            ),
+                            decoration: InputDecoration(
+                              labelStyle: TextStyle(
+                                color: AppColors.blackColor
+                              ),
+                              prefixText: 'Rs ',
+                              hintText: '0.00',
+                              prefixStyle:  TextStyle(
+                                color: AppColors.greyColor,
+                              ),
+                              hintStyle: TextStyle(
+                                color: AppColors.greyColor,
+                              ),
+                              filled: true,
+                              fillColor: AppColors.whiteColor,
+                              // Default border
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.borderGreyColor, width: 0.5),
+                              ),
+
+                              // When enabled but not focused
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.greyColor, width: 0.5),
+                              ),
+
+                              // When focused (clicked)
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: AppColors.mainButtonsColor, width: 2),
+                              ),
+
+                              // When error
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.red, width: 2),
+                              ),
+
+                              // When error + focused
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.red, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
+                            ),
+                            onChanged: (_) => updateDiscountFromAmount(),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                  ],
+                ),
 
-                  // Quick chips
-                  const SizedBox(height: 10),
-                  Align(alignment: Alignment.centerLeft, child: quickChips()),
+                const SizedBox(height: 30),
 
-                  // Total
-                  const SizedBox(height: 12),
-                  ValueListenableBuilder<int>(
-                    valueListenable: qty,
-                    builder: (_, v, __) => Align(
-                      alignment: Alignment.centerRight,
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        transitionBuilder: (c, a) =>
-                            FadeTransition(opacity: a, child: c),
-                        child: Text(
-                          'Total: Rs. ${(v * price).toStringAsFixed(2)}',
-                          key: ValueKey(v),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black
+
+                // Total amount
+                ValueListenableBuilder<int>(
+                  valueListenable: qty,
+                  builder: (_, v, __) {
+                    return ValueListenableBuilder<double>(
+                      valueListenable: discountAmount,
+                      builder: (_, discount, __) {
+                        final subtotal = v * price;
+                        final total = subtotal - discount;
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Amount',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              'Rs. ${total.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          side: const BorderSide(color: Color(0xFFE0E0E0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: qty,
+                        builder: (_, v, __) {
+                          final canAdd = v >= 1 && (stock == 0 ? true : v <= stock);
+                          return ElevatedButton.icon(
+                            onPressed: canAdd
+                                ? () {
+                              setState(() => _cart[product.skuCode] = v);
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${product.skuName} • qty $v added'),
+                                ),
+                              );
+                            }
+                                : null,
+                            icon: const Icon(Icons.shopping_cart, size: 18),
+                            label: const Text(
+                              'Add to Cart',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.mainButtonsColor,
+                              foregroundColor: Colors.black,
+                              disabledBackgroundColor: Colors.grey[300],
+                              disabledForegroundColor: Colors.grey[500],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
 
-                  // Actions
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ValueListenableBuilder<int>(
-                          valueListenable: qty,
-                          builder: (_, v, __) {
-                            final canAdd =
-                                v >= 1 && (stock == 0 ? true : v <= stock);
-                            return ElevatedButton(
-                              onPressed: canAdd
-                                  ? () {
-                                      setState(
-                                        () => _cart[product.skuCode] = v,
-                                      );
-                                      Navigator.pop(ctx);
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            '${product.skuName} • qty $v added',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                              child: const Text('Add to Cart'),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+
+
+              ],
             ),
           ),
         );
@@ -481,8 +647,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _initManagersAndFirstLoad();
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 100 &&
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
           !isLoading &&
           hasMore) {
         fetchProducts();
@@ -492,17 +657,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       setState(() {});
     });
   }
-
   Future<void> _initManagersAndFirstLoad() async {
     await loadUserData();
 
     final prefs = await SharedPreferences.getInstance();
-    _salesOrderMgrId =
-        prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
-    _invoiceMgrId = prefs.getString('invoiceManagerID')?.trim() ?? '';
+    _salesOrderMgrId = prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
+    _invoiceMgrId    = prefs.getString('invoiceManagerID')?.trim() ?? '';
     _stockLocationId = prefs.getString('stockLocationID')?.trim() ?? '';
 
-    final hasSO = _salesOrderMgrId.isNotEmpty;
+    final hasSO  = _salesOrderMgrId.isNotEmpty;
     final hasInv = _invoiceMgrId.isNotEmpty;
 
     setState(() {
@@ -523,7 +686,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     _resetAndFetch();
   }
-
   void _resetAndFetch() {
     setState(() {
       currentPage = 1;
@@ -532,7 +694,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
     fetchProducts();
   }
-
   Future<void> loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -545,30 +706,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       debugPrint('Error loading user data: \$e');
     }
   }
-
   String? _resolveActiveManagerId() {
     if (_managerSource == null) return null;
-    if (_managerSource == ManagerSource.salesOrder)
-      return _salesOrderMgrId.isNotEmpty ? _salesOrderMgrId : null;
-    if (_managerSource == ManagerSource.invoice)
-      return _invoiceMgrId.isNotEmpty ? _invoiceMgrId : null;
+    if (_managerSource == ManagerSource.salesOrder) return _salesOrderMgrId.isNotEmpty ? _salesOrderMgrId : null;
+    if (_managerSource == ManagerSource.invoice)    return _invoiceMgrId.isNotEmpty ? _invoiceMgrId : null;
     return null;
   }
-
   Future<void> fetchProducts() async {
     final activeId = _resolveActiveManagerId();
     if (activeId == null || activeId.isEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No manager ID available to fetch products.'),
-          ),
+          const SnackBar(content: Text('No manager ID available to fetch products.')),
         );
       });
       return;
     }
     setState(() => isLoading = true);
     try {
+
       List<Product> newProducts = [];
       if (_managerSource == ManagerSource.salesOrder) {
         newProducts.clear();
@@ -598,29 +754,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (newProducts.length < pageSize) hasMore = false;
       });
     } catch (e) {
-
       debugPrint('Error loading products: $e');
     }
     setState(() => isLoading = false);
   }
-
   Future<void> _clearCart() async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear Cart?'),
-        content: const Text(
-          'Are you sure you want to remove all items from the cart?',
-        ),
+        content: const Text('Are you sure you want to remove all items from the cart?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear')),
         ],
       ),
     );
@@ -630,7 +776,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       });
     }
   }
-
   Widget _managerToggleBar() {
     if (!_showManagerSwitch) {
       // Optional: show small chip if only one manager is active
@@ -649,11 +794,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       child: SegmentedButton<ManagerSource>(
         segments: const <ButtonSegment<ManagerSource>>[
-          ButtonSegment(
-            value: ManagerSource.salesOrder,
-            label: Text('Sales Order'),
-          ),
-          ButtonSegment(value: ManagerSource.invoice, label: Text('Invoice')),
+          ButtonSegment(value: ManagerSource.salesOrder, label: Text('Sales Order')),
+          ButtonSegment(value: ManagerSource.invoice,    label: Text('Invoice')),
         ],
         selected: {
           _managerSource ?? ManagerSource.salesOrder
@@ -677,20 +819,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           });
           fetchProducts();
         },
+
       ),
     );
   }
-
   Widget _fabButtons() {
     // Determine dynamic label & action type based on selected manager source
     final bool isInvoice = _managerSource == ManagerSource.invoice;
     final String actionLabel = isInvoice ? 'Create Invoice' : 'Place Order';
-    final IconData actionIcon = isInvoice
-        ? Icons.receipt_long
-        : Icons.shopping_bag;
-    final OrderAction actionType = isInvoice
-        ? OrderAction.salesInvoice
-        : OrderAction.placeOrder;
+    final IconData actionIcon = isInvoice ? Icons.receipt_long : Icons.shopping_bag;
+    final OrderAction actionType =
+    isInvoice ? OrderAction.salesInvoice : OrderAction.placeOrder;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -702,18 +841,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () {
               if (_cart.isEmpty) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cart is empty')),
+                );
               } else {
                 _showOrderSummaryDialog(actionType);
               }
             },
             icon: Icon(actionIcon, color: Colors.white),
-            label: Text(
-              actionLabel,
-              style: const TextStyle(color: Colors.white),
-            ),
+            label: Text(actionLabel, style: const TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 12),
         ],
@@ -730,13 +866,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ],
     );
   }
-
   Widget _buildExpandableFAB() {
     return Positioned(
       left: fabOffset.dx,
       top: fabOffset.dy,
       child: Draggable(
-        feedback: Material(color: Colors.transparent, child: _fabButtons()),
+        feedback: Material(
+          color: Colors.transparent,
+          child: _fabButtons(),
+        ),
         childWhenDragging: const SizedBox.shrink(),
         onDraggableCanceled: (_, offset) {
           setState(() => fabOffset = offset);
@@ -745,16 +883,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
   Widget _buildProductItem(Product product) {
     return Dismissible(
       key: ValueKey(product.skuCode),
       direction: DismissDirection.startToEnd,
       background: Container(
-        color: Colors.green[100],
+        color: AppColors.appBackgroundGreyColor,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(Icons.shopping_cart, color: Colors.green, size: 30),
+        child: const Icon(Icons.shopping_cart, color: AppColors.mainButtonsColor, size: 30),
       ),
       confirmDismiss: (_) async {
         await _showAddToCartSheet(product);
@@ -764,14 +901,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: _productCard(product),
     );
   }
-
   Widget _productCard(Product product) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      margin: const EdgeInsets.only(top: 20,bottom: 0,left: 20,right: 20),
+      elevation: 0,
+      color: AppColors.whiteColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -779,40 +918,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: product.imageUrls.isNotEmpty
-                  ? Image.network(
-                      ApiService.imageBaseUrl + product.imageUrls,
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 90,
-                        height: 90,
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.broken_image,
-                          size: 30,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    )
+                  ? Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color:AppColors.appBackgroundGreyColor),
+                ),
+                    child: Image.network(
+                                    ApiService.imageBaseUrl + product.imageUrls,
+                                    width: 110,
+                                    height: 110,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                    width: 90,
+                    height: 90,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, size: 30, color: Colors.grey),
+                                    ),
+                                  ),
+                  )
                   : Container(
-                      width: 90,
-                      height: 90,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.image,
-                        size: 30,
-                        color: Colors.grey,
-                      ),
-                    ),
+                width: 110,
+                height: 110,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.black),
+                ),
+                child: const Icon(Icons.image, size: 30, color: Colors.black),
+              ),
             ),
-
             const SizedBox(width: 14),
-
             // Product Info
             Expanded(
               child: Column(
@@ -822,55 +958,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Text(
                     product.skuName,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      fontFamily: 'Roboto', // modern clean font
-                      letterSpacing: 0.2,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        fontFamily: 'Roboto', // modern clean font
+                        letterSpacing: 0.2,
+                        color:AppColors.blackColor
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-
                   // Brand
                   Text(
                     'Brand: ${product.brandName}',
                     style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
+                      fontSize: 15,
+                      color: AppColors.brandGreyColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 8),
 
-                  // Price + Stock Row
+                  const SizedBox(height: 40),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Rs. ${product.tradePrice}',
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: AppColors.priceGreenColor,
                           fontFamily: 'RobotoMono', // monospace for numbers
                         ),
                       ),
                       const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        margin: EdgeInsets.only(right: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: product.stockInHand > 0
-                              ? Colors.orange.withValues(alpha: 0.1)
+                              ? AppColors.stockBackColor
                               : Colors.red.withValues(alpha: 0.1),
-
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: product.stockInHand > 0
-                                ? Colors.orange
-                                : Colors.red,
+                            color: product.stockInHand > 0 ? AppColors.stockBorderColor : Colors.red,
                             width: 0.8,
                           ),
                         ),
@@ -879,11 +1010,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ? 'Stock: ${product.stockInHand.toStringAsFixed(0)}'
                               : 'Out of stock',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: product.stockInHand > 0
-                                ? Colors.orange[800]
-                                : Colors.red[800],
+                            color: product.stockInHand > 0 ? AppColors.stockTextColor : Colors.red[800],
                           ),
                         ),
                       ),
@@ -891,13 +1020,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),
     );
   }
-
   void _showOrderSummaryDialog(OrderAction action) {
     final bool isInvoice = action == OrderAction.salesInvoice;
     String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
@@ -905,8 +1033,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Controllers persist for dialog lifetime
     final TextEditingController addressController = TextEditingController();
     final TextEditingController walkInNameController = TextEditingController();
-    final TextEditingController walkInMobileController =
-        TextEditingController();
+    final TextEditingController walkInMobileController = TextEditingController();
     Future<List<Map<String, dynamic>>> _loadBanksFromPrefs() async {
       final prefs = await SharedPreferences.getInstance();
       final banksString = prefs.getString('banks');
@@ -923,6 +1050,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         bool isSubmitting = false;
         List<Map<String, dynamic>> bankPayments = [];
 
+
+
         bool finalizeDisabled(List cartItems) {
           if (cartItems.isEmpty || isSubmitting) return true;
 
@@ -938,10 +1067,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           }
         }
 
-        Future<void> _openBankPaymentPopup(
-          void Function(void Function()) setStateDialog,
-        ) async
-        {
+        Future<void> _openBankPaymentPopup(void Function(void Function()) setStateDialog) async {
           final banks = await _loadBanksFromPrefs();
           String? selectedBankId;
           String? selectedBankName;
@@ -952,10 +1078,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             builder: (ctx) {
               return AlertDialog(
                 // Shrink overall dialog margins on small screens
-                insetPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 24,
-                ),
+                insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 title: const Text("Select Bank & Amount"),
                 content: ConstrainedBox(
                   // ✅ Hard limit the dialog’s content width
@@ -971,20 +1094,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             labelText: "Bank",
                             isDense: true, // ✅ More compact height
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
-                          menuMaxHeight:
-                              300, // ✅ Keep the menu from covering the whole screen
+                          menuMaxHeight: 300, // ✅ Keep the menu from covering the whole screen
                           items: banks.map<DropdownMenuItem<String>>((bank) {
                             return DropdownMenuItem<String>(
                               value: bank['bankID'] as String,
                               child: Text(
                                 bank['bankName'] as String,
-                                overflow: TextOverflow
-                                    .ellipsis, // ✅ Ellipsize long names
+                                overflow: TextOverflow.ellipsis, // ✅ Ellipsize long names
                                 softWrap: false,
                               ),
                             );
@@ -992,9 +1110,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           onChanged: (val) {
                             selectedBankId = val;
                             if (val != null) {
-                              final match = banks.firstWhere(
-                                (b) => b['bankID'] == val,
-                              );
+                              final match = banks.firstWhere((b) => b['bankID'] == val);
                               selectedBankName = match['bankName'] as String?;
                             }
                           },
@@ -1005,17 +1121,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         // --- Amount ---
                         TextField(
                           controller: amountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(
                             labelText: "Amount",
                             border: OutlineInputBorder(),
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
                         ),
                       ],
@@ -1031,9 +1142,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     onPressed: () {
                       final raw = amountController.text.trim();
                       final amount = double.tryParse(raw) ?? 0;
-                      if (selectedBankId != null &&
-                          raw.isNotEmpty &&
-                          amount > 0) {
+                      if (selectedBankId != null && raw.isNotEmpty && amount > 0) {
                         setStateDialog(() {
                           bankPayments.add({
                             "bankID": selectedBankId,
@@ -1054,9 +1163,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            final cartItems = _products
-                .where((p) => _cart.containsKey(p.skuCode))
-                .toList();
+            final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
 
             double grandTotal = 0;
             for (var item in cartItems) {
@@ -1066,43 +1173,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Text(
-                dialogTitle,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               content: SizedBox(
                 width: double.maxFinite,
                 height: 600,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "👤 Customer",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
 
                     if (isInvoice) ...[
                       // Walk-in vs Registered toggle
                       SegmentedButton<bool>(
                         segments: const [
-                          ButtonSegment<bool>(
-                            value: true,
-                            label: Text('Walk-in customer'),
-                          ),
-                          ButtonSegment<bool>(
-                            value: false,
-                            label: Text('Registered customer'),
-                          ),
+                          ButtonSegment<bool>(value: true, label: Text('Walk-in customer')),
+                          ButtonSegment<bool>(value: false, label: Text('Registered customer')),
                         ],
                         selected: {isWalkIn},
                         onSelectionChanged: (s) {
@@ -1110,8 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             isWalkIn = s.first;
                             if (isWalkIn) {
                               _selectedCustomer = null;
-                              addressController.text =
-                                  ''; // no delivery address for walk-in
+                              addressController.text = ''; // no delivery address for walk-in
                             }
                           });
                         },
@@ -1131,9 +1217,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         TextField(
                           controller: walkInMobileController,
                           keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: const InputDecoration(
                             labelText: "Mobile Number (optional)",
                             hintText: "03XXXXXXXXX",
@@ -1152,12 +1236,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 border: OutlineInputBorder(),
                               ),
                             ),
-                            itemBuilder:
-                                (context, Customer customer, isSelected) =>
-                                    ListTile(
-                                      title: Text(customer.customerName),
-                                      subtitle: Text(customer.customerAddress),
-                                    ),
+                            itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                              title: Text(customer.customerName),
+                              subtitle: Text(customer.customerAddress),
+                            ),
                           ),
                           dropdownDecoratorProps: const DropDownDecoratorProps(
                             dropdownSearchDecoration: InputDecoration(
@@ -1167,18 +1249,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                           asyncItems: (String filter) async {
                             if (filter.length < 3) return [];
-                            return await ApiService.fetchInvCustomers(
-                              _invoiceMgrId,
-                              filter,
-                            );
+                            return await ApiService.fetchInvCustomers(_invoiceMgrId, filter);
                           },
                           itemAsString: (Customer u) => u.customerName,
                           selectedItem: _selectedCustomer,
                           onChanged: (Customer? customer) {
                             setStateDialog(() {
                               _selectedCustomer = customer;
-                              addressController.text =
-                                  customer?.customerAddress ?? '';
+                              addressController.text = customer?.customerAddress ?? '';
                             });
                           },
                         ),
@@ -1195,12 +1273,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               border: OutlineInputBorder(),
                             ),
                           ),
-                          itemBuilder:
-                              (context, Customer customer, isSelected) =>
-                                  ListTile(
-                                    title: Text(customer.customerName),
-                                    subtitle: Text(customer.customerAddress),
-                                  ),
+                          itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                            title: Text(customer.customerName),
+                            subtitle: Text(customer.customerAddress),
+                          ),
                         ),
                         dropdownDecoratorProps: const DropDownDecoratorProps(
                           dropdownSearchDecoration: InputDecoration(
@@ -1210,18 +1286,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         asyncItems: (String filter) async {
                           if (filter.length < 3) return [];
-                          return await ApiService.fetchPOCustomers(
-                            _salesOrderMgrId,
-                            filter,
-                          );
+                          return await ApiService.fetchPOCustomers(_salesOrderMgrId, filter);
                         },
                         itemAsString: (Customer u) => u.customerName,
                         selectedItem: _selectedCustomer,
                         onChanged: (Customer? customer) {
                           setStateDialog(() {
                             _selectedCustomer = customer;
-                            addressController.text =
-                                customer?.customerAddress ?? '';
+                            addressController.text = customer?.customerAddress ?? '';
                           });
                         },
                       ),
@@ -1231,13 +1303,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                     // DELIVERY ADDRESS: hide for walk-in invoice
                     if (!(isInvoice && isWalkIn)) ...[
-                      const Text(
-                        "🏠 Delivery Address",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       TextField(
                         controller: addressController,
@@ -1252,41 +1318,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
 
                     const Divider(),
-                    Text(
-                      "🛒 Items (${cartItems.length})",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text("🛒 Items (${cartItems.length})", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
 
                     Expanded(
                       child: cartItems.isEmpty
                           ? const Center(child: Text("Cart is empty."))
                           : ListView.builder(
-                              itemCount: cartItems.length,
-                              itemBuilder: (context, index) {
-                                final item = cartItems[index];
-                                final qty = _cart[item.skuCode]!;
-                                return _OrderItemTile(
-                                  item: item,
-                                  qty: qty,
-                                  onQtyChanged: (newQty) {
-                                    if (newQty < 1) return;
-                                    setStateDialog(() {
-                                      _cart[item.skuCode] = newQty;
-                                    });
-                                  },
-                                  onRemove: () {
-                                    setState(() {
-                                      _cart.remove(item.skuCode);
-                                    });
-                                    setStateDialog(() {});
-                                  },
-                                );
-                              },
-                            ),
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartItems[index];
+                          final qty = _cart[item.skuCode]!;
+                          return _OrderItemTile(
+                            item: item,
+                            qty: qty,
+                            onQtyChanged: (newQty) {
+                              if (newQty < 1) return;
+                              setStateDialog(() {
+                                _cart[item.skuCode] = newQty;
+                              });
+                            },
+                            onRemove: () {
+                              setState(() {
+                                _cart.remove(item.skuCode);
+                              });
+                              setStateDialog(() {});
+                            },
+                          );
+                        },
+                      ),
                     ),
 
                     const Divider(),
@@ -1294,11 +1354,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       alignment: Alignment.centerRight,
                       child: Text(
                         'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
                       ),
                     ),
                   ],
@@ -1307,6 +1363,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 Row(
                   children: [
+
+
                     if (isInvoice) ...[
                       IconButton(
                         tooltip: 'Add bank payment',
@@ -1316,15 +1374,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(width: 8),
                     ],
 
+
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Cancel'),
@@ -1337,273 +1394,203 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: finalizeDisabled(cartItems)
                             ? null
                             : () async {
-                                setStateDialog(
-                                  () => isSubmitting = true,
-                                ); // lock UI
+                          setStateDialog(() => isSubmitting = true); // lock UI
 
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                final employeeID = prefs.getString(
-                                  'employeeID',
-                                );
+                          final prefs = await SharedPreferences.getInstance();
+                          final employeeID = prefs.getString('employeeID');
 
-                                if (action == OrderAction.placeOrder) {
-                                  // Registered customer required
-                                  final payload = {
-                                    "fK_Customer_ID": _selectedCustomer!.id,
-                                    "fK_Employee_ID": employeeID,
-                                    "deliveryAddress": addressController.text,
-                                    "isBankGuarantee": false,
-                                    "isClosed": false,
-                                    "fK_PurchaseSalesOrderManagerMaster_ID":
-                                        prefs.getString(
-                                          'salesPurchaseOrderManagerID',
-                                        ) ??
-                                        '',
-                                    "docDate": DateTime.now().toIso8601String(),
-                                    "expectedDelRecDate": null,
-                                    "bankGuaranteeIssueDate": null,
-                                    "bankGuaranteeExpiryDate": null,
-                                    "proformaInvoiceDate": null,
-                                    "lcReceived": false,
-                                    "transShipmentAllow": false,
-                                    "purchaseSalesOrderDetailsInp": cartItems
-                                        .map((item) {
-                                          final qty = _cart[item.skuCode]!;
-                                          final rate =
-                                              double.tryParse(
-                                                item.tradePrice,
-                                              ) ??
-                                              0;
-                                          return {
-                                            "id": "",
-                                            "fK_ChartOfAccounts_ID": null,
-                                            "fK_Sku_ID": item.id,
-                                            "fK_SKUPacking_ID":
-                                                item.defaultPackingID,
-                                            "quantity": qty,
-                                            "agreedRate": rate,
-                                            "totalAmount": qty * rate,
-                                            "totalAmountInLocalCurrency": 0,
-                                            "specialInstruction": "",
-                                            "skuName": "",
-                                            "packingName": "",
-                                          };
-                                        })
-                                        .toList(),
-                                    "purchaseSalesOrderShipmentDetailsInp": [],
-                                  };
-                                  try {
-                                    final response =
-                                        await ApiService.finalizeSalesOrder(
-                                          payload,
-                                        );
-                                    if (response.statusCode == 200 ||
-                                        response.statusCode == 201) {
-                                      setState(() => _cart.clear());
-                                      setStateDialog(
-                                        () => dialogTitle =
-                                            '✅ Order placed successfully!',
-                                      );
-                                      await Future.delayed(
-                                        const Duration(seconds: 2),
-                                      );
-                                      if (context.mounted)
-                                        Navigator.pop(context);
-                                    } else {
-                                      final msg =
-                                          ApiService.extractServerMessage(
-                                            response,
-                                          );
-                                      setStateDialog(
-                                        () => dialogTitle = '❌ $msg',
-                                      );
-                                    }
-                                  } catch (e) {
-                                    setStateDialog(
-                                      () => dialogTitle = '⚠️ Error: $e',
-                                    );
-                                  } finally {
-                                    setStateDialog(() => isSubmitting = false);
-                                  }
-                                }
+                          if (action == OrderAction.placeOrder) {
+                            // Registered customer required
+                            final payload = {
+                              "fK_Customer_ID": _selectedCustomer!.id,
+                              "fK_Employee_ID": employeeID,
+                              "deliveryAddress": addressController.text,
+                              "isBankGuarantee": false,
+                              "isClosed": false,
+                              "fK_PurchaseSalesOrderManagerMaster_ID":
+                              prefs.getString('salesPurchaseOrderManagerID') ?? '',
+                              "docDate": DateTime.now().toIso8601String(),
+                              "expectedDelRecDate": null,
+                              "bankGuaranteeIssueDate": null,
+                              "bankGuaranteeExpiryDate": null,
+                              "proformaInvoiceDate": null,
+                              "lcReceived": false,
+                              "transShipmentAllow": false,
+                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "agreedRate": rate,
+                                  "totalAmount": qty * rate,
+                                  "totalAmountInLocalCurrency": 0,
+                                  "specialInstruction": "",
+                                  "skuName": "",
+                                  "packingName": "",
+                                };
+                              }).toList(),
+                              "purchaseSalesOrderShipmentDetailsInp": [],
+                            };
 
-                                if (action == OrderAction.salesInvoice) {
-                                  final customerId = isWalkIn
-                                      ? (prefs.getString('walkInCustomerID') ??
-                                            '')
-                                      : (_selectedCustomer?.id ?? '');
+                            try {
+                              final response = await ApiService.finalizeSalesOrder(payload);
+                              if (response.statusCode == 200 || response.statusCode == 201) {
+                                setState(() => _cart.clear());
+                                setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
+                                await Future.delayed(const Duration(seconds: 2));
+                                if (context.mounted) Navigator.pop(context);
+                              } else {
+                                final msg = ApiService.extractServerMessage(response);
+                                setStateDialog(() => dialogTitle = '❌ $msg');
+                              }
+                            } catch (e) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
+                            }
+                          }
 
-                                  String? _bankID;
-                                  double _bankTotal = 0.0;
-                                  // recompute totals safely
-                                  double bankTotal = 0;
-                                  for (final bp in bankPayments) {
-                                    _bankID = bp['bankID'] as String;
-                                    _bankTotal =
-                                        (bp['amount'] as double?) ?? 0.0;
-                                    bankTotal +=
-                                        (bp['amount'] as double?) ?? 0.0;
-                                  }
-                                  final double cashAfterBank =
-                                      (grandTotal - bankTotal).clamp(
-                                        0,
-                                        double.infinity,
-                                      );
+                          if (action == OrderAction.salesInvoice) {
+                            final customerId = isWalkIn
+                                ? (prefs.getString('walkInCustomerID') ?? '')
+                                : (_selectedCustomer?.id ?? '');
 
-                                  final payload = {
-                                    "fK_Customer_ID": customerId,
-                                    "fK_Employee_ID": employeeID,
-                                    // For walk-in: no delivery address
-                                    "deliveryAddress": isWalkIn
-                                        ? ""
-                                        : addressController.text,
-                                    "fK_StockLocation_ID":
-                                        prefs.getString('stockLocationID') ??
-                                        '',
-                                    "fK_InvoiceManagerMaster_ID":
-                                        prefs.getString('invoiceManagerID') ??
-                                        '',
-                                    "docDate": DateTime.now().toIso8601String(),
+                            String? _bankID;
+                            double _bankTotal = 0.0;
+                            // recompute totals safely
+                            double bankTotal = 0;
+                            for (final bp in bankPayments) {
+                              _bankID=bp['bankID'] as String;
+                              _bankTotal = (bp['amount'] as double?) ?? 0.0;
+                              bankTotal += (bp['amount'] as double?) ?? 0.0;
+                            }
+                            final double cashAfterBank = (grandTotal - bankTotal).clamp(0, double.infinity);
 
-                                    if (_bankID != null && _bankTotal > 0) ...{
-                                      "fK_ChartOfAccounts_ID_Bank": _bankID,
-                                      "bankReceived": _bankTotal,
-                                    },
 
-                                    // Walk-in extras (your API can accept these or ignore if not present)
-                                    "customerNamePOS": isWalkIn
-                                        ? walkInNameController.text.trim()
-                                        : "",
-                                    "mobileNumber": isWalkIn
-                                        ? walkInMobileController.text.trim()
-                                        : "",
-                                    "cashReceived": cashAfterBank,
 
-                                    "invoiceDetailsInp": cartItems.map((item) {
-                                      final qty = _cart[item.skuCode]!;
-                                      final rate =
-                                          double.tryParse(item.tradePrice) ?? 0;
-                                      return {
-                                        "id": "",
-                                        "fK_ChartOfAccounts_ID": null,
-                                        "fK_Sku_ID": item.id,
-                                        "fK_SKUPacking_ID":
-                                            item.defaultPackingID,
-                                        "quantity": qty,
-                                        "rate": rate,
-                                        "amount": qty * rate,
-                                        "discountPercentage": 0,
-                                        "discountAmount": 0,
-                                        "totalAmount": qty * rate,
-                                        "valueExclusiveTax": 0,
-                                        "taxPercentage": 0,
-                                        "taxAmount": 0,
-                                        "valueInclusiveTax": 0,
-                                        "freightCharges": 0,
-                                        "notes": isWalkIn
-                                            ? "Walk-in: ${walkInNameController.text.trim()} / ${walkInMobileController.text.trim()}"
-                                            : "",
-                                        "batchNumber": "",
-                                      };
-                                    }).toList(),
-                                    "invoiceGdnGrnDetailsInp": [],
-                                  };
 
-                                  try {
-                                    final resp =
-                                        await ApiService.finalizeInvoice(
-                                          payload,
-                                        );
 
-                                    // 1) Check HTTP status first
-                                    final ok =
-                                        resp.statusCode >= 200 &&
-                                        resp.statusCode < 300;
-                                    if (!ok) {
-                                      final msg =
-                                          ApiService.extractServerMessage(resp);
-                                      setStateDialog(
-                                        () => dialogTitle = '❌ $msg',
-                                      );
-                                      return;
-                                    }
 
-                                    // 2) Parse body → data
-                                    Map<String, dynamic> invData;
-                                    try {
-                                      final body = jsonDecode(resp.body);
-                                      final data = body['data'];
-                                      if (data is Map) {
-                                        invData = Map<String, dynamic>.from(
-                                          data as Map,
-                                        );
-                                      } else {
-                                        // Data missing or wrong shape
-                                        setStateDialog(
-                                          () => dialogTitle =
-                                              '⚠️ Invalid server response (no data).',
-                                        );
-                                        return;
-                                      }
-                                    } catch (e) {
-                                      setStateDialog(
-                                        () => dialogTitle =
-                                            '⚠️ Could not read invoice from server.',
-                                      );
-                                      return;
-                                    }
 
-                                    // 3) Success UI updates
-                                    setState(() => _cart.clear());
-                                    setStateDialog(
-                                      () => dialogTitle =
-                                          '✅ Invoice Created successfully!',
-                                    );
 
-                                    // 4) Close the summary dialog
-                                    if (!context.mounted) return;
-                                    Navigator.pop(context);
 
-                                    // 5) Go to print/preview screen
-                                    if (!context.mounted) return;
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            InvoicePrintPage(inv: invData),
-                                      ),
-                                    );
-                                  } catch (e, st) {
-                                    setStateDialog(
-                                      () => dialogTitle = '⚠️ Error: $e',
-                                    );
-                                    debugPrint(
-                                      'finalizeInvoice error: $e\n$st',
-                                    );
-                                  } finally {
-                                    setStateDialog(() => isSubmitting = false);
-                                  }
-                                }
+                            final payload = {
+                              "fK_Customer_ID": customerId,
+                              "fK_Employee_ID": employeeID,
+                              // For walk-in: no delivery address
+                              "deliveryAddress": isWalkIn ? "" : addressController.text,
+                              "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
+                              "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
+                              "docDate": DateTime.now().toIso8601String(),
+
+
+                              if (_bankID != null && _bankTotal > 0) ...{
+                                "fK_ChartOfAccounts_ID_Bank": _bankID,
+                                "bankReceived": _bankTotal,
                               },
+
+
+                              // Walk-in extras (your API can accept these or ignore if not present)
+                              "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
+                              "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
+                              "cashReceived": cashAfterBank,
+
+                              "invoiceDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "rate": rate,
+                                  "amount": qty * rate,
+                                  "discountPercentage": 0,
+                                  "discountAmount": 0,
+                                  "totalAmount": qty * rate,
+                                  "valueExclusiveTax": 0,
+                                  "taxPercentage": 0,
+                                  "taxAmount": 0,
+                                  "valueInclusiveTax": 0,
+                                  "freightCharges": 0,
+                                  "notes": isWalkIn
+                                      ? "Walk-in: ${walkInNameController.text.trim()} / ${walkInMobileController.text.trim()}"
+                                      : "",
+                                  "batchNumber": "",
+                                };
+                              }).toList(),
+                              "invoiceGdnGrnDetailsInp": [],
+                            };
+
+                            try {
+                              final resp = await ApiService.finalizeInvoice(payload);
+
+                              // 1) Check HTTP status first
+                              final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+                              if (!ok) {
+                                final msg = ApiService.extractServerMessage(resp);
+                                setStateDialog(() => dialogTitle = '❌ $msg');
+                                return;
+                              }
+
+                              // 2) Parse body → data
+                              Map<String, dynamic> invData;
+                              try {
+                                final body = jsonDecode(resp.body);
+                                final data = body['data'];
+                                if (data is Map) {
+                                  invData = Map<String, dynamic>.from(data as Map);
+                                } else {
+                                  // Data missing or wrong shape
+                                  setStateDialog(() => dialogTitle = '⚠️ Invalid server response (no data).');
+                                  return;
+                                }
+                              } catch (e) {
+                                setStateDialog(() => dialogTitle = '⚠️ Could not read invoice from server.');
+                                return;
+                              }
+
+                              // 3) Success UI updates
+                              setState(() => _cart.clear());
+                              setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
+
+                              // 4) Close the summary dialog
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+
+                              // 5) Go to print/preview screen
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => InvoicePrintPage(inv: invData),
+                                ),
+                              );
+                            } catch (e, st) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                              debugPrint('finalizeInvoice error: $e\n$st');
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
+                            }
+
+                          }
+                        },
                         child: isSubmitting
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                        )
                             : Text(isInvoice ? '🧾 Save' : '📝 Save'),
                       ),
                     ),
@@ -1617,23 +1604,607 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+/*  void _showOrderSummaryDialog(OrderAction action) {
+    final bool isInvoice = action == OrderAction.salesInvoice;
+    String dialogTitle = isInvoice ? '🧾 Sales Invoice' : '🧾 Order Summary';
+
+    // Controllers persist for dialog lifetime
+    final TextEditingController addressController = TextEditingController();
+    final TextEditingController walkInNameController = TextEditingController();
+    final TextEditingController walkInMobileController = TextEditingController();
+    Future<List<Map<String, dynamic>>> _loadBanksFromPrefs() async {
+      final prefs = await SharedPreferences.getInstance();
+      final banksString = prefs.getString('banks');
+      if (banksString == null) return [];
+      final List<dynamic> banksList = jsonDecode(banksString);
+      return banksList.map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+
+    showDialog(
+      context: context,
+      builder: (outerCtx) {
+        // Persist across StatefulBuilder rebuilds
+        bool isWalkIn = isInvoice ? true : false;
+        bool isSubmitting = false;
+        List<Map<String, dynamic>> bankPayments = [];
+
+
+        bool finalizeDisabled(List cartItems) {
+          if (cartItems.isEmpty || isSubmitting) return true;
+
+          if (isInvoice) {
+            // Walk-in: allow finalize even if name/mobile are empty
+            if (isWalkIn) return false;
+
+            // Registered: still require a selected customer
+            return _selectedCustomer == null;
+          } else {
+            // Sales Order: always require a selected customer
+            return _selectedCustomer == null;
+          }
+        }
+        
+        Future<void> _openBankPaymentPopup(
+          void Function(void Function()) setStateDialog,
+        ) async
+        {
+          final banks = await _loadBanksFromPrefs();
+          String? selectedBankId;
+          String? selectedBankName;
+          final amountController = TextEditingController();
+
+          showDialog(
+            context: context,
+            builder: (ctx) {
+              return AlertDialog(
+                // Shrink overall dialog margins on small screens
+                insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                title: const Text("Select Bank & Amount"),
+                content: ConstrainedBox(
+                  // ✅ Hard limit the dialog’s content width
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // --- Select Bank (narrow + non-overflow) ---
+                        DropdownButtonFormField<String>(
+                          isExpanded: true, // ✅ Prevents overflow of long names
+                          decoration: const InputDecoration(
+                            labelText: "Bank",
+                            isDense: true, // ✅ More compact height
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                          menuMaxHeight: 300, // ✅ Keep the menu from covering the whole screen
+                          items: banks.map<DropdownMenuItem<String>>((bank) {
+                            return DropdownMenuItem<String>(
+                              value: bank['bankID'] as String,
+                              child: Text(
+                                bank['bankName'] as String,
+                                overflow: TextOverflow.ellipsis, // ✅ Ellipsize long names
+                                softWrap: false,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            selectedBankId = val;
+                            if (val != null) {
+                              final match = banks.firstWhere((b) => b['bankID'] == val);
+                              selectedBankName = match['bankName'] as String?;
+                            }
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // --- Amount ---
+                        TextField(
+                          controller: amountController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: "Amount",
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final raw = amountController.text.trim();
+                      final amount = double.tryParse(raw) ?? 0;
+                      if (selectedBankId != null && raw.isNotEmpty && amount > 0) {
+                        setStateDialog(() {
+                          bankPayments.add({
+                            "bankID": selectedBankId,
+                            "bankName": selectedBankName,
+                            "amount": amount,
+                          });
+                        });
+                        Navigator.pop(ctx);
+                      }
+                    },
+                    child: const Text("Add"),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+
+            double grandTotal = 0;
+            for (var item in cartItems) {
+              final qty = _cart[item.skuCode]!;
+              final price = double.tryParse(item.tradePrice) ?? 0;
+              grandTotal += qty * price;
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(dialogTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 600,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+
+                    if (isInvoice) ...[
+                      // Walk-in vs Registered toggle
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment<bool>(value: true, label: Text('Walk-in customer')),
+                          ButtonSegment<bool>(value: false, label: Text('Registered customer')),
+                        ],
+                        selected: {isWalkIn},
+                        onSelectionChanged: (s) {
+                          setStateDialog(() {
+                            isWalkIn = s.first;
+                            if (isWalkIn) {
+                              _selectedCustomer = null;
+                              addressController.text = ''; // no delivery address for walk-in
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
+
+                      if (isWalkIn) ...[
+                        // WALK-IN FIELDS: NAME + MOBILE
+                        TextField(
+                          controller: walkInNameController,
+                          decoration: const InputDecoration(
+                            labelText: "Walk-in Name (optional)",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: walkInMobileController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: const InputDecoration(
+                            labelText: "Mobile Number (optional)",
+                            hintText: "03XXXXXXXXX",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ] else ...[
+                        // Registered customer dropdown
+                        DropdownSearch<Customer>(
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            isFilterOnline: true,
+                            searchFieldProps: const TextFieldProps(
+                              decoration: InputDecoration(
+                                hintText: "🔍 Search customer...",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                              title: Text(customer.customerName),
+                              subtitle: Text(customer.customerAddress),
+                            ),
+                          ),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: "Select Customer",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          asyncItems: (String filter) async {
+                            if (filter.length < 3) return [];
+                            return await ApiService.fetchInvCustomers(_invoiceMgrId, filter);
+                          },
+                          itemAsString: (Customer u) => u.customerName,
+                          selectedItem: _selectedCustomer,
+                          onChanged: (Customer? customer) {
+                            setStateDialog(() {
+                              _selectedCustomer = customer;
+                              addressController.text = customer?.customerAddress ?? '';
+                            });
+                          },
+                        ),
+                      ],
+                    ] else ...[
+                      // Sales Order: always registered customer
+                      DropdownSearch<Customer>(
+                        popupProps: PopupProps.menu(
+                          showSearchBox: true,
+                          isFilterOnline: true,
+                          searchFieldProps: const TextFieldProps(
+                            decoration: InputDecoration(
+                              hintText: "🔍 Search customer...",
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          itemBuilder: (context, Customer customer, isSelected) => ListTile(
+                            title: Text(customer.customerName),
+                            subtitle: Text(customer.customerAddress),
+                          ),
+                        ),
+                        dropdownDecoratorProps: const DropDownDecoratorProps(
+                          dropdownSearchDecoration: InputDecoration(
+                            labelText: "Select Customer",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        asyncItems: (String filter) async {
+                          if (filter.length < 3) return [];
+                          return await ApiService.fetchPOCustomers(_salesOrderMgrId, filter);
+                        },
+                        itemAsString: (Customer u) => u.customerName,
+                        selectedItem: _selectedCustomer,
+                        onChanged: (Customer? customer) {
+                          setStateDialog(() {
+                            _selectedCustomer = customer;
+                            addressController.text = customer?.customerAddress ?? '';
+                          });
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 12),
+
+                    // DELIVERY ADDRESS: hide for walk-in invoice
+                    if (!(isInvoice && isWalkIn)) ...[
+                      const Text("🏠 Delivery Address", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: addressController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          hintText: "Enter delivery address",
+                          border: OutlineInputBorder(),
+                          filled: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    const Divider(),
+                    Text("🛒 Items (${cartItems.length})", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+
+                    Expanded(
+                      child: cartItems.isEmpty
+                          ? const Center(child: Text("Cart is empty."))
+                          : ListView.builder(
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartItems[index];
+                          final qty = _cart[item.skuCode]!;
+                          return _OrderItemTile(
+                            item: item,
+                            qty: qty,
+                            onQtyChanged: (newQty) {
+                              if (newQty < 1) return;
+                              setStateDialog(() {
+                                _cart[item.skuCode] = newQty;
+                              });
+                            },
+                            onRemove: () {
+                              setState(() {
+                                _cart.remove(item.skuCode);
+                              });
+                              setStateDialog(() {});
+                            },
+                          );
+                        },
+                      ),
+                    ),
+
+                    const Divider(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Grand Total: Rs. ${grandTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                Row(
+                  children: [
+
+
+                    if (isInvoice) ...[
+                      IconButton(
+                        tooltip: 'Add bank payment',
+                        onPressed: () => _openBankPaymentPopup(setStateDialog),
+                        icon: const Icon(Icons.account_balance),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+
+
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: finalizeDisabled(cartItems)
+                            ? null
+                            : () async {
+                          setStateDialog(() => isSubmitting = true); // lock UI
+
+                          final prefs = await SharedPreferences.getInstance();
+                          final employeeID = prefs.getString('employeeID');
+
+                          if (action == OrderAction.placeOrder) {
+                            // Registered customer required
+                            final payload = {
+                              "fK_Customer_ID": _selectedCustomer!.id,
+                              "fK_Employee_ID": employeeID,
+                              "deliveryAddress": addressController.text,
+                              "isBankGuarantee": false,
+                              "isClosed": false,
+                              "fK_PurchaseSalesOrderManagerMaster_ID":
+                              prefs.getString('salesPurchaseOrderManagerID') ?? '',
+                              "docDate": DateTime.now().toIso8601String(),
+                              "expectedDelRecDate": null,
+                              "bankGuaranteeIssueDate": null,
+                              "bankGuaranteeExpiryDate": null,
+                              "proformaInvoiceDate": null,
+                              "lcReceived": false,
+                              "transShipmentAllow": false,
+                              "purchaseSalesOrderDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "agreedRate": rate,
+                                  "totalAmount": qty * rate,
+                                  "totalAmountInLocalCurrency": 0,
+                                  "specialInstruction": "",
+                                  "skuName": "",
+                                  "packingName": "",
+                                };
+                              }).toList(),
+                              "purchaseSalesOrderShipmentDetailsInp": [],
+                            };
+
+                            try {
+                              final response = await ApiService.finalizeSalesOrder(payload);
+                              if (response.statusCode == 200 || response.statusCode == 201) {
+                                setState(() => _cart.clear());
+                                setStateDialog(() => dialogTitle = '✅ Order placed successfully!');
+                                await Future.delayed(const Duration(seconds: 2));
+                                if (context.mounted) Navigator.pop(context);
+                              } else {
+                                final msg = ApiService.extractServerMessage(response);
+                                setStateDialog(() => dialogTitle = '❌ $msg');
+                              }
+                            } catch (e) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
+                            }
+                          }
+
+                          if (action == OrderAction.salesInvoice) {
+                            final customerId = isWalkIn
+                                ? (prefs.getString('walkInCustomerID') ?? '')
+                                : (_selectedCustomer?.id ?? '');
+
+                            String? _bankID;
+                            double _bankTotal = 0.0;
+                            // recompute totals safely
+                            double bankTotal = 0;
+                            for (final bp in bankPayments) {
+                              _bankID=bp['bankID'] as String;
+                              _bankTotal = (bp['amount'] as double?) ?? 0.0;
+                              bankTotal += (bp['amount'] as double?) ?? 0.0;
+                            }
+                            final double cashAfterBank = (grandTotal - bankTotal).clamp(0, double.infinity);
+
+
+
+
+
+
+
+
+
+                            final payload = {
+                              "fK_Customer_ID": customerId,
+                              "fK_Employee_ID": employeeID,
+                              // For walk-in: no delivery address
+                              "deliveryAddress": isWalkIn ? "" : addressController.text,
+                              "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
+                              "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
+                              "docDate": DateTime.now().toIso8601String(),
+
+
+                              if (_bankID != null && _bankTotal > 0) ...{
+                                "fK_ChartOfAccounts_ID_Bank": _bankID,
+                                "bankReceived": _bankTotal,
+                              },
+
+
+                              // Walk-in extras (your API can accept these or ignore if not present)
+                              "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
+                              "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
+                              "cashReceived": cashAfterBank,
+
+                              "invoiceDetailsInp": cartItems.map((item) {
+                                final qty = _cart[item.skuCode]!;
+                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                return {
+                                  "id": "",
+                                  "fK_ChartOfAccounts_ID": null,
+                                  "fK_Sku_ID": item.id,
+                                  "fK_SKUPacking_ID": item.defaultPackingID,
+                                  "quantity": qty,
+                                  "rate": rate,
+                                  "amount": qty * rate,
+                                  "discountPercentage": 0,
+                                  "discountAmount": 0,
+                                  "totalAmount": qty * rate,
+                                  "valueExclusiveTax": 0,
+                                  "taxPercentage": 0,
+                                  "taxAmount": 0,
+                                  "valueInclusiveTax": 0,
+                                  "freightCharges": 0,
+                                  "notes": isWalkIn
+                                      ? "Walk-in: \${walkInNameController.text.trim()} / \${walkInMobileController.text.trim()}"
+                                      : "",
+                                  "batchNumber": "",
+                                };
+                              }).toList(),
+                              "invoiceGdnGrnDetailsInp": [],
+                            };
+
+                            try {
+                              final resp = await ApiService.finalizeInvoice(payload);
+
+                              // 1) Check HTTP status first
+                              final ok = resp.statusCode >= 200 && resp.statusCode < 300;
+                              if (!ok) {
+                                final msg = ApiService.extractServerMessage(resp);
+                                setStateDialog(() => dialogTitle = '❌ $msg');
+                                return;
+                              }
+
+                              // 2) Parse body → data
+                              Map<String, dynamic> invData;
+                              try {
+                                final body = jsonDecode(resp.body);
+                                final data = body['data'];
+                                if (data is Map) {
+                                  invData = Map<String, dynamic>.from(data as Map);
+                                } else {
+                                  // Data missing or wrong shape
+                                  setStateDialog(() => dialogTitle = '⚠️ Invalid server response (no data).');
+                                  return;
+                                }
+                              } catch (e) {
+                                setStateDialog(() => dialogTitle = '⚠️ Could not read invoice from server.');
+                                return;
+                              }
+
+                              // 3) Success UI updates
+                              setState(() => _cart.clear());
+                              setStateDialog(() => dialogTitle = '✅ Invoice Created successfully!');
+
+                              // 4) Close the summary dialog
+                              if (!context.mounted) return;
+                              Navigator.pop(context);
+
+                              // 5) Go to print/preview screen
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => InvoicePrintPage(inv: invData),
+                                ),
+                              );
+                            } catch (e, st) {
+                              setStateDialog(() => dialogTitle = '⚠️ Error: $e');
+                              debugPrint('finalizeInvoice error: $e\n$st');
+                            } finally {
+                              setStateDialog(() => isSubmitting = false);
+                            }
+
+                          }
+                        },
+                        child: isSubmitting
+                            ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                        )
+                            : Text(isInvoice ? '🧾 Save' : '📝 Save'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }*/
+
+
   @override
   void dispose() {
     _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+ final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.appBackgroundGreyColor,
       appBar: AppBar(
-        title: const Text('Products'),
+        title: const Text('Products',style: TextStyle(color: Colors.black,fontSize: 20,fontWeight: FontWeight.w600)),
+        backgroundColor: AppColors.mainButtonsColor,
+        toolbarHeight: 80,
+        iconTheme: IconThemeData(color: AppColors.blackColor,size: 30),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete_outline),
             tooltip: 'Clear Cart',
             onPressed: _cart.isNotEmpty ? _clearCart : null,
           ),
@@ -1641,14 +2212,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             alignment: Alignment.topRight,
             children: [
               IconButton(
-                icon: const Icon(Icons.shopping_cart),
+                icon: const Icon(Icons.shopping_cart_outlined),
                 onPressed: () {
                   if (_cart.isEmpty) {
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
                   } else {
-                    _showOrderSummaryDialog(actionType);
+                   // _showOrderSummaryDialog(actionType);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>  SalesInvoiceScreen(invoiceMgrId: _invoiceMgrId,products: _products,)
+                      ),
+                    );
                   }
                 },
               ),
@@ -1658,10 +2235,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   top: 6,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                     child: Text(
                       '${_cart.length}',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -1673,132 +2247,133 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
       ),
       drawer: Drawer(
-        backgroundColor: AppColors.g1,
-        surfaceTintColor: AppColors.primaryContainer,
-        child: ListView(
+        backgroundColor: AppColors.whiteColor,
+        surfaceTintColor: AppColors.mainButtonsColor,
+        child: Column(
           children: [
+            // Header Section
             UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: AppColors.primary
+              decoration: BoxDecoration(color: AppColors.mainButtonsColor),
+              accountName: Text(
+                '$firstName $lastName',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.blackColor
+                ),
               ),
-              accountName: Text('$firstName $lastName',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
-              accountEmail: const Text(''),
+              accountEmail: Text(
+                'admin@topsum.com', // Replace with actual email if available
+                style:  TextStyle(fontSize: 14,color: AppColors.blackColor),
+              ),
               currentAccountPicture: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                backgroundColor: Colors.white,
                 child: Text(
-                  firstName.isNotEmpty ? firstName[0] : '',
+                  firstName.isNotEmpty ? firstName[0].toUpperCase() : 'D',
                   style: TextStyle(
-                    fontSize: 40,
-                    color: AppColors.primary,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.mainButtonsColor,
                   ),
                 ),
               ),
             ),
 
-            _buildDrawerItem(
-              context,
-              icon: Icons.people,
-              title: 'Allowed IP',
-              route: '/allowedIPs',
+            // Menu Items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.language,
+                    title: 'Allowed IP',
+                    route: '/allowedIPs',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.account_balance_wallet,
+                    title: 'Customer Ledger',
+                    route: '/customerLedger',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.payments_outlined,
+                    title: 'Collections',
+                    route: '/collections',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.call_received,
+                    title: 'Good Receive Note',
+                    route: '/good_recieve_note_screen',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.call_made,
+                    title: 'GRN Discard',
+                    route: '/grn_discard_screen',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.shopping_cart,
+                    title: 'My Sales Orders',
+                    route: '/mySalesOrders',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.people,
+                    title: 'My Customers',
+                    route: '/myCustomers',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.receipt_long,
+                    title: 'My Sales Invoices',
+                    route: '/mySalesInvoices',
+                    // badge: '3', // Uncomment if you want to show badge count
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.book,
+                    title: 'My Cash Book',
+                    route: '/myCashBook',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.attach_money,
+                    title: 'My Expenses',
+                    route: '/myExpenses',
+                  ),
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.policy,
+                    title: 'Active Policy',
+                    route: '/activePolicy',
+                  ),
+                ],
+              ),
             ),
 
-            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
-              _buildDrawerItem(
-                context,
-                icon: Icons.people,
-                title: 'My Customers',
-                route: '/myCustomers',
-              ),
-            ],
+            // Bottom Section
+            const Divider(height: 1),
 
-            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
-              _buildDrawerItem(
-                context,
-                icon: Icons.account_balance_wallet,
-                title: 'Customer Ledger',
-                route: '/customerLedger',
-              ),
-            ],
-
-            if (_salesOrderMgrId.isNotEmpty || _invoiceMgrId.isNotEmpty) ...[
-              _buildDrawerItem(
-                context,
-                icon: Icons.payments_outlined,
-                title: 'Collections',
-                route: '/collections',
-              ),
-
-              _buildDrawerItem(
-                context,
-                icon: Icons.inventory_outlined,
-                title: 'Stock Taking',
-                route: '/stock_taking_screen',
-              ),
-
-              _buildDrawerItem(
-                context,
-                icon: Icons.call_received,
-                title: 'Good Receive Note',
-                route: '/good_receive_note_screen',
-              ),
-
-              _buildDrawerItem(
-                context,
-                icon: Icons.call_made,
-                title: 'GRN Discard',
-                route: '/grn_discard_screen',
-              ),
-
-              _buildDrawerItem(
-                context,
-                icon: Icons.account_balance_wallet,
-                title: 'My Sales Orders',
-                route: '/mySalesOrders',
-              ),
-
-              _buildDrawerItem(
-                context,
-                icon: Icons.account_balance_wallet,
-                title: 'My Stock',
-                route: '/my_stock_screen',
-              ),
-            ],
-
-            if (_invoiceMgrId.isNotEmpty) ...[
-              _buildDrawerItem(
-                context,
-                icon: Icons.receipt_long,
-                title: 'My Sales Invoices',
-                route: '/mySalesInvoices',
-              ),
-              _buildDrawerItem(
-                context,
-                icon: Icons.payments,
-                title: 'My Cash Book',
-                route: '/myCashBook',
-              ),
-            ],
-
-           /* if (_salesOrderMgrId.isNotEmpty) ...[
-              _buildDrawerItem(
-                context,
-                icon: Icons.policy,
-                title: 'Active Policy',
-                route: '/activePolicy',
-              ),
-            ],
-
-            _buildDrawerItem(
-              context,
-              icon: Icons.money,
-              title: 'My Expenses',
-              route: '/myExpenses',
-            ),*/
             _buildDrawerItem(
               context,
               icon: Icons.logout,
               title: 'Logout',
+              iconColor: Colors.red,
+              textColor: Colors.red,
               onTap: () async {
                 final nav = Navigator.of(context);
                 final prefs = await SharedPreferences.getInstance();
@@ -1806,79 +2381,108 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 nav.pushReplacementNamed('/login');
               },
             ),
+
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'App Version 2.4.1',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Text(
+                    '© 2025 SMH Global',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+
       body: Column(
         children: [
           _managerToggleBar(),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.only(left:20,right: 20,top: 10,bottom: 10),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(
-                color: Colors.black87,
-              ), // make typed text visible
+              style: const TextStyle(color: Colors.black87), // make typed text visible
               cursorColor: Colors.black54,
               decoration: InputDecoration(
                 hintText: 'Search products...',
-                hintStyle: const TextStyle(
-                  color: Colors.black45,
-                ), // visible hint
+                hintStyle: const TextStyle(color: AppColors.greyColor),    // visible hint
                 filled: true,
-                fillColor: Colors.white, 
-                icon: IconButton(
-                  onPressed: scanBarcodeAndFetchProduct,
-                  icon: Icon(Icons.qr_code_scanner),
+                fillColor: Colors.white,                               // solid light background
+                icon: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        spreadRadius: 1,
+                        blurRadius: 2,
+                        offset: Offset(0, 5), // changes position of shadow
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: scanBarcodeAndFetchProduct,
+                    icon: Icon(Icons.qr_code_scanner ,color: AppColors.grey2Color,size: 30,),
+                  ),
                 ),
                 prefixIcon: isLoading
                     ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.black54,
-                            ), // visible spinner
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.search, color: Colors.black54),
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black54), // visible spinner
+                    ),
+                  ),
+                )
+                    : const Icon(Icons.search, color: AppColors.greyColor),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.black54),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            searchKey = '';
-                            currentPage = 1;
-                            barcode= '';
-                            _products.clear();
-                            hasMore = true;
-                          });
-                          fetchProducts();
-                        },
-                      )
+                  icon: const Icon(Icons.clear, color: Colors.black54),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      searchKey = '';
+                      currentPage = 1;
+                      _products.clear();
+                      hasMore = true;
+                      barcode = ''; // Also clear barcode state on search clear
+                    });
+                    fetchProducts();
+                  },
+                )
                     : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.black12),
+                  borderSide: const BorderSide(color: Colors.white),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).primaryColor,
-                  ), // brand color on focus
+                  borderSide: BorderSide(color: Colors.white), // brand color on focus
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 0,
-                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
               ),
               textInputAction: TextInputAction.search,
               onChanged: (value) {
@@ -1895,62 +2499,112 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
           ),
-          const Divider(),
           Expanded(
             child: _products.isEmpty
                 ? Center(
-                    child: isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('No products found.'),
-                  )
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('No products found.'),
+            )
                 : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: _products.length + (isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index < _products.length) {
-                        return _buildProductItem(_products[index]);
-                      } else {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                    },
-                  ),
+              padding: EdgeInsets.only(bottom: 40),
+              controller: _scrollController,
+              itemCount: _products.length + (isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index < _products.length) {
+                  return _buildProductItem(_products[index]);
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.mainButtonsColor,)),
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
       //floatingActionButton: Stack(children: [_buildExpandableFAB()]),
     );
   }
+  // void _switchManager(ManagerSource next) {
+  //   if (next == _managerSource) return;
+  //
+  //   setState(() {
+  //     _managerSource = next;
+  //
+  //     // 👇 clear cart on mode change
+  //     _cart.clear();
+  //
+  //     // also reset paging & products so list reloads for new mode
+  //     currentPage = 1;
+  //     _products.clear();
+  //     hasMore = true;
+  //   });
+  //
+  //   // tiny heads-up
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     const SnackBar(content: Text('Mode changed. Cart cleared.')),
+  //   );
+  //
+  //   // fetch with the new active manager id
+  //   fetchProducts();
+  // }
 
-  Widget _buildDrawerItem(BuildContext context, {
+  Widget _buildDrawerItem(
+      BuildContext context, {
         required IconData icon,
         required String title,
         String? route,
         VoidCallback? onTap,
-      })
-  {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(icon, color: colorScheme.onSurface),
-          title: Text(
+        Color? iconColor,
+        Color? textColor,
+        String? badge,
+      }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: iconColor ?? Colors.grey[700],
+        size: 24,
+      ),
+      title: Row(
+        children: [
+          Text(
             title,
-            style: TextStyle(color: colorScheme.onSurface),
+            style: TextStyle(
+              color: textColor ?? Colors.grey[800],
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          onTap: () {
+          if (badge != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                badge,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      onTap: onTap ??
+              () {
             Navigator.pop(context);
             if (route != null) {
               Navigator.pushNamed(context, route);
-            } else {
-              onTap?.call();
             }
           },
-        ),
-        Divider(color: Theme.of(context).dividerColor, height: 1),
-      ],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 }
@@ -1974,23 +2628,14 @@ class _RoundIconButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0x11000000)),
           boxShadow: const [
-            BoxShadow(
-              color: Color(0x0F000000),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
+            BoxShadow(color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: enabled ? Colors.black87 : Colors.black26,
-        ),
+        child: Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.black26),
       ),
     );
   }
 }
-
 class _OrderItemTile extends StatelessWidget {
   final Product item;
   final int qty;
@@ -2010,6 +2655,7 @@ class _OrderItemTile extends StatelessWidget {
     final theme = Theme.of(context);
     final price = double.tryParse(item.tradePrice) ?? 0;
     final total = price * qty;
+
     return Card(
       color: Colors.white,
       elevation: 2,
@@ -2019,40 +2665,31 @@ class _OrderItemTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(8), // reduced padding
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // align center vertically
+          crossAxisAlignment: CrossAxisAlignment.center, // align center vertically
           children: [
             // Thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(8), // slightly smaller radius
               child: item.imageUrls.isNotEmpty
                   ? Image.network(
-                      ApiService.imageBaseUrl + item.imageUrls,
-                      width: 48,
-                      height: 48, // reduced size
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 48,
-                        height: 48,
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    )
+                ApiService.imageBaseUrl + item.imageUrls,
+                width: 48,
+                height: 48, // reduced size
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 48,
+                  height: 48,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image_not_supported, size: 18, color: Colors.grey),
+                ),
+              )
                   : Container(
-                      width: 48,
-                      height: 48,
-                      alignment: Alignment.center,
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.image,
-                        size: 18,
-                        color: Colors.grey,
-                      ),
-                    ),
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                color: Colors.grey[200],
+                child: const Icon(Icons.image, size: 18, color: Colors.grey),
+              ),
             ),
 
             const SizedBox(width: 8),
@@ -2106,10 +2743,7 @@ class _OrderItemTile extends StatelessWidget {
                   iconSize: 18,
                   splashRadius: 16,
                   onPressed: onRemove,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                  ),
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                 ),
               ],
             ),
@@ -2117,9 +2751,9 @@ class _OrderItemTile extends StatelessWidget {
         ),
       ),
     );
+
   }
 }
-
 class _QtyPillStepper extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
@@ -2134,10 +2768,7 @@ class _QtyPillStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 6,
-        vertical: 2,
-      ), // much smaller
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // much smaller
       decoration: BoxDecoration(
         color: const Color(0xFFF4F6F8),
         borderRadius: BorderRadius.circular(20),

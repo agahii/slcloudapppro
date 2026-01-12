@@ -9,13 +9,13 @@ import 'package:slcloudapppro/Model/customer.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
-import 'package:slcloudapppro/Model/my_stock_model.dart';
 import 'Model/PagedCustomers.dart';
 import 'Model/SalesOrderItem.dart';
 import 'Model/chart_account.dart';
 import 'Model/customer_lite.dart';
 import 'Model/ledger_entry.dart';
 import 'Model/allowed_ip.dart';
+import 'Model/my_stock_model.dart';
 import 'collection_screen.dart';
 
 class ApiException implements Exception {
@@ -104,7 +104,6 @@ class ApiService {
     if (!await hasInternetConnection()) {
       throw ApiException(0, 'No internet connection.');
     }
-   // final url = Uri.parse('$baseUrl/api/Account/loginMobile');
     final url = Uri.parse('$baseUrl/api/Account/login');
 
     final response = await _post(
@@ -125,7 +124,6 @@ class ApiService {
         await prefs.setString('lastName', data['lastName']);
         await prefs.setString('tokenExpire', data['tokenExpire']);
         await prefs.setString('salesPurchaseOrderManagerID', data['salesPurchaseOrderManagerID']);
-        await prefs.setString('stockTackingManagerID', data['stockTackingManagerID']);
         await prefs.setString('invoiceManagerID', data['invoiceManagerID']);
         await prefs.setString('walkInCustomerID', data['walkInCustomerID']);
         await prefs.setString('cashBookID', data['cashBookID']);
@@ -392,6 +390,9 @@ class ApiService {
     }
   }
 
+
+
+
   static Future<List<Product>> fetchProductsFromInvoiceManager({
     required String managerID,
     required String stockLocationID,
@@ -438,6 +439,15 @@ class ApiService {
           response.statusCode, extractServerMessage(response));
     }
   }
+
+
+
+
+
+
+
+
+
 
   static Future<List<SalesInvoice>> fetchMySalesInvoices({
     required String managerID,
@@ -598,8 +608,6 @@ class ApiService {
     return '${d.year}-${two(d.month)}-${two(d.day)}';
   }
 
-
-
   static Future<List<MyStockModel>> fetchMyStock({
 
     String SkuID = '',
@@ -663,6 +671,10 @@ class ApiService {
     return list.map((e) => MyStockModel.fromJson(e as Map<String, dynamic>)).toList();
 
   }
+
+
+
+
 
   static Future<List<LedgerEntry>> fetchCustomerLedger({
 

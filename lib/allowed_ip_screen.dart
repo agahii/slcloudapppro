@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 
 import 'Model/allowed_ip.dart';
 import 'api_service.dart';
@@ -110,7 +111,8 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Allowed IPs')),
+      backgroundColor: AppColors.appBackgroundGreyColor,
+      appBar: AppBar(title: const Text('Allowed IPs',style: TextStyle(color: Colors.black),),backgroundColor: AppColors.mainButtonsColor,iconTheme: IconThemeData(color: Colors.black),),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -121,14 +123,15 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainButtonsColor),
                 onPressed: () => _openForm(),
                 icon: Padding(
                   padding: const EdgeInsets.only(left: 3,right: 1),
-                  child: Icon(Icons.add),
+                  child: Icon(Icons.add ,color: Colors.black,),
                 ),
                 label: Padding(
                   padding: const EdgeInsets.only(left: 1,right: 5),
-                  child: Text('Add New'),
+                  child: Text('Add New',style: const TextStyle(color: Colors.black),),
                 ),
               ),
             ),
@@ -149,6 +152,8 @@ class _AllowedIpScreenState extends State<AllowedIpScreen> {
                 }
 
                 return RefreshIndicator(
+                  backgroundColor: Colors.white,
+                  color: AppColors.mainButtonsColor,
                   onRefresh: _load,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(12),
@@ -232,7 +237,8 @@ class _AllowedIpCard extends StatelessWidget {
     final isExpired = item.validUntil != null && item.validUntil!.isBefore(DateTime.now());
 
     return Card(
-      elevation: 2,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -252,16 +258,19 @@ class _AllowedIpCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: Colors.black
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: 'Edit',
-                    icon: const Icon(Icons.edit),
+                    color: Colors.black,
+                    icon:  Icon(Icons.edit),
                     onPressed: onEdit,
                   ),
                   IconButton(
                     tooltip: 'Delete',
+                    color: Colors.black,
                     icon: const Icon(Icons.delete),
                     onPressed: onDelete,
                   ),
@@ -276,7 +285,9 @@ class _AllowedIpCard extends StatelessWidget {
                   item.desc,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.black
+                  ),
                 ),
 
               const SizedBox(height: 10),
@@ -287,25 +298,24 @@ class _AllowedIpCard extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   Chip(
+                    side: BorderSide.none,
                     label: Text(item.isActive ? 'Active' : 'Inactive'),
                     avatar: Icon(
                       item.isActive ? Icons.check_circle : Icons.cancel,
                       size: 18,
+                      color: Colors.black,
                     ),
-                    backgroundColor: item.isActive
-                        ? cs.primaryContainer
-                        : cs.tertiaryContainer,
+                    backgroundColor: AppColors.mainButtonsColor,
                     labelStyle: TextStyle(
-                      color: item.isActive
-                          ? cs.onPrimaryContainer
-                          : cs.onTertiaryContainer,
+                      color: Colors.black,
                     ),
                   ),
                   if (item.validUntil != null)
                     Chip(
-                      label: Text('Valid: ${fmtDate(item.validUntil)}'),
-                      avatar: const Icon(Icons.schedule, size: 18),
-                      backgroundColor: cs.secondaryContainer,
+                      side: BorderSide.none,
+                      label: Text('Valid: ${fmtDate(item.validUntil)}',style: const TextStyle(color: Colors.black),),
+                      avatar: const Icon(Icons.schedule, size: 18 ,color: Colors.black,),
+                      backgroundColor: AppColors.mainButtonsColor,
                       labelStyle: TextStyle(color: cs.onSecondaryContainer),
                     ),
                   if (isExpired)
@@ -325,7 +335,7 @@ class _AllowedIpCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                  color: Colors.black,
                 ),
               ),
             ],

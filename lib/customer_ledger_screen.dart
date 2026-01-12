@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 
 import 'api_service.dart';
 import 'Model/customer.dart';
@@ -193,88 +194,157 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
     final allowLoad = _selectedCustomer != null && _fromDate != null && _toDate != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Customer Ledger')),
+      backgroundColor: AppColors.appBackgroundGreyColor,
+      appBar: AppBar(title: const Text('Customer Ledger',style: TextStyle(color: Colors.black),) ,backgroundColor: AppColors.mainButtonsColor,iconTheme: IconThemeData(color: Colors.black),),
       body: Column(
         children: [
           // ---- Filters ----
-          Padding(
+          
+          Container(
+            margin: EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white
+            ),
+            padding: EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Customer
-                DropdownSearch<Customer>(
-                  enabled: managerIDSalesOrder.isNotEmpty,
-                  asyncItems: (filter) => _searchCustomers(filter ?? ''),
-                  itemAsString: (c) => c.customerName,
-                  selectedItem: _selectedCustomer,
-                  popupProps: PopupProps.menu(
-                    showSearchBox: true,
-                    isFilterOnline: true,
-                    searchDelay: const Duration(milliseconds: 800),
-                    searchFieldProps: TextFieldProps(
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        hintText: 'Search customers...',
+                SizedBox(
+                  height: 60,
+                  child: DropdownSearch<Customer>(
+                    enabled: managerIDSalesOrder.isNotEmpty,
+                    asyncItems: (filter) => _searchCustomers(filter ?? ''),
+                    itemAsString: (c) => c.customerName,
+                    selectedItem: _selectedCustomer,
+                    popupProps: PopupProps.menu(
+                      showSearchBox: true,
+                      isFilterOnline: true,
+                      searchDelay: const Duration(milliseconds: 800),
+                      searchFieldProps: TextFieldProps(
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintStyle: TextStyle(color: Colors.black),
+                          hintText: 'Search customers...',
+                        ),
                       ),
-                    ),
-                    emptyBuilder: (ctx, str) {
-                      final typed = (str ?? '').trim();
-                      if (typed.length < 3) {
+                      emptyBuilder: (ctx, str) {
+                        final typed = (str ?? '').trim();
+                        if (typed.length < 3) {
+                          return const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text('Type at least 3 characters to search...'),
+                          );
+                        }
                         return const Padding(
                           padding: EdgeInsets.all(12),
-                          child: Text('Type at least 3 characters to search...'),
+                          child: Text('No customers found'),
                         );
-                      }
-                      return const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text('No customers found'),
-                      );
-                    },
-                  ),
-                  dropdownDecoratorProps: const DropDownDecoratorProps(
-                    dropdownSearchDecoration: InputDecoration(
-                      labelText: 'Customer',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+                      },
                     ),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: 'Customer',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                    ),
+                    onChanged: (val) => setState(() => _selectedCustomer = val),
                   ),
-                  onChanged: (val) => setState(() => _selectedCustomer = val),
                 ),
 
                 const SizedBox(height: 8),
 
-                // Dates row
+// Dates row
                 Row(
                   children: [
                     Expanded(
-                      child: InkWell(
-                        onTap: _pickFromDate,
-                        child: InputDecorator(
-                          isEmpty: _fromDate == null,
-                          decoration: const InputDecoration(
-                            labelText: 'From',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                      child: SizedBox(
+                        height: 60,
+                        child: InkWell(
+                          onTap: _pickFromDate,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            child: InputDecorator(
+                              isEmpty: _fromDate == null,
+                              decoration: InputDecoration(
+                                labelText: 'From Date',
+                                labelStyle: TextStyle(color: Colors.grey[600]),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                _fromDate == null ? '' : _fmtDate(_fromDate!),
+                                style: TextStyle(
+                                  color: _fromDate == null ? Colors.grey[400] : Colors.black87,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: Text(
-                              _fromDate == null ? 'Select date' : _fmtDate(_fromDate)),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: InkWell(
-                        onTap: _pickToDate,
-                        child: InputDecorator(
-                          isEmpty: _toDate == null,
-                          decoration: const InputDecoration(
-                            labelText: 'To',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                      child: SizedBox(
+                        height: 60,
+                        child: InkWell(
+                          onTap: _pickToDate,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            child: InputDecorator(
+                              isEmpty: _toDate == null,
+                              decoration: InputDecoration(
+                                labelText: 'To Date',
+                                labelStyle: TextStyle(color: Colors.grey[600]),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              child: Text(
+                                _toDate == null ? '' : _fmtDate(_toDate!),
+                                style: TextStyle(
+                                  color: _toDate == null ? Colors.grey[400] : Colors.black87,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: Text(
-                              _toDate == null ? 'Select date' : _fmtDate(_toDate)),
                         ),
                       ),
                     ),
@@ -284,20 +354,28 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
                 const SizedBox(height: 8),
 
                 // Load button on separate line
-                SizedBox(
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.mainButtonsColor,
+                  ),
                   width: double.infinity,
+                  height: 60,
                   child: ElevatedButton.icon(
                     onPressed: allowLoad ? _onLoadPressed : null,
-                    icon: const Icon(Icons.download),
-                    label: const Text('Load'),
+                    icon: const Icon(Icons.download,color: Colors.black,),
+                    label: const Text('Load',style: TextStyle(color: Colors.black),),
                   ),
                 ),
               ],
             ),
           ),
 
+              ],
+            ),
+          ),
 
-          const Divider(height: 1),
+
 
           // ---- List ----
           Expanded(

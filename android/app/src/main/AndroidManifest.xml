@@ -9,7 +9,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="POS App"
+        android:label="slcloudapppro"
         android:icon="@mipmap/ic_launcher">
 
         <activity

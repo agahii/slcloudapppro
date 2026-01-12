@@ -10,12 +10,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-//  final emailController = TextEditingController(text: '923212255434');
-  //final passwordController = TextEditingController(text: 'Ba@leno99');
-  //final emailController = TextEditingController(text: 'Zerrittaflowerspk@gmail.com');
-  //final passwordController = TextEditingController(text: 'Ba@leno99');
-  final emailController = TextEditingController(text: 'Demo@gmail.com');
-  final passwordController = TextEditingController(text: 'Ba@leno99');
+  final emailController = TextEditingController(text: 'demo@gmail.com');
+  final passwordController = TextEditingController(text: 'Ba@leno9988');
 
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
@@ -36,13 +32,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       if (response['success'] == true) {
-        // final prefs = await SharedPreferences.getInstance();
-        // final token = prefs.getString('token');
-        // await SignalRService.instance.start(token!).then((_) {
-        //   print("SignalR started!");
-        // }).catchError((err) {
-        //   print("Error starting SignalR: $err");
-        // });
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        if (token != null && token.isNotEmpty) {
+          try {
+            await SignalRService.instance.start(token);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Connected to SignalR')),
+              );
+            }
+          } catch (err) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('SignalR failed: $err')),
+              );
+            }
+          }
+        }
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         final msg = (response['message'] ?? 'Login failed').toString();
@@ -128,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         validator: (v) =>
                         (v == null || v.isEmpty) ? 'Required' : null,
                       ),
+
                       const SizedBox(height: 24),
+
                       // Login button
                       SizedBox(
                         width: double.infinity,

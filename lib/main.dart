@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:slcloudapppro/stock_taking_screen.dart';
 
 import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
-import 'good_receive_note_screen.dart';
+import 'good_recieve_note_screen.dart';
 import 'grn_discard_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
@@ -152,9 +151,8 @@ class _MyAppState extends State<MyApp> {
         '/myCustomers': (_) => const MyCustomersScreen(),
         '/allowedIPs': (_) => const AllowedIpScreen(),
         '/my_stock_screen': (_) => const MyStockScreen(),
-        '/good_receive_note_screen': (_) =>  PurchaseFormPage(),
+        '/good_recieve_note_screen': (_) =>  PurchaseFormPage(),
         '/grn_discard_screen': (_) =>  DiscardFormPage(),
-        '/stock_taking_screen': (_) =>  StockTakingScreen(),
       },
     );
   }
