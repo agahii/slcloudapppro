@@ -5,6 +5,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 
 import 'Model/chart_account.dart';
 import 'api_service.dart';
@@ -287,16 +288,8 @@ class _CollectionScreenState extends State<CollectionScreen>
     final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 18,
-            offset: Offset(0, 6),
-          ),
-        ],
-        border: Border.all(color: cs.outlineVariant.withOpacity(0.3)),
       ),
       padding: padding,
       child: child,
@@ -319,7 +312,7 @@ class _CollectionScreenState extends State<CollectionScreen>
         if (icon != null) const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16,color: Colors.black),
         ),
       ],
     );
@@ -347,7 +340,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                   'Transaction ${index + 1}',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: cs.onSurface.withOpacity(.9),
+                    color: Colors.black,
                   ),
                 ),
                 const Spacer(),
@@ -365,37 +358,54 @@ class _CollectionScreenState extends State<CollectionScreen>
             const SizedBox(height: 8),
 
             // Customer
-            DropdownSearch<ChartAccount>(
-              key: ValueKey('cust_${row.hashCode}'), // <-- forces fresh widget
-              asyncItems: (String filter) async {
-                if (_managerID.isEmpty) return <ChartAccount>[];
-                final q = filter.trim();
-                if (q.length < 3) return <ChartAccount>[];
-                return await ApiService.getProvisionalReceiptCreditAccounts(
-                  managerID: _managerID,
-                  searchKey: q,
-                );
-              },
-              itemAsString: (c) => c.accountName,
-              selectedItem: row.customer,
-              popupProps: PopupProps.menu(
-                showSearchBox: true,
-                isFilterOnline: true,
-                searchFieldProps: const TextFieldProps(
-                  decoration: InputDecoration(
-                    hintText: "🔍 Search customer...",
-                    border: OutlineInputBorder(),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9F9F9),
+                borderRadius: BorderRadius.circular(8),
+                // border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: DropdownSearch<ChartAccount>(
+                key: ValueKey('cust_${row.hashCode}'), // <-- forces fresh widget
+                asyncItems: (String filter) async {
+                  if (_managerID.isEmpty) return <ChartAccount>[];
+                  final q = filter.trim();
+                  if (q.length < 3) return <ChartAccount>[];
+                  return await ApiService.getProvisionalReceiptCreditAccounts(
+                    managerID: _managerID,
+                    searchKey: q,
+                  );
+                },
+
+                itemAsString: (c) => c.accountName,
+                selectedItem: row.customer,
+                popupProps: PopupProps.menu(
+                  menuProps: MenuProps(
+                    // The backgroundColor property of MenuStyle changes the popup background color
+                    backgroundColor: Colors.white, // <-- Set your desired color here
+                  ),
+                  showSearchBox: true,
+                  isFilterOnline: true,
+                  searchFieldProps: const TextFieldProps(
+                    style: TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      fillColor: const Color(0xFFF9F9F9),
+                      hintText: "🔍 Search customer...",
+                      hintStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              dropdownDecoratorProps: const DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Customer',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+                dropdownDecoratorProps: const DropDownDecoratorProps(
+                  baseStyle: TextStyle(color: Colors.black),
+                  dropdownSearchDecoration: InputDecoration(
+                    labelText: "Select Customer",
+                    labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
                 ),
+                onChanged: (c) => setState(() => row.customer = c),
               ),
-              onChanged: (c) => setState(() => row.customer = c),
             ),
 
             _divider(),
@@ -522,13 +532,15 @@ class _CollectionScreenState extends State<CollectionScreen>
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: cs.surfaceVariant.withOpacity(.15),
+      backgroundColor: AppColors.appBackgroundGreyColor,
       appBar: AppBar(
         titleSpacing: 0,
         elevation: 0,
         centerTitle: false,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: AppColors.mainButtonsColor,
         title: const Text('Collections',
-            style: TextStyle(fontWeight: FontWeight.w800)),
+            style: TextStyle(fontWeight: FontWeight.w800,color: Colors.black)),
       ),
       body: SafeArea(
         child: Column(
@@ -545,30 +557,44 @@ class _CollectionScreenState extends State<CollectionScreen>
                     _header('Bank/Collection Account',
                         icon: Icons.account_balance_rounded),
                     const SizedBox(height: 12),
-                    DropdownSearch<BankAccount>(
-                      items: _banks,
-                      itemAsString: (b) => b.accountName,
-                      selectedItem: _selectedBank,
-                      popupProps: const PopupProps.menu(showSearchBox: true),
-                      dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          labelText: 'Select Bank/Collection Account',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9F9F9),
+                        borderRadius: BorderRadius.circular(8),
+                        // border: Border.all(color: Colors.grey.shade300),
                       ),
-                      onChanged: (b) => setState(() => _selectedBank = b),
+                      child: DropdownSearch<BankAccount>(
+                        items: _banks,
+                        itemAsString: (b) => b.accountName,
+                        selectedItem: _selectedBank,
+                        popupProps: const PopupProps.menu(showSearchBox: true),
+                        dropdownDecoratorProps: const DropDownDecoratorProps(
+                          dropdownSearchDecoration: InputDecoration(
+                            labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                            labelText: 'Select Bank/Collection Account',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
+                        onChanged: (b) => setState(() => _selectedBank = b),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _detailsCtrl,
                       maxLines: 2,
+                      style: TextStyle(color: Colors.black),
                       textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
+                      decoration:  InputDecoration(
+                        hintStyle:  TextStyle(color: AppColors.tabLabelBlueColor),
+                        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: const Color(0xFFF8F8F8),
                         labelText: 'Details / Narration',
                         hintText:
                         'e.g. Received via cheque #123456 from customer',
-                        border: OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
@@ -592,7 +618,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               elevation: 0,
-                              backgroundColor: cs.primary,
+                              backgroundColor: AppColors.mainButtonsColor,
                               foregroundColor: cs.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -601,8 +627,8 @@ class _CollectionScreenState extends State<CollectionScreen>
                                   horizontal: 14),
                             ),
                             onPressed: _addRow,
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add'),
+                            icon: const Icon(Icons.add_rounded,color: Colors.black,),
+                            label: const Text('Add',style: TextStyle(color: Colors.black),),
                           ),
                         ],
                       ),
@@ -630,7 +656,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             // Sticky total + save
             Container(
               decoration: BoxDecoration(
-                color: cs.surface,
+                color: Colors.white,
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x14000000),
@@ -645,7 +671,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                 ),
               ),
               padding:
-              const EdgeInsets.symmetric(horizontal: 12).copyWith(top: 10),
+              const EdgeInsets.symmetric(horizontal: 12).copyWith(top: 10,bottom: 10),
               child: SafeArea(
                 top: false,
                 child: Row(
@@ -654,13 +680,13 @@ class _CollectionScreenState extends State<CollectionScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: cs.primaryContainer,
+                        color: AppColors.tabLabelBlueColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         'Total: ${_moneyFmt.format(_grandTotal())}',
                         style: TextStyle(
-                          color: cs.onPrimaryContainer,
+                          color: Colors.white,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -669,6 +695,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                     FilledButton.icon(
                       onPressed: _canSave ? _submit : null, // gated by validity
                       style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.mainButtonsColor,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -680,10 +707,10 @@ class _CollectionScreenState extends State<CollectionScreen>
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                          : const Icon(Icons.save_outlined),
+                          : const Icon(Icons.save_outlined,color: Colors.black,),
                       label: const Text(
                         'Save',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(fontWeight: FontWeight.w700,color: Colors.black),
                       ),
                     ),
                   ],

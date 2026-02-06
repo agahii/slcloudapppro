@@ -100,13 +100,13 @@ class DiscardFormPageState extends State<DiscardFormPage> {
     if (!hasMore) return;
     setState(() => isLoading = true);
     try {
-      final List<Product> newProducts = await ApiService.fetchProductsFromOrderManager(
-        managerID: managerID,
+      final List<Product> newProducts = await ApiService.fetchProductsFromInvoiceManager(
+        managerID: _invoiceMgrId,
         stockLocationID: stockLocationId,
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,
-        barcode: barcode,
+        barCode: barcode,
       );
       setState(() {
         currentPage++;
@@ -129,7 +129,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
       setState(() {
         _cartItems.add(CartItem(
           product: product,
-          packing: product.defaultPackingID,
+          packing: product.defaultPackingID!,
           quantity: 1,
           expiryDate: '',
         ));
@@ -181,7 +181,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
   void _showCartDialog() {
     showModalBottomSheet(
       isScrollControlled: true,
-      backgroundColor: AppColors.g1,
+      backgroundColor: AppColors.appBackgroundGreyColor,
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
@@ -189,7 +189,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.75,
               decoration: const BoxDecoration(
-                color: AppColors.g1,
+                color: AppColors.appBackgroundGreyColor,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: EdgeInsets.only(
@@ -205,6 +205,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -220,21 +221,21 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                           onQtyChanged: (newQty) {
                             if (newQty < 1) return;
                             setStateDialog(() {
-                              _updateCartItemQty(item.product.skuCode, newQty);
+                              _updateCartItemQty(item.product.skuCode!, newQty);
                             });
                           },
                           onPackingChanged: (newPacking) {
                             setStateDialog(() {
-                              _updateCartItemPacking(item.product.skuCode, newPacking);
+                              _updateCartItemPacking(item.product.skuCode!, newPacking);
                             });
                           },
                           onExpiryChanged: () async {
-                            await _pickExpiryDate(item.product.skuCode);
+                            await _pickExpiryDate(item.product.skuCode!);
                             setStateDialog(() {});
                           },
                           onRemove: () {
                             setState(() {
-                              _removeCartItem(item.product.skuCode);
+                              _removeCartItem(item.product.skuCode!);
                             });
                             setStateDialog(() {});
                           },
@@ -245,11 +246,17 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mainButtonsColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       onPressed: () {
                         Navigator.pop(context);
                         _submit();
                       },
-                      child: const Text('Submit Selected'),
+                      child: const Text('Submit Selected',style: TextStyle(color: Colors.black),),
                     ),
                   ),
                 ],
@@ -271,142 +278,16 @@ class DiscardFormPageState extends State<DiscardFormPage> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Submitted successfully')));
+
+      _cartItems.clear();
+      setState(() {});
     } else {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Please fix form errors')));
     }
   }
 
-  Widget _productCard(Product product) {
-    final isSelected = _cartItems.any((item) => item.product.skuCode == product.skuCode);
 
-    return GestureDetector(
-      onTap: () => _toggleCart(product),
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        elevation: isSelected ? 8 : 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: isSelected ? Colors.blue : AppColors.surface,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: product.imageUrls.isNotEmpty
-                    ? Image.network(
-                  ApiService.imageBaseUrl + product.imageUrls,
-                  width: 90,
-                  height: 90,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 90,
-                    height: 90,
-                    color: Colors.grey[200],
-                    child: const Icon(
-                      Icons.broken_image,
-                      size: 30,
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-                    : Container(
-                  width: 90,
-                  height: 90,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.image,
-                    size: 30,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.skuName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        fontFamily: 'Roboto',
-                        letterSpacing: 0.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Brand: ${product.brandName}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          'Rs. ${product.tradePrice}',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                            fontFamily: 'RobotoMono',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: product.stockInHand > 0
-                                ? Colors.orange.withAlpha(25)
-                                : Colors.red.withAlpha(25),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: product.stockInHand > 0 ? Colors.orange : Colors.red,
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            product.stockInHand > 0
-                                ? 'Stock: ${product.stockInHand.toStringAsFixed(0)}'
-                                : 'Out of stock',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: product.stockInHand > 0 ? Colors.orange[800] : Colors.red[800],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                isSelected ? Icons.check_circle : Icons.circle_outlined,
-                color: isSelected ? Colors.blue : Colors.grey,
-                size: 28,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
 
   Widget _OrderItemTile({
@@ -416,14 +297,14 @@ class DiscardFormPageState extends State<DiscardFormPage> {
     required VoidCallback onExpiryChanged,
     required VoidCallback onRemove,
   }) {
-    final price = double.tryParse(item.product.tradePrice) ?? 0;
+    final price = double.tryParse(item.product.tradePrice!) ?? 0;
     final total = price * item.quantity;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      color: AppColors.g2,
+      color: AppColors.whiteColor,
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -433,9 +314,9 @@ class DiscardFormPageState extends State<DiscardFormPage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: item.product.imageUrls.isNotEmpty
+                  child: item.product.imageUrls!.isNotEmpty
                       ? Image.network(
-                    item.product.imageUrls,
+                    item.product.imageUrls!,
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,
@@ -469,13 +350,13 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        item.product.skuName,
+                        item.product.skuName!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
-                          color: Colors.white,
+                          color: Colors.black,
                         ),
                       ),
                       SizedBox(
@@ -483,7 +364,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                       ),
                       Text(
                         'Rs. ${price.toStringAsFixed(2)} × ${item.quantity}',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
+                        style: TextStyle(color: AppColors.priceGreenColor, fontSize: 14),
                       ),
                       SizedBox(
                         height: 10,
@@ -491,7 +372,7 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                       _QtyPillStepper(
                         value: item.quantity,
                         onChanged: onQtyChanged,
-                        primary: AppColors.onSurface,
+                        primary: AppColors.greyColor,
                       ),
                     ],
                   ),
@@ -503,9 +384,9 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                     Text(
                       'Rs. ${total.toStringAsFixed(2)}',
                       style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.mainButtonsColor,
                       ),
                     ),
                     IconButton(
@@ -526,17 +407,27 @@ class DiscardFormPageState extends State<DiscardFormPage> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Packing',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color:  AppColors.appBackgroundGreyColor,
+                      borderRadius: BorderRadius.circular(8),
+                       //border: Border.all(color: Colors.grey.shade300),
                     ),
-                    initialValue:  packingOptions.contains(item.packing) ? item.packing : null,
-                    items: packingOptions.toSet().toList().map((pack) =>  // Ensure unique items
-                    DropdownMenuItem(value: pack, child: Text(pack))
-                    ).toList(),
-                    onChanged: (val) => onPackingChanged(val ?? ''),
+                    child: DropdownButtonFormField<String>(
+                      iconEnabledColor: Colors.black,
+                      dropdownColor: Colors.white,
+                      decoration: const InputDecoration(
+                        labelText: 'Packing',
+                        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                      initialValue:  packingOptions.contains(item.packing) ? item.packing : null,
+                      items: packingOptions.toSet().toList().map((pack) =>  // Ensure unique items
+                      DropdownMenuItem(value: pack, child: Text(pack,style: TextStyle(color: Colors.black),))
+                      ).toList(),
+                      onChanged: (val) => onPackingChanged(val ?? ''),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -545,10 +436,15 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                     onTap: onExpiryChanged,
                     child: IgnorePointer(
                       child: TextFormField(
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: Colors.black),
+                        decoration:  InputDecoration(
                           labelText: 'Expiry Date',
-                          border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: AppColors.appBackgroundGreyColor,
                         ),
                         controller: TextEditingController(text: item.expiryDate),
                       ),
@@ -614,6 +510,138 @@ class DiscardFormPageState extends State<DiscardFormPage> {
     }
   }
 
+  Widget _productCard(Product product) {
+    final isSelected = _cartItems.any((item) => item.product.skuCode == product.skuCode);
+
+    return GestureDetector(
+      onTap: () => _toggleCart(product),
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        elevation: isSelected ? 5 : 1,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color: isSelected ? AppColors.mainButtonsColor : AppColors.whiteColor,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: product.imageUrls!.isNotEmpty
+                    ? Image.network(
+                  ApiService.imageBaseUrl + product.imageUrls!,
+                  width: 90,
+                  height: 90,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 90,
+                    height: 90,
+                    color: Colors.grey[200],
+                    child: const Icon(
+                      Icons.broken_image,
+                      size: 30,
+                      color: Colors.grey,
+                    ),
+                  ),
+                )
+                    : Container(
+                  width: 90,
+                  height: 90,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.image,
+                    size: 30,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.skuName!,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontFamily: 'Roboto',
+                        letterSpacing: 0.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Brand: ${product.brandName}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          'Rs. ${product.tradePrice}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                            fontFamily: 'RobotoMono',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: product.stockInHand! > 0
+                                ? Colors.orange.withAlpha(25)
+                                : Colors.red.withAlpha(25),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: product.stockInHand! > 0 ? Colors.orange : Colors.red,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            product.stockInHand! > 0
+                                ? 'Stock: ${product.stockInHand!.toStringAsFixed(0)}'
+                                : 'Out of stock',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: product.stockInHand! > 0 ? Colors.orange[800] : Colors.red[800],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                isSelected ? Icons.check_circle : Icons.circle_outlined,
+                color: isSelected ? AppColors.mainButtonsColor : Colors.grey,
+                size: 28,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
 
   @override
@@ -621,8 +649,11 @@ class DiscardFormPageState extends State<DiscardFormPage> {
     final cartCount = _cartItems.length;
 
     return Scaffold(
+      backgroundColor: AppColors.appBackgroundGreyColor,
       appBar: AppBar(
-        title: const Text('GRN Discard'),
+        backgroundColor: AppColors.mainButtonsColor,
+        iconTheme: IconThemeData(color: Colors.black),
+        title: const Text('GRN Discard',style: TextStyle(color: Colors.black),),
         actions: [
           Stack(
             alignment: Alignment.center,
@@ -657,53 +688,74 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    DropdownSearch<Customer>(
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        isFilterOnline: true,
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: "🔍 Search customer...",
+                    Container(
+                      decoration: BoxDecoration(
+                        color:  Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        // border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: DropdownSearch<Customer>(
+                        popupProps: PopupProps.menu(
+                          menuProps: MenuProps(
+                            // The backgroundColor property of MenuStyle changes the popup background color
+                            backgroundColor: Colors.white, // <-- Set your desired color here
+                          ),
+                          showSearchBox: true,
+                          isFilterOnline: true,
+                          searchFieldProps: const TextFieldProps(
+                            style: TextStyle(color: Colors.black),
+                            decoration: InputDecoration(
+                              fillColor: const Color(0xFFF9F9F9),
+                              hintText: "🔍 Search customer...",
+                              hintStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          itemBuilder:
+                              (context, Customer customer, isSelected) =>
+                              ListTile(
+                                title: Text(customer.customerName),
+                                subtitle: Text(customer.customerAddress),
+                              ),
+                        ),
+                        dropdownDecoratorProps: const DropDownDecoratorProps(
+                          baseStyle: TextStyle(color: Colors.black),
+                          dropdownSearchDecoration: InputDecoration(
+                            labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                            labelText: "Select Customer",
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        itemBuilder:
-                            (context, Customer customer, isSelected) =>
-                            ListTile(
-                              title: Text(customer.customerName),
-                              subtitle: Text(customer.customerAddress),
-                            ),
+                        asyncItems: (String filter) async {
+                          if (filter.length < 3) return [];
+                          return await ApiService.fetchVander(
+                            _invoiceMgrId,
+                            filter,
+                          );
+                        },
+                        itemAsString: (Customer u) => u.customerName,
+                        selectedItem: _selectedCustomer,
+                        onChanged: (Customer? customer) {
+                          setState(() {
+                            _selectedCustomer = customer;
+                            addressController.text =
+                                customer?.customerAddress ?? '';
+                          });
+                        },
                       ),
-                      dropdownDecoratorProps: const DropDownDecoratorProps(
-                        dropdownSearchDecoration: InputDecoration(
-                          labelText: "Select Customer",
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      asyncItems: (String filter) async {
-                        if (filter.length < 3) return [];
-                        return await ApiService.fetchVander(
-                          _invoiceMgrId,
-                          filter,
-                        );
-                      },
-                      itemAsString: (Customer u) => u.customerName,
-                      selectedItem: _selectedCustomer,
-                      onChanged: (Customer? customer) {
-                        setState(() {
-                          _selectedCustomer = customer;
-                          addressController.text =
-                              customer?.customerAddress ?? '';
-                        });
-                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: notesController,
                       maxLines: 3,
-                      decoration: const InputDecoration(
+                      style: TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: Colors.white,
                         labelText: 'Notes',
-                        border: OutlineInputBorder(),
                       ),
                     ),
                   ],
@@ -718,11 +770,15 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                         controller: searchController,
                         decoration: InputDecoration(
                           labelText: 'Search by SKU or Brand',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.search),
+                          labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.white,
+                          prefixIcon: const Icon(Icons.search,color: AppColors.tabLabelBlueColor),
                           suffixIcon: searchController.text.isNotEmpty
                               ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white),
+                            icon: const Icon(Icons.clear, color: AppColors.tabLabelBlueColor),
                             onPressed: () {
                               searchController.clear();
                               setState(() {
@@ -745,12 +801,18 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mainButtonsColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       onPressed: () {
                         /*barcode = ''; // or open barcode scanner to set this
                         fetchProducts(reset: true);*/
                         scanBarcodeAndFetchProduct();
                       },
-                      child: const Icon(Icons.qr_code_scanner),
+                      child: const Icon(Icons.qr_code_scanner,color: Colors.black,),
                     ),
                   ],
                 ),
@@ -771,8 +833,14 @@ class DiscardFormPageState extends State<DiscardFormPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mainButtonsColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     onPressed: cartCount > 0 ? _showCartDialog : null,
-                    child: const Text('View Cart & Submit'),
+                    child: const Text('View Cart & Submit',style: TextStyle(color: Colors.black),),
                   ),
                 ),
               )

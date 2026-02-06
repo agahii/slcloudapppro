@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:slcloudapppro/Model/cash_book.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 import 'api_service.dart';
 
 class MyCashBookScreen extends StatefulWidget {
@@ -119,29 +120,59 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('My Cash Book')),
+      backgroundColor: AppColors.appBackgroundGreyColor,
+      appBar: AppBar(
+          backgroundColor: AppColors.mainButtonsColor,
+          iconTheme: IconThemeData(color: Colors.black),
+          title: const Text('My Cash Book',style: TextStyle(color: Colors.black),)
+      ),
       body: Column(
         children: [
           // Search
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            padding: const EdgeInsets.only(left:20,right: 20,top: 20,bottom: 20),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by Narration / Ref / Cheque...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                  icon: const Icon(Icons.clear),
+                hintStyle: const TextStyle(color: AppColors.greyColor),    // visible hint
+                filled: true,
+                fillColor: Colors.white,                               // solid light background
+                prefixIcon: isLoading
+                    ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black54), // visible spinner
+                    ),
+                  ),
+                )
+                    : const Icon(Icons.search, color: AppColors.greyColor),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.black54),
                   onPressed: () {
                     _searchController.clear();
                     setState(() => searchKey = "");
                     _fetchCashBook(initial: true);
                   },
+                )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                isDense: true,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white), // brand color on focus
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
               ),
               textInputAction: TextInputAction.search,
               onSubmitted: (_) {
@@ -150,12 +181,11 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
               },
             ),
           ),
-
-          const Divider(height: 1),
-
           // List
           Expanded(
             child: RefreshIndicator(
+              backgroundColor: AppColors.mainButtonsColor,
+              color: AppColors.blackColor,
               onRefresh: _refresh,
               child: _rows.isEmpty && !isLoading
                   ? const Center(child: Text("No entries found"))
@@ -166,7 +196,7 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
                   if (i >= _rows.length) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: AppColors.mainButtonsColor,)),
                     );
                   }
 
@@ -175,8 +205,9 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
                   final amount = isDebit ? row.debit : row.credit;
 
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    elevation: 2,
+                    margin: const EdgeInsets.only(left:20,right: 20,top: 10,bottom: 10),
+                    elevation: 0,
+                    color: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -205,17 +236,17 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: isDebit
-                                      ? Colors.green.withOpacity(.1)
+                                      ? AppColors.mainButtonsColor.withOpacity(.1)
                                       : Colors.red.withOpacity(.1),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: isDebit ? Colors.green : Colors.red,
+                                    color: isDebit ? AppColors.mainButtonsColor : Colors.red,
                                   ),
                                 ),
                                 child: Text(
                                   isDebit ? 'DEBIT' : 'CREDIT',
                                   style: TextStyle(
-                                    color: isDebit ? Colors.green[800] : Colors.red[800],
+                                    color: isDebit ? AppColors.mainButtonsColor : Colors.red[800],
                                     fontWeight: FontWeight.w700,
                                     fontSize: 12,
                                   ),
@@ -231,6 +262,7 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
                             row.narration.isEmpty ? '—' : row.narration,
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
+                              color: Colors.black87,
                               fontSize: 15,
                             ),
                           ),
@@ -264,7 +296,7 @@ class _MyCashBookScreenState extends State<MyCashBookScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
-                                  color: isDebit ? Colors.green[800] : Colors.red[800],
+                                  color: isDebit ? AppColors.mainButtonsColor : Colors.red[800],
                                 ),
                               ),
                             ],

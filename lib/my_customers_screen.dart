@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 import 'package:slcloudapppro/utils/location_helper.dart';
 
 import 'api_service.dart';
@@ -227,16 +228,23 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Confirm Tagging'),
-          content: Text('Do you want to Tag location for "${c.customer}"?'),
+          backgroundColor: AppColors.appBackgroundGreyColor,
+          title: const Text('Confirm Tagging' ,style: TextStyle(color: AppColors.tabLabelBlueColor),),
+          content: Text('Do you want to Tag location for "${c.customer}"?',style: TextStyle(color: AppColors.blackColor),),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Cancel'),
+              child: const Text('Cancel',style: TextStyle(color: Colors.black),),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Yes'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainButtonsColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Yes',style: TextStyle(color: Colors.black),),
             ),
           ],
         );
@@ -411,32 +419,47 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
     final canQuery = _mgrInvoice.isNotEmpty || _mgrPO.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Customers')),
+      backgroundColor: AppColors.appBackgroundGreyColor,
+      appBar: AppBar(
+          backgroundColor: AppColors.mainButtonsColor,
+          iconTheme: IconThemeData(color: Colors.black),
+          title: const Text('My Customers',style: TextStyle(color: Colors.black))),
       body: Column(
         children: [
           // Search
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: const EdgeInsets.only(left:20,right: 20,top: 10,bottom: 10),
             child: TextField(
               controller: _search,
               textInputAction: TextInputAction.search,
+              style: TextStyle(color: Colors.black),
               decoration: InputDecoration(
                 hintText: 'Search customers by name, code, or area...',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: const TextStyle(color: AppColors.greyColor),    // visible hint
+                filled: true,
+                fillColor: Colors.white,                               // solid light background
+                prefixIcon:  const Icon(Icons.search, color: AppColors.greyColor),
+                suffixIcon: _search.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.black54),
+                  onPressed: () {
+                    _search.clear();
+                    _debounce?.cancel();
+                  },
+                )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                isDense: true,
-                contentPadding: const EdgeInsets.all(12),
-                suffixIcon: _search.text.isEmpty
-                    ? null
-                    : IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _search.clear();
-                    FocusScope.of(context).unfocus();
-                  },
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white), // brand color on focus
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
               ),
             ),
           ),
@@ -450,60 +473,70 @@ class _MyCustomersScreenState extends State<MyCustomersScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
+              color: AppColors.blackColor,
+              backgroundColor: AppColors.mainButtonsColor,
               child: _initialLoading && _items.isEmpty
                   ? const _LoadingList()
-                  : ListView.separated(
+                  : ListView.builder(
                 controller: _scroll,
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemCount: _items.length + (_hasMore ? 1 : 0),
-                separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
                 itemBuilder: (ctx, i) {
                   if (i >= _items.length) {
                     // Footer loader
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(child: CircularProgressIndicator(color: AppColors.mainButtonsColor,)),
                     );
                   }
                   final c = _items[i];
-                  return ListTile(
-                    leading: _Avatar(initials: _initials(c.customer)),
-                    title: Text(
-                      c.customer,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  return Container(
+                    margin: const EdgeInsets.only(left: 20, right: 20, top: 20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if ((c.area ?? '').isNotEmpty) Text("Area: ${c.area}"),
-                        if ((c.customerAddress ?? '').isNotEmpty)
-                          Text(
-                            c.customerAddress!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                    child: ListTile(
+                      leading: _Avatar(initials: _initials(c.customer)),
+                      title: Text(
+                        c.customer,
+                        maxLines: 1,
+                        style: TextStyle(color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if ((c.area ?? '').isNotEmpty) Text("Area: ${c.area}" ,style: TextStyle(color: AppColors.grey2Color),),
+                          if ((c.customerAddress ?? '').isNotEmpty)
+                            Text(
+                              c.customerAddress!,
+                              maxLines: 2,
+                              style: TextStyle(color: AppColors.grey2Color),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Log Visit button
+                          _loggingCustomerIds.contains(c.id)
+                              ? const SizedBox(
+                              width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                              : IconButton(
+                            icon: const Icon(Icons.pin_drop_outlined,color: AppColors.tabLabelBlueColor,),
+                            tooltip: 'Log Visit',
+                            onPressed: () => _confirmLogVisit(context, c),
                           ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Log Visit button
-                        _loggingCustomerIds.contains(c.id)
-                            ? const SizedBox(
-                            width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                            : IconButton(
-                          icon: const Icon(Icons.pin_drop_outlined),
-                          tooltip: 'Log Visit',
-                          onPressed: () => _confirmLogVisit(context, c),
-                        ),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
+                          const Icon(Icons.chevron_right,color: AppColors.tabLabelBlueColor),
+                        ],
+                      ),
 
-                    onTap: () {
-                      _showCustomerDetail(context, c);
-                    },
+                      onTap: () {
+                        _showCustomerDetail(context, c);
+                      },
+                    ),
                   );
                 },
               ),
@@ -529,7 +562,9 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(child: Text(initials));
+    return CircleAvatar(
+        backgroundColor: AppColors.mainButtonsColor ,
+        child: Text(initials,style: TextStyle(color: Colors.black),));
   }
 }
 
@@ -542,7 +577,7 @@ class _LoadingList extends StatelessWidget {
       itemCount: 8,
       separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
       itemBuilder: (_, __) => const ListTile(
-        leading: CircleAvatar(),
+        leading: CircleAvatar(backgroundColor: Colors.black12,),
         title: _ShimmerBar(width: 160),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

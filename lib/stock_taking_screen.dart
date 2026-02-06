@@ -1,152 +1,22 @@
-import 'dart:convert';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:slcloudapppro/Model/Product.dart';
 import 'package:slcloudapppro/theme/app_colors.dart';
 import 'package:slcloudapppro/utils/barcode_scanner_page.dart';
 
-import 'Model/customer.dart';
+import 'Model/Product.dart';
+import 'Model/cart_item_model.dart';
 import 'api_service.dart';
 
-/*
-class ApiException implements Exception {
-  final int code;
-  final String message;
-  ApiException(this.code, this.message);
-}
-
-Future<bool> hasInternetConnection() async {
-  // Implement actual connectivity check here
-  return true;
-}
-
-Future<http.Response> _post(Uri url,
-    {required Map<String, String> headers, required String body}) async {
-  return await http.post(url, headers: headers, body: body);
-}
-
-const String baseUrl = 'https://yourapi.baseurl.com';
-
-class Product {
-  final String id;
-  final String defaultPackingID;
-  final String skuName;
-  final String skuCode;
-  final String tradePrice;
-  final String categoryName;
-  final String imageUrls;
-  final String brandName;
-  final double stockInHand;
-
-  Product({
-    required this.id,
-    required this.defaultPackingID,
-    required this.skuName,
-    required this.skuCode,
-    required this.tradePrice,
-    required this.categoryName,
-    required this.imageUrls,
-    required this.brandName,
-    required this.stockInHand,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['id'],
-      defaultPackingID: json['defaultPackingID'],
-      skuName: json['skuName'],
-      skuCode: json['skuCode'],
-      tradePrice: json['tradePrice'],
-      categoryName: json['categoryName'],
-      imageUrls: json['imageUrls'],
-      brandName: json['brandName'],
-      stockInHand: (json['stockInHand'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-}
-
-class ApiService {
-  static Future<List<Product>> fetchProductsFromOrderManager({
-    required String managerID,
-    required String stockLocationID,
-    int page = 1,
-    int pageSize = 20,
-    String searchKey = "",
-    String barcode = "",
-  }) async {
-    if (!await hasInternetConnection()) {
-      throw ApiException(0, 'No internet connection.');
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    if (token == null) {
-      throw ApiException(401, 'Token not found. Please login again.');
-    }
-    final url = Uri.parse('$baseUrl/api/PurchaseSalesOrderMaster/GetSKUPOS');
-    final payload = {
-      "managerID": managerID,
-      "searchKey": searchKey,
-      "barCode": barcode,
-      "categoryID": "",
-      "pageNumber": page,
-      "pageSize": pageSize,
-      "stockLocationID": stockLocationID
-    };
-
-    final response = await _post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode(payload),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List skuList = data['data']['skuVMPOS'];
-      return skuList.map((item) => Product.fromJson(item)).toList();
-    } else {
-      throw ApiException(response.statusCode, 'Failed to fetch products.');
-    }
-  }
-}
-*/
-
-class CartItem {
-  final Product product;
-  String packing;
-  int quantity;
-  String expiryDate;
-
-  CartItem({
-    required this.product,
-    required this.packing,
-    required this.quantity,
-    required this.expiryDate,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': product.id,
-      'skuCode': product.skuCode,
-      'packing': packing,
-      'quantity': quantity,
-      'expiryDate': expiryDate,
-    };
-  }
-}
-
-class PurchaseFormPage extends StatefulWidget {
-  const PurchaseFormPage({Key? key}) : super(key: key);
+class StockTakingScreen extends StatefulWidget {
+  const StockTakingScreen({super.key});
 
   @override
-  _PurchaseFormPageState createState() => _PurchaseFormPageState();
+  StockTakingScreenState createState() {
+    return StockTakingScreenState();
+  }
 }
 
-class _PurchaseFormPageState extends State<PurchaseFormPage> {
+class StockTakingScreenState extends State<StockTakingScreen> {
   final _formKey = GlobalKey<FormState>();
 
   List<String> vendors = ['THE FLEX SHOP (MALIK SAFDAR DGK)(100010)'];
@@ -159,7 +29,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
   TextEditingController searchController = TextEditingController();
   TextEditingController barcodeController = TextEditingController();
   TextEditingController notesController = TextEditingController();
-   TextEditingController addressController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
   final List<String> packingOptions = ['Piece', 'Kg', 'Box'];
 
@@ -173,7 +43,6 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
 
   String searchKey = '';
   String barcode = '';
-  Customer? _selectedCustomer;
 
   @override
   void initState() {
@@ -189,7 +58,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
         prefs.getString('salesPurchaseOrderManagerID')?.trim() ?? '';
     _invoiceMgrId = prefs.getString('invoiceManagerID')?.trim() ?? '';
     stockLocationId = prefs.getString('stockLocationID')?.trim() ?? '';
-    if(managerID.isNotEmpty || stockLocationId.isNotEmpty){
+    if(_invoiceMgrId.isNotEmpty || stockLocationId.isNotEmpty){
       fetchProducts();
     }
   }
@@ -211,7 +80,7 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
         page: currentPage,
         pageSize: pageSize,
         searchKey: searchKey,
-        barCode: barcode,
+        barCode: barcode
       );
       setState(() {
         currentPage++;
@@ -282,7 +151,6 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
       _cartItems.removeWhere((item) => item.product.skuCode == skuCode);
     });
   }
-
 
   void _showCartDialog() {
     showModalBottomSheet(
@@ -603,6 +471,18 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
     );
   }
 
+  void scanBarcodeAndFetchProduct() async {
+    String result = await BarcodeScannerService.scanBarcode();
+    if (!mounted) return;
+    setState(() {
+      barcode = result;
+      searchController.text = barcode;
+    });
+
+    if (result.isNotEmpty) {
+      fetchProducts();
+    }
+  }
 
   Widget _productCard(Product product) {
     final isSelected = _cartItems.any((item) => item.product.skuCode == product.skuCode);
@@ -739,20 +619,6 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
 
 
 
-  void scanBarcodeAndFetchProduct() async {
-    String result = await BarcodeScannerService.scanBarcode();
-    if (!mounted) return;
-    setState(() {
-      barcode = result;
-      searchController.text = barcode;
-    });
-
-    if (result.isNotEmpty) {
-      fetchProducts();
-    }
-  }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -761,15 +627,15 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
     return Scaffold(
       backgroundColor: AppColors.appBackgroundGreyColor,
       appBar: AppBar(
+        title: const Text('Stock Taking',style: TextStyle(color: Colors.black)),
         backgroundColor: AppColors.mainButtonsColor,
         iconTheme: IconThemeData(color: Colors.black),
-        title: const Text('Good Receive Note',style: TextStyle(color: Colors.black),),
         actions: [
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.shopping_cart,color: Colors.black,),
+                icon: const Icon(Icons.shopping_cart),
                 onPressed: cartCount > 0 ? _showCartDialog : null,
               ),
               if (cartCount > 0)
@@ -794,89 +660,68 @@ class _PurchaseFormPageState extends State<PurchaseFormPage> {
           key: _formKey,
           child: Column(
             children: [
-              Padding(
+              /* Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color:  Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        // border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: DropdownSearch<Customer>(
-                        popupProps: PopupProps.menu(
-                          menuProps: MenuProps(
-                            // The backgroundColor property of MenuStyle changes the popup background color
-                            backgroundColor: Colors.white, // <-- Set your desired color here
-                          ),
-                          showSearchBox: true,
-                          isFilterOnline: true,
-                          searchFieldProps: const TextFieldProps(
-                            style: TextStyle(color: Colors.black),
-                            decoration: InputDecoration(
-                              fillColor: const Color(0xFFF9F9F9),
-                              hintText: "🔍 Search customer...",
-                              hintStyle: TextStyle(color: AppColors.tabLabelBlueColor),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          itemBuilder:
-                              (context, Customer customer, isSelected) =>
-                              ListTile(
-                                title: Text(customer.customerName),
-                                subtitle: Text(customer.customerAddress),
-                              ),
-                        ),
-                        dropdownDecoratorProps: const DropDownDecoratorProps(
-                          baseStyle: TextStyle(color: Colors.black),
-                          dropdownSearchDecoration: InputDecoration(
-                            labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
-                            labelText: "Select Customer",
+                    DropdownSearch<Customer>(
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        isFilterOnline: true,
+                        searchFieldProps: const TextFieldProps(
+                          decoration: InputDecoration(
+                            hintText: "🔍 Search customer...",
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        asyncItems: (String filter) async {
-                          if (filter.length < 3) return [];
-                          return await ApiService.fetchVander(
-                            _invoiceMgrId,
-                            filter,
-                          );
-                        },
-                        itemAsString: (Customer u) => u.customerName,
-                        selectedItem: _selectedCustomer,
-                        onChanged: (Customer? customer) {
-                          setState(() {
-                            _selectedCustomer = customer;
-                            addressController.text =
-                                customer?.customerAddress ?? '';
-                          });
-                        },
+                        itemBuilder:
+                            (context, Customer customer, isSelected) =>
+                            ListTile(
+                              title: Text(customer.customerName),
+                              subtitle: Text(customer.customerAddress),
+                            ),
                       ),
+                      dropdownDecoratorProps: const DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: "Select Customer",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      asyncItems: (String filter) async {
+                        if (filter.length < 3) return [];
+                        return await ApiService.fetchVander(
+                          _invoiceMgrId,
+                          filter,
+                        );
+                      },
+                      itemAsString: (Customer u) => u.customerName,
+                      selectedItem: _selectedCustomer,
+                      onChanged: (Customer? customer) {
+                        setState(() {
+                          _selectedCustomer = customer;
+                          addressController.text =
+                              customer?.customerAddress ?? '';
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: notesController,
                       maxLines: 3,
-                      style: TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        filled: true,
-                        fillColor: Colors.white,
+                      decoration: const InputDecoration(
                         labelText: 'Notes',
+                        border: OutlineInputBorder(),
                       ),
                     ),
                   ],
                 ),
-              ),
+              ),*/
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child:  TextField(
                         controller: searchController,
                         decoration: InputDecoration(
                           labelText: 'Search by SKU or Brand',

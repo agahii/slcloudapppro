@@ -51,6 +51,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool isFabExpanded = false;
   late String actionLabel ;
   late OrderAction actionType= OrderAction.placeOrder;
+  late List<Map<String, dynamic>> fbrScenario = [];
+
+
+  Future<void> fbrList() async {
+    fbrScenario = await _loadFbrFromPrefs();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadFbrFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final fbrString = prefs.getString('allowedFbrScenario');
+    if (fbrString == null) return [];
+    final List<dynamic> fbrList = jsonDecode(fbrString);
+    return fbrList.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
 
   void scanBarcodeAndFetchProduct() async {
     String result = await BarcodeScannerService.scanBarcode();
@@ -68,8 +82,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _showAddToCartSheet(Product product) async {
     final theme = Theme.of(context);
-    final double price = double.tryParse(product.tradePrice) ?? 0;
-    final int stock = product.stockInHand.round();
+    final double price = double.tryParse(product.tradePrice!) ?? 0;
+    final int stock = product.stockInHand!.round();
     final int initialQty = (_cart[product.skuCode] ?? 0) > 0 ? _cart[product.skuCode]! : 1;
 
     final qty = ValueNotifier<int>(initialQty);
@@ -213,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
 
         Widget quickChips() {
-          final options = [1, 3, 5, 10, 25];
+          final options = [1, 3, 5, 10, 25,50,100];
           return Wrap(
           direction: Axis.horizontal,
             alignment: WrapAlignment.start,
@@ -295,9 +309,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: product.imageUrls.isNotEmpty
+                      child: product.imageUrls!.isNotEmpty
                           ? Image.network(
-                        ApiService.imageBaseUrl + product.imageUrls,
+                        ApiService.imageBaseUrl + product.imageUrls!,
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
@@ -325,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            product.skuName,
+                            product.skuName!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -597,7 +611,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           return ElevatedButton.icon(
                             onPressed: canAdd
                                 ? () {
-                              setState(() => _cart[product.skuCode] = v);
+                              setState(() {
+                                _cart[product.skuCode!] = v;
+                                product.quantity = v;
+                              });
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -605,7 +622,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                               );
                             }
-                                : null,
+                            : null,
                             icon: const Icon(Icons.shopping_cart, size: 18),
                             label: const Text(
                               'Add to Cart',
@@ -646,6 +663,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initManagersAndFirstLoad();
+    fbrList();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
           !isLoading &&
@@ -917,7 +935,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Product Image
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: product.imageUrls.isNotEmpty
+              child: product.imageUrls!.isNotEmpty
                   ? Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
@@ -925,7 +943,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   border: Border.all(color:AppColors.appBackgroundGreyColor),
                 ),
                     child: Image.network(
-                                    ApiService.imageBaseUrl + product.imageUrls,
+                                    ApiService.imageBaseUrl + product.imageUrls!,
                                     width: 110,
                                     height: 110,
                                     fit: BoxFit.cover,
@@ -956,7 +974,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 children: [
                   // Product Name
                   Text(
-                    product.skuName,
+                    product.skuName!,
                     style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
@@ -996,23 +1014,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         margin: EdgeInsets.only(right: 10),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: product.stockInHand > 0
+                          color: product.stockInHand! > 0
                               ? AppColors.stockBackColor
                               : Colors.red.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: product.stockInHand > 0 ? AppColors.stockBorderColor : Colors.red,
+                            color: product.stockInHand! > 0 ? AppColors.stockBorderColor : Colors.red,
                             width: 0.8,
                           ),
                         ),
                         child: Text(
-                          product.stockInHand > 0
-                              ? 'Stock: ${product.stockInHand.toStringAsFixed(0)}'
+                          product.stockInHand! > 0
+                              ? 'Stock: ${product.stockInHand!.toStringAsFixed(0)}'
                               : 'Out of stock',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: product.stockInHand > 0 ? AppColors.stockTextColor : Colors.red[800],
+                            color: product.stockInHand! > 0 ? AppColors.stockTextColor : Colors.red[800],
                           ),
                         ),
                       ),
@@ -1168,7 +1186,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             double grandTotal = 0;
             for (var item in cartItems) {
               final qty = _cart[item.skuCode]!;
-              final price = double.tryParse(item.tradePrice) ?? 0;
+              final price = double.tryParse(item.tradePrice!) ?? 0;
               grandTotal += qty * price;
             }
 
@@ -1184,7 +1202,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Text("👤 Customer", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
 
-                    if (isInvoice) ...[
+                    if (isInvoice==false ) ...[
                       // Walk-in vs Registered toggle
                       SegmentedButton<bool>(
                         segments: const [
@@ -1335,7 +1353,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             onQtyChanged: (newQty) {
                               if (newQty < 1) return;
                               setStateDialog(() {
-                                _cart[item.skuCode] = newQty;
+                                _cart[item.skuCode!] = newQty;
                               });
                             },
                             onRemove: () {
@@ -1423,7 +1441,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               "transShipmentAllow": false,
                               "purchaseSalesOrderDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
-                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                final rate = double.tryParse(item.tradePrice!) ?? 0;
                                 return {
                                   "id": "",
                                   "fK_ChartOfAccounts_ID": null,
@@ -1463,7 +1481,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             final customerId = isWalkIn
                                 ? (prefs.getString('walkInCustomerID') ?? '')
                                 : (_selectedCustomer?.id ?? '');
-
                             String? _bankID;
                             double _bankTotal = 0.0;
                             // recompute totals safely
@@ -1474,15 +1491,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               bankTotal += (bp['amount'] as double?) ?? 0.0;
                             }
                             final double cashAfterBank = (grandTotal - bankTotal).clamp(0, double.infinity);
-
-
-
-
-
-
-
-
-
                             final payload = {
                               "fK_Customer_ID": customerId,
                               "fK_Employee_ID": employeeID,
@@ -1491,22 +1499,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               "fK_StockLocation_ID": prefs.getString('stockLocationID') ?? '',
                               "fK_InvoiceManagerMaster_ID": prefs.getString('invoiceManagerID') ?? '',
                               "docDate": DateTime.now().toIso8601String(),
-
-
                               if (_bankID != null && _bankTotal > 0) ...{
                                 "fK_ChartOfAccounts_ID_Bank": _bankID,
                                 "bankReceived": _bankTotal,
                               },
-
-
                               // Walk-in extras (your API can accept these or ignore if not present)
                               "customerNamePOS": isWalkIn ? walkInNameController.text.trim() : "",
                               "mobileNumber": isWalkIn ? walkInMobileController.text.trim() : "",
                               "cashReceived": cashAfterBank,
-
                               "invoiceDetailsInp": cartItems.map((item) {
                                 final qty = _cart[item.skuCode]!;
-                                final rate = double.tryParse(item.tradePrice) ?? 0;
+                                final rate = double.tryParse(item.tradePrice!) ?? 0;
                                 return {
                                   "id": "",
                                   "fK_ChartOfAccounts_ID": null,
@@ -2194,6 +2197,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
  final theme = Theme.of(context);
+ final cartItems = _products.where((p) => _cart.containsKey(p.skuCode)).toList();
+
+ double grandTotal = 0;
+ for (var item in cartItems) {
+   final qty = _cart[item.skuCode]!;
+   final price = double.tryParse(item.tradePrice!) ?? 0;
+   grandTotal += qty * price;
+ }
 
     return Scaffold(
       backgroundColor: AppColors.appBackgroundGreyColor,
@@ -2219,12 +2230,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       context,
                     ).showSnackBar(const SnackBar(content: Text('Cart is empty')));
                   } else {
-                   // _showOrderSummaryDialog(actionType);
+                    //_showOrderSummaryDialog(actionType);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>  SalesInvoiceScreen(invoiceMgrId: _invoiceMgrId,products: _products,)
+                        builder: (_) =>  SalesInvoiceScreen(invoiceMgrId: _invoiceMgrId,products: cartItems,cart: _cart,fbrList : fbrScenario)
                       ),
+                    ).then((value) {
+                      setState(() {
+                        _cart.clear();
+                      });
+                    }
                     );
                   }
                 },
@@ -2317,6 +2333,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     icon: Icons.call_made,
                     title: 'GRN Discard',
                     route: '/grn_discard_screen',
+                  ),
+
+                 /* _buildDrawerItem(
+                    context,
+                    icon: Icons.storage_outlined,
+                    title: 'Stock Taking',
+                    route: '/my_stock_screen',
+                  ),*/
+
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.inventory_outlined,
+                    title: 'Stock Taking',
+                    route: '/stock_taking_screen',
                   ),
 
                   _buildDrawerItem(
@@ -2653,7 +2683,7 @@ class _OrderItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final price = double.tryParse(item.tradePrice) ?? 0;
+    final price = double.tryParse(item.tradePrice!) ?? 0;
     final total = price * qty;
 
     return Card(
@@ -2670,9 +2700,9 @@ class _OrderItemTile extends StatelessWidget {
             // Thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(8), // slightly smaller radius
-              child: item.imageUrls.isNotEmpty
+              child: item.imageUrls!.isNotEmpty
                   ? Image.network(
-                ApiService.imageBaseUrl + item.imageUrls,
+                ApiService.imageBaseUrl + item.imageUrls!,
                 width: 48,
                 height: 48, // reduced size
                 fit: BoxFit.cover,
@@ -2701,7 +2731,7 @@ class _OrderItemTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min, // shrink height
                 children: [
                   Text(
-                    item.skuName,
+                    item.skuName!,
                     maxLines: 1, // force single line for compactness
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

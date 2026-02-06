@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/stock_taking_screen.dart';
 
 import 'collection_screen.dart';
 import 'customer_ledger_screen.dart';
@@ -153,6 +154,7 @@ class _MyAppState extends State<MyApp> {
         '/my_stock_screen': (_) => const MyStockScreen(),
         '/good_recieve_note_screen': (_) =>  PurchaseFormPage(),
         '/grn_discard_screen': (_) =>  DiscardFormPage(),
+        '/stock_taking_screen': (_) =>  StockTakingScreen(),
       },
     );
   }

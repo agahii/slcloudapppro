@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 
 class InvoicePrintPage extends StatelessWidget {
   final Map<String, dynamic> inv;
@@ -193,7 +194,7 @@ class InvoicePrintPage extends StatelessWidget {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Invoice Preview')),
+      appBar: AppBar(title: const Text('Invoice Preview',style: TextStyle(color: Colors.black),),backgroundColor: AppColors.mainButtonsColor,iconTheme: const IconThemeData(color: Colors.black),),
       body: PdfPreview(
         build: (format) => _buildPdf(format),
         initialPageFormat: PdfPageFormat.roll80,

@@ -136,6 +136,9 @@ class ApiService {
         if (data['banks'] != null) {
           await prefs.setString('banks', jsonEncode(data['banks']));
         }
+        if (data['allowedFbrScenario'] != null) {
+          await prefs.setString('allowedFbrScenario', jsonEncode(data['allowedFbrScenario']));
+        }
         return {'success': true};
       } else {
         return {'success': false, 'message': json['message']};
@@ -397,7 +400,7 @@ class ApiService {
     required String managerID,
     required String stockLocationID,
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 50,
     String searchKey = "",
     String barCode = "",
   }) async {
@@ -414,6 +417,7 @@ class ApiService {
       "managerID": managerID,
       "searchKey": searchKey,
       "barCode": barCode,
+      "brandID":"",
       "categoryID": "",
       "pageNumber": page,
       "pageSize": pageSize,

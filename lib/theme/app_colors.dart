@@ -24,6 +24,10 @@ class AppColors {
   static const Color greyColor = Color(0xFF9DA4B0);
   static const Color grey2Color = Color(0xFF6C7381);
   static const Color borderGreyColor = Color(0xFFD4D7DD);
+  static const Color tabLabelBlueColor = Color(0xFF4D6D9B);
+  static const Color lineGretColor = Color(0xFFCBD5E1);
+  static const Color deleteRedColor = Color(0xFFEF4444);
+  static const Color walletIconColor = Color(0xFF4C6C9A);
 
 
 

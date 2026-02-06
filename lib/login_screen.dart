@@ -11,7 +11,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController(text: 'demo@gmail.com');
-  final passwordController = TextEditingController(text: 'Ba@leno9988');
+ // final passwordController = TextEditingController(text: 'Ba@leno9988');
+  final passwordController = TextEditingController(text: 'Demo@123');
 
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response['success'] == true) {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
-        if (token != null && token.isNotEmpty) {
+       /* if (token != null && token.isNotEmpty) {
           try {
             await SignalRService.instance.start(token);
             if (mounted) {
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           }
-        }
+        }*/
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         final msg = (response['message'] ?? 'Login failed').toString();

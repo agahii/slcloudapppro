@@ -59,7 +59,7 @@ class _CustomerLedgerScreenState extends State<CustomerLedgerScreen> {
     final lastName = prefs.getString('lastCustomerName');
     if (lastId != null && lastName != null) {
       setState(() {
-        _selectedCustomer = Customer(id: lastId, customerName: lastName, customerAddress: ''); // adjust fields to your Customer model
+        _selectedCustomer = Customer(id: lastId, customerName: lastName, customerAddress: '', ledgerBalance: 0); // adjust fields to your Customer model
       });
     }
   }

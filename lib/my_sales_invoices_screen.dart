@@ -2,19 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:slcloudapppro/sales_return_screen.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
+import 'package:slcloudapppro/utils/return_invoice_parser.dart';
 import 'api_service.dart';
 import 'package:slcloudapppro/Model/MySalesInvoice.dart';
 class MySalesInvoicesScreen extends StatefulWidget {
   const MySalesInvoicesScreen({super.key});
-
-
-
-
-
-
-
-
-
   @override
   State<MySalesInvoicesScreen> createState() => _MySalesInvoicesScreenState();
 }
@@ -106,25 +100,43 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirm Invoice Return'),
-        content: Text('Return Invoice #${inv.docNumber ?? "-"}?'),
+        backgroundColor: Colors.white,
+        title: const Text('Confirm Invoice Return',style: TextStyle(color: Colors.black),),
+        content: Text('Return Invoice #${inv.docNumber ?? "-"}?',style: TextStyle(color: Colors.black)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.mainButtonsColor,
+
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Proceed'),
+            child: const Text('Proceed',style: TextStyle(color: Colors.black),),
           ),
         ],
       ),
     );
 
     if (confirmed != true) return;
+    _openReturnPage(inv);
+
 
     // Option A: Navigate to a return screen (recommended)
-    Navigator.pushNamed(
+   /* Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SalesReturnPage(
+          invoiceNumber: inv.docNumber ?? "",
+          items: inv.itemsList,
+        ),
+      ),
+    );*/
+
+
+    /*Navigator.pushNamed(
       context,
       '/invoiceReturn',
       arguments: {
@@ -134,7 +146,7 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
         'docDate': inv.docDate,
         'itemsList': inv.itemsList,
       },
-    );
+    );*/
 
     // Option B (alternative): Call an API directly here to create a return
     // try {
@@ -150,34 +162,106 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
     // }
   }
 
+
+  void _openReturnPage(SalesInvoice invoice) {
+    // Parse products from itemsList
+    final products = InvoiceItemsParser.parseItemsList(invoice.itemsList ?? '');
+
+    if (products.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No items found in this invoice'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SalesReturnPage(
+          invoiceNumber: invoice.docNumber!,
+          items: products,
+        ),
+      ),
+    ).then((result) {
+      if (result != null) {
+        _handleReturnProcessed(invoice, result);
+      }
+    });
+  }
+  void _handleReturnProcessed(SalesInvoice invoice, Map<String, dynamic> returnData) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Return processed for ${invoice.docNumber}\n'
+              'Amount: Rs.${returnData['totalAmount']?.toStringAsFixed(2) ?? '0.00'}',
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('My Sales Invoices')),
+      backgroundColor: AppColors.appBackgroundGreyColor,
+      appBar: AppBar(
+          backgroundColor: AppColors.mainButtonsColor,
+          iconTheme: IconThemeData(color: Colors.black),
+          title: const Text('My Sales Invoices',style: TextStyle(color: Colors.black),)
+      ),
       body: Column(
         children: [
           // Search
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+            padding: const EdgeInsets.only(left:20,right: 20,top: 10,bottom: 10),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by Invoice No / Customer...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                  icon: const Icon(Icons.clear),
+                hintStyle: const TextStyle(color: AppColors.greyColor),    // visible hint
+                filled: true,
+                fillColor: Colors.white,                               // solid light background
+                prefixIcon: isLoading
+                    ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black54), // visible spinner
+                    ),
+                  ),
+                )
+                    : const Icon(Icons.search, color: AppColors.greyColor),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.black54),
                   onPressed: () {
                     _searchController.clear();
                     _debounce?.cancel();
                     setState(() => searchKey = "");
                     _fetchInvoices(initial: true);
                   },
+                )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                isDense: true,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white), // brand color on focus
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
               ),
               onChanged: (value) {
                 // cancel old timer
@@ -191,13 +275,11 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
               },
             ),
           ),
-
-
-          const Divider(height: 1),
-
           // List
           Expanded(
             child: RefreshIndicator(
+              color: AppColors.blackColor,
+              backgroundColor: AppColors.mainButtonsColor,
               onRefresh: _refresh,
               child: _invoices.isEmpty && !isLoading
                   ? const Center(child: Text("No invoices found"))
@@ -207,8 +289,8 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                 itemBuilder: (context, i) {
                   if (i >= _invoices.length) {
                     return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: CircularProgressIndicator()),
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: CircularProgressIndicator( color: AppColors.mainButtonsColor,)),
                     );
                   }
 
@@ -216,8 +298,9 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                   final preview = (inv.itemsList ?? '').trim();
 
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    elevation: 0,
+                    color: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
@@ -231,14 +314,14 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(.08),
+                                color: AppColors.tabLabelBlueColor.withOpacity(.08),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.blue),
+                                border: Border.all(color: AppColors.tabLabelBlueColor),
                               ),
                               child: Text(
                                 'Doc #${inv.docNumber ?? '-'}',
                                 style: const TextStyle(
-                                  color: Colors.blue,
+                                  color: AppColors.tabLabelBlueColor,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 12,
                                 ),
@@ -258,8 +341,9 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         child: Text(
                                           "Invoice Details",
                                           style: TextStyle(
-                                            fontWeight: FontWeight.w800,
+                                            fontWeight: FontWeight.w300,
                                             fontSize: 16,
+                                            color: Colors.black
                                           ),
                                         ),
                                       ),
@@ -293,8 +377,8 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                   Text(
                                     inv.customerName ?? "Unknown Customer",
                                     style: TextStyle(
-                                      color: Colors.grey[800],
-                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
 
@@ -310,6 +394,11 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         style: const TextStyle(color: Colors.grey, fontSize: 12),
                                       ),
                                       const SizedBox(width: 8),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
                                       const Icon(Icons.list_alt, size: 14, color: Colors.grey),
                                       const SizedBox(width: 4),
                                       Expanded(
@@ -344,26 +433,21 @@ class _MySalesInvoicesScreenState extends State<MySalesInvoicesScreen> {
                                         text: Colors.indigo,
                                       ),
                                       const Spacer(), // pushes button to the far right
-                                      OutlinedButton.icon(
-                                        icon: const Icon(Icons.assignment_return, size: 16),
-                                        label: const Text('Return'),
-                                        style: OutlinedButton.styleFrom(
-                                          side: BorderSide(color: Colors.red.shade300),
-                                          foregroundColor: Colors.red.shade300,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // match chip height
-                                          minimumSize: const Size(0, 38),
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-                                          textStyle: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 12,
-                                          ),
-                                        ),
+                                      ElevatedButton(
                                         onPressed: () => _onReturnPressed(inv),
+                                      style:  ElevatedButton.styleFrom(
+                                       // side: BorderSide(color: AppColors.mainButtonsColor),
+                                        backgroundColor: AppColors.mainButtonsColor,
+                                        foregroundColor: AppColors.mainButtonsColor,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), // match chip height
+                                        textStyle: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      child: Text('Return',style: TextStyle(color: AppColors.blackColor),)
                                       )
-
-
                                     ],
                                   ),
                                 ],

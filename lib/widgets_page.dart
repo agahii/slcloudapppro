@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:slcloudapppro/theme/app_colors.dart';
 
 import 'Model/Product.dart';
 
@@ -22,7 +23,7 @@ class ProductCartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final price = double.tryParse(product.tradePrice) ?? 0;
+  final price = double.tryParse(product.tradePrice!) ?? 0;
     final total = price * quantity;
 
     return Container(
@@ -59,7 +60,7 @@ class ProductCartCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.skuName,
+                  product.skuName!,
                   style: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w600),
                   maxLines: 1,
@@ -131,9 +132,52 @@ class ProductCartCard extends StatelessWidget {
   }
 }
 
+
+class CartHeader extends StatelessWidget {
+  final int itemCount;
+
+  const CartHeader({
+    super.key,
+    required this.itemCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Text(
+          'CART ITEMS',
+          style: TextStyle(
+            fontSize: 18,
+            color: AppColors.tabLabelBlueColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.mainButtonsColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '$itemCount items',
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ============================================================================
 // CREDIT DAYS FIELD COMPONENT
 // ============================================================================
+
 class CreditDaysField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -144,6 +188,75 @@ class CreditDaysField extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
+      style: const TextStyle(color: Colors.black),
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(3),
+
+        // ✅ Blocks typing above 100
+        TextInputFormatter.withFunction((oldValue, newValue) {
+          if (newValue.text.isEmpty) return newValue;
+
+          int value = int.tryParse(newValue.text) ?? 0;
+
+          if (value > 100) {
+            return oldValue; // block
+          }
+
+          return newValue;
+        }),
+      ],
+      decoration: InputDecoration(
+        labelText: 'Credit Days',
+        hintText: '000',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: true,
+        fillColor: const Color(0xFFF8F8F8),
+        hintStyle:  TextStyle(color: AppColors.tabLabelBlueColor),
+        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
+        prefixIcon: const Icon(Icons.calendar_today, size: 20,color: AppColors.tabLabelBlueColor,),
+        helperText: 'Enter 0 - 100',
+      ),
+
+      // ✅ Auto format when user finishes
+      onEditingComplete: () {
+        _formatValue();
+        FocusScope.of(context).unfocus();
+      },
+
+      // ✅ Also format when tapping outside
+      onTapOutside: (_) {
+        _formatValue();
+      },
+    );
+  }
+
+  void _formatValue() {
+    int value = int.tryParse(controller.text) ?? 0;
+
+    if (value > 100) value = 100; // safety
+
+    controller.text = value.toString().padLeft(3, '0');
+  }
+}
+
+
+
+
+
+/*
+
+class CreditDaysField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const CreditDaysField({Key? key, required this.controller}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      style: TextStyle(color: Colors.black),
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(3),
@@ -152,10 +265,12 @@ class CreditDaysField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: 'Credit Days',
         hintText: '000',
+        hintStyle:  TextStyle(color: AppColors.tabLabelBlueColor),
+        labelStyle: TextStyle(color: AppColors.tabLabelBlueColor),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         filled: true,
         fillColor: const Color(0xFFF8F8F8),
-        prefixIcon: const Icon(Icons.calendar_today, size: 20),
+        prefixIcon: const Icon(Icons.calendar_today, size: 20,color: AppColors.tabLabelBlueColor,),
         helperText: 'Enter 0-999 (format: 001, 010, 100)',
         helperStyle: const TextStyle(fontSize: 11),
       ),
@@ -183,7 +298,7 @@ class CreditDaysFormatter extends TextInputFormatter {
       selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
-}
+}*/
 
 // ============================================================================
 // PAYMENT METHOD BUTTON COMPONENT
@@ -461,6 +576,7 @@ class EmptyCartWidget extends StatelessWidget {
   }
 }*/
 
+/*
 class Customer {
   final String id;
   final String customerName;
@@ -488,4 +604,4 @@ class Customer {
       isVIP: json['isVIP'] ?? false,
     );
   }
-}
+}*/
